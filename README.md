@@ -18,10 +18,19 @@ Full brief and weekly plan: [`docs/BRIEF.md`](docs/BRIEF.md).
 ## Run
 
 ```bash
-make dev    # build the image and start the full local stack (LocalStack S3 + DynamoDB)
-make test   # run the test suite inside the container
+make weights   # download the ALIKED and LightGlue ONNX models into models/ (52 MB, sha1 verified)
+make dev       # build the image and start the full local stack (LocalStack S3 + DynamoDB)
+make test      # run the test suite inside the container
 ```
 
 ## Status
 
-Week 1: scaffolding. An arm64 container with OpenCV 5 that reads an image from S3 (LocalStack) and returns a blur metric (Laplacian variance) computed with OpenCV.
+Week 2: perception. The five tools of `services/perception/` are implemented and tested on synthetic
+fixtures — capture quality, baseline alignment (OpenCV 5 `Features`: ALIKED + LightGlue, with ORB as
+the fallback detector), diffing against memory, crop-and-rescan, and defect severity. Each returns
+the raw numeric metrics the agent will branch on; thresholds and policy land in week 4.
+
+The neural matchers need two ONNX files that are not in the wheel. `make weights` downloads them into
+`models/` and verifies the published sha1; the image copies them in at build time.
+
+Progress against the rubric is tracked in [`docs/SUBMISSION.md`](docs/SUBMISSION.md).

@@ -5,7 +5,8 @@ import cv2
 import numpy as np
 import pytest
 
-from services.perception.s3_smoke import blur_metric_from_s3, laplacian_variance
+from services.perception.quality import laplacian_variance
+from services.perception.s3_smoke import blur_metric_from_s3
 
 BUCKET = "afterimage-test"
 
@@ -30,9 +31,3 @@ def test_s3_roundtrip_returns_opencv_metric():
 
     assert metric == pytest.approx(laplacian_variance(image))
     assert metric > 0
-
-
-def test_blur_lowers_the_metric():
-    sharp = make_checkerboard()
-    blurred = cv2.GaussianBlur(sharp, (21, 21), 0)
-    assert laplacian_variance(blurred) < laplacian_variance(sharp)

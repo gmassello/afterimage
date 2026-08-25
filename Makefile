@@ -1,11 +1,14 @@
 COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo docker compose || echo docker-compose)
 
-.PHONY: dev test eval deploy
+.PHONY: dev test eval deploy weights
 
-dev:
+weights:
+	AFTERIMAGE_WEIGHTS_DIR=models python3 services/perception/weights.py
+
+dev: weights
 	$(COMPOSE) up --build
 
-test:
+test: weights
 	$(COMPOSE) run --rm --build app python -m pytest services/ -v; status=$$?; $(COMPOSE) down; exit $$status
 
 eval:

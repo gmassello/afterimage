@@ -4,15 +4,12 @@ import cv2
 import numpy as np
 import boto3
 
+from services.perception.quality import laplacian_variance
+
 
 @lru_cache(maxsize=1)
 def _s3():
     return boto3.client("s3")
-
-
-def laplacian_variance(image: np.ndarray) -> float:
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    return float(cv2.Laplacian(gray, cv2.CV_64F).var())
 
 
 def blur_metric_from_s3(bucket: str, key: str) -> float:
