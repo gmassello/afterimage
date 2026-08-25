@@ -1,18 +1,15 @@
-from conftest import cell_bbox, with_crack, with_faint_spot
-
+from services.perception.alignment import CLASSIC, align_to_baseline
 from services.perception.diffing import crop_and_rescan, diff_against_memory
+from services.perception.tests.panels import (
+    cell_bbox,
+    centre,
+    contains,
+    shifted,
+    with_crack,
+    with_faint_spot,
+)
 
 CRACK_CELL = (2, 4)
-
-
-def _contains(bbox, point):
-    x, y, width, height = bbox
-    return x <= point[0] <= x + width and y <= point[1] <= y + height
-
-
-def _centre(bbox):
-    x, y, width, height = bbox
-    return x + width // 2, y + height // 2
 
 
 def test_identical_capture_reports_no_change(panel):
@@ -26,7 +23,7 @@ def test_broken_cell_is_located(panel):
     result = diff_against_memory(with_crack(panel, *CRACK_CELL), panel)
 
     assert len(result.regions) == 1
-    assert _contains(result.regions[0].bbox, _centre(cell_bbox(*CRACK_CELL)))
+    assert contains(result.regions[0].bbox, centre(cell_bbox(*CRACK_CELL)))
     assert result.regions[0].mean_delta > 0
 
 
@@ -50,4 +47,14 @@ def test_rescan_returns_full_frame_coordinates(panel):
 
     rescanned = crop_and_rescan(damaged, panel, region.bbox)
 
-    assert _contains(rescanned.regions[0].bbox, _centre(cell_bbox(*CRACK_CELL)))
+    assert contains(rescanned.regions[0].bbox, centre(cell_bbox(*CRACK_CELL)))
+
+
+def test_the_uncovered_border_of_a_warp_is_not_a_change(panel):
+    alignment = align_to_baseline(shifted(panel), panel, detector=CLASSIC)
+
+    unmasked = diff_against_memory(alignment.warped, panel)
+    masked = diff_against_memory(alignment.warped, panel, alignment.valid_mask)
+
+    assert unmasked.changed_ratio > masked.changed_ratio
+    assert not masked.regions

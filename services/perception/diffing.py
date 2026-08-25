@@ -32,8 +32,15 @@ def _delta_map(aligned: np.ndarray, baseline: np.ndarray) -> np.ndarray:
     return cv2.GaussianBlur(cv2.absdiff(aligned, baseline), BLUR_KERNEL, 0)
 
 
-def diff_against_memory(aligned: np.ndarray, baseline: np.ndarray) -> DiffResult:
-    return _regions(_delta_map(_normalized_gray(aligned), _normalized_gray(baseline)))
+def diff_against_memory(
+    aligned: np.ndarray, baseline: np.ndarray, valid_mask: np.ndarray | None = None
+) -> DiffResult:
+    # Pixels the homography never covered are black, and black against the baseline reads
+    # as the largest change in the frame. Only the warp knows which those are.
+    delta = _delta_map(_normalized_gray(aligned), _normalized_gray(baseline))
+    if valid_mask is not None:
+        delta = cv2.bitwise_and(delta, valid_mask)
+    return _regions(delta)
 
 
 def _regions(delta: np.ndarray) -> DiffResult:

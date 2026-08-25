@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Afterimage Field Manual</title>
+<meta name="description" content="A plain-language walkthrough of afterimage, a solar-panel inspection agent with longitudinal memory, built on OpenCV 5 for the OpenCV AI Competition 2026.">
+<link rel="canonical" href="https://gmassello.github.io/afterimage/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Afterimage Field Manual">
+<meta property="og:description" content="A plain-language walkthrough of afterimage, a solar-panel inspection agent with longitudinal memory, built on OpenCV 5 for the OpenCV AI Competition 2026.">
+<meta property="og:url" content="https://gmassello.github.io/afterimage/">
+<meta name="twitter:card" content="summary">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&display=swap">
+
+<style>
+  :root {
+    --ground:   #F2F4F8;
+    --surface:  #FFFFFF;
+    --sunk:     #E8EBF2;
+    --ink:      #15182B;
+    --muted:    #5F6685;
+    --line:     #D3D8E4;
+    --accent:   #A85610;
+    --accent-soft: #F5E4CE;
+    --cool:     #2F4FA8;
+    --cool-soft: #DEE5F7;
+
+    --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+    --sans:  "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    --mono:  "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    --measure: 67ch;
+    --step--1: 0.815rem;
+    --step-0:  1.02rem;
+    --step-1:  1.28rem;
+    --step-2:  1.62rem;
+    --step-3:  2.15rem;
+    --step-4:  3.05rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:  #0C0F1E;
+      --surface: #151A2E;
+      --sunk:    #1D2340;
+      --ink:     #E6E9F4;
+      --muted:   #949BBA;
+      --line:    #2C3350;
+      --accent:  #EDA35A;
+      --accent-soft: #3A2C18;
+      --cool:    #8AA6E8;
+      --cool-soft: #1C2748;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:  #0C0F1E;
+    --surface: #151A2E;
+    --sunk:    #1D2340;
+    --ink:     #E6E9F4;
+    --muted:   #949BBA;
+    --line:    #2C3350;
+    --accent:  #EDA35A;
+    --accent-soft: #3A2C18;
+    --cool:    #8AA6E8;
+    --cool-soft: #1C2748;
+  }
+
+  * { box-sizing: border-box; }
+  img, svg { max-width: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 61rem;
+    margin: 0 auto;
+    padding: 0 1.5rem 6rem;
+  }
+
+  .col { max-width: var(--measure); }
+
+  h1, h2, h3 { font-family: var(--serif); text-wrap: balance; margin: 0; }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    padding: 4.5rem 0 2.75rem;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.1rem;
+  }
+
+  h1 {
+    font-size: var(--step-4);
+    font-weight: 600;
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+  }
+
+  h1 .glow { color: var(--accent); }
+
+  .thesis {
+    font-family: var(--serif);
+    font-size: var(--step-1);
+    line-height: 1.5;
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  /* ---------- sections ---------- */
+
+  section { padding-top: 3.75rem; }
+
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .sec-head h2 {
+    font-size: var(--step-2);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+
+  .marker {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    flex: none;
+  }
+
+  p { margin: 0 0 1.05rem; }
+  p:last-child { margin-bottom: 0; }
+
+  a { color: var(--cool); text-underline-offset: 0.18em; }
+
+  strong { font-weight: 600; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--sunk);
+    padding: 0.1em 0.36em;
+    border-radius: 3px;
+  }
+
+  .lede {
+    font-size: var(--step-1);
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  /* ---------- figure / diagram ---------- */
+
+  figure {
+    margin: 2rem 0 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1.5rem 1.25rem 1.1rem;
+    overflow-x: auto;
+  }
+
+  figure svg {
+    display: block;
+    min-width: 620px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  /* diagram tokens — set here, not as SVG presentation attributes,
+     because var() is not reliably resolved inside those */
+  .d-box   { fill: var(--surface); stroke: var(--line); }
+  .d-sunk  { fill: var(--sunk);    stroke: var(--line); }
+  .d-act   { fill: var(--accent-soft); stroke: var(--accent); }
+  .d-flow  { fill: none; stroke: var(--ink);    stroke-width: 1.25; }
+  .d-branch{ fill: none; stroke: var(--accent); stroke-width: 1.25; }
+  .d-dash  { stroke-dasharray: 4 3; }
+  .d-rail  { fill: none; stroke: var(--cool); stroke-width: 1.25; stroke-dasharray: 2 4; }
+  .d-head  { fill: var(--ink); }
+  .d-head-a{ fill: var(--accent); }
+  .d-fn    { font-family: var(--mono); font-size: 12px;   fill: var(--ink); }
+  .d-sub   { font-family: var(--sans); font-size: 11px;   fill: var(--muted); }
+  .d-metric{ font-family: var(--mono); font-size: 10px;   fill: var(--accent); }
+  .d-act-t { font-family: var(--sans); font-size: 12px;   font-weight: 600; fill: var(--ink); }
+  .d-act-s { font-family: var(--sans); font-size: 10.5px; fill: var(--muted); }
+  .d-rail-t{ font-family: var(--mono); font-size: 10px;   fill: var(--cool); }
+
+  figcaption {
+    font-size: var(--step--1);
+    color: var(--muted);
+    margin-top: 1.1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+    max-width: 62ch;
+  }
+
+  /* ---------- tables ---------- */
+
+  .scroll { overflow-x: auto; margin-top: 1.5rem; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--step--1);
+    line-height: 1.45;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 0.62rem 0.9rem 0.62rem 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-weight: 500;
+    font-size: 0.76rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom-color: var(--ink);
+    white-space: nowrap;
+  }
+
+  td.num {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .hi { color: var(--accent); font-weight: 500; }
+  .lo { color: var(--muted); }
+
+  /* ---------- tool list ---------- */
+
+  .tools {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    display: grid;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .tools li {
+    background: var(--surface);
+    padding: 1.15rem 1.3rem;
+    display: grid;
+    grid-template-columns: 2.1rem 1fr;
+    gap: 0 0.85rem;
+    align-items: baseline;
+  }
+
+  .tools .n {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--accent);
+  }
+
+  .tools h3 {
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    font-weight: 600;
+    margin: 0 0 0.3rem;
+  }
+
+  .tools .fn {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 0.45rem;
+  }
+
+  .tools p {
+    font-size: var(--step--1);
+    color: var(--muted);
+    line-height: 1.55;
+    grid-column: 2;
+    margin: 0;
+  }
+
+  /* ---------- callout ---------- */
+
+  .callout {
+    margin-top: 1.75rem;
+    padding: 1.35rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 3px;
+  }
+
+  .callout .label {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 0.79rem;
+    line-height: 1.7;
+    background: var(--sunk);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 0.95rem 1.1rem;
+    overflow-x: auto;
+    margin: 1.25rem 0 0;
+  }
+
+  pre code { background: none; padding: 0; font-size: 1em; }
+
+  .comment { color: var(--muted); }
+
+  /* ---------- findings ---------- */
+
+  .findings {
+    counter-reset: f;
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .findings li { padding-left: 2.2rem; position: relative; }
+
+  .findings li::before {
+    counter-increment: f;
+    content: counter(f, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 0.1rem;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--accent);
+  }
+
+  .findings h3 {
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    font-weight: 600;
+    margin: 0 0 0.35rem;
+  }
+
+  .findings p { font-size: var(--step--1); color: var(--muted); }
+
+  /* ---------- status ---------- */
+
+  .pill {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.16rem 0.5rem;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .pill.done { background: var(--cool-soft); color: var(--cool); }
+  .pill.todo { background: var(--sunk); color: var(--muted); }
+
+  /* ---------- glossary ---------- */
+
+  dl { margin: 1.5rem 0 0; display: grid; gap: 0.95rem; }
+  dt { font-family: var(--mono); font-size: var(--step--1); color: var(--ink); }
+  dd {
+    margin: 0.2rem 0 0;
+    font-size: var(--step--1);
+    color: var(--muted);
+    max-width: 62ch;
+    line-height: 1.55;
+  }
+
+  ul.plain { padding-left: 1.15rem; margin: 1.25rem 0 0; }
+  ul.plain li { margin-bottom: 0.65rem; font-size: var(--step--1); color: var(--muted); }
+  ul.plain li:last-child { margin-bottom: 0; }
+
+  footer {
+    margin-top: 4.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 640px) {
+    :root { --step-4: 2.3rem; --step-3: 1.75rem; --step-2: 1.42rem; }
+    .masthead { padding-top: 3rem; }
+    .tools li { grid-template-columns: 1.6rem 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="eyebrow">
+      <span>afterimage</span>
+      <span>OpenCV AI Competition 2026</span>
+      <span>Agentic Vision path</span>
+    </div>
+    <h1>An inspection agent<br>that <span class="glow">remembers</span>.</h1>
+    <p class="thesis">
+      Photograph a solar panel today. Photograph it again in three months. The difference between
+      those two frames is where every defect lives — and it is the one thing no inspection system
+      keeps. This one does.
+    </p>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="marker">01</span><h2>The problem</h2></div>
+    <div class="col">
+      <p class="lede">
+        Solar panels fail slowly. A cell cracks, a hot spot spreads, dust builds up over a season.
+        Every one of those is obvious when you compare against last time, and nearly invisible in a
+        single photograph.
+      </p>
+      <p>
+        Field inspection today produces photographs, not comparisons. A technician walks the site,
+        shoots what looks wrong, and files a report. The next visit starts from zero — a different
+        technician, a different angle, a different hour of daylight. Nobody compares against last
+        time, because nobody kept last time in a form you can compare against.
+      </p>
+      <p>
+        So degradation is caught when it becomes visible to a person standing in front of the panel,
+        which is long after it became measurable.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">02</span><h2>What makes this different</h2></div>
+    <div class="col">
+      <p>
+        The agent keeps a <strong>baseline for every asset it has ever seen</strong>. When a new
+        capture of panel <code>A-114</code> arrives, it does not analyse that photograph in
+        isolation — it aligns it against the stored image of that same panel and reports what moved.
+      </p>
+      <p>
+        That is the whole idea, and it is deliberately narrow. Every award-winning entry in previous
+        editions analyses one frame or one session. <em>The same asset, seen again three months
+        later</em> is empty ground.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">03</span><h2>How it decides</h2></div>
+    <div class="col">
+      <p>
+        The agent is not a classifier with a report attached. At four points in the loop, a number
+        computed by OpenCV changes what happens next — the capture gets rejected, a different
+        detector gets tried, the agent zooms into a region it chose itself, or a human is asked
+        before anything is filed.
+      </p>
+    </div>
+
+    <figure>
+      <svg viewBox="0 0 780 560" role="img" aria-label="The perception, decision and action loop: capture quality gates recapture, feature alignment gates a detector retry, diffing against memory gates a zoom that re-enters the loop, and severity gates human approval before the result is written to memory.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path class="d-head" d="M 0 0 L 10 5 L 0 10 z"></path>
+          </marker>
+          <marker id="ah-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path class="d-head-a" d="M 0 0 L 10 5 L 0 10 z"></path>
+          </marker>
+        </defs>
+
+        <!-- trace rail -->
+        <line class="d-rail" x1="60" y1="14" x2="60" y2="516"></line>
+        <text class="d-rail-t" x="52" y="270" text-anchor="middle" transform="rotate(-90 52 270)">every step emitted as a span</text>
+
+        <!-- central spine -->
+        <g class="d-flow" marker-end="url(#ah)">
+          <line x1="235" y1="52" x2="235" y2="80"></line>
+          <line x1="235" y1="140" x2="235" y2="174"></line>
+          <line x1="235" y1="234" x2="235" y2="268"></line>
+          <line x1="235" y1="328" x2="235" y2="362"></line>
+          <line x1="235" y1="422" x2="235" y2="456"></line>
+        </g>
+
+        <!-- capture -->
+        <rect class="d-sunk" x="120" y="14" width="230" height="38" rx="3"></rect>
+        <text class="d-fn" x="235" y="38" text-anchor="middle">capture of a known asset</text>
+
+        <!-- perception boxes -->
+        <g class="d-box">
+          <rect x="120" y="80" width="230" height="60" rx="3"></rect>
+          <rect x="120" y="174" width="230" height="60" rx="3"></rect>
+          <rect x="120" y="268" width="230" height="60" rx="3"></rect>
+          <rect x="120" y="362" width="230" height="60" rx="3"></rect>
+          <rect x="120" y="456" width="230" height="60" rx="3"></rect>
+        </g>
+
+        <g class="d-fn" text-anchor="middle">
+          <text x="235" y="104">assess_quality()</text>
+          <text x="235" y="198">align_to_baseline()</text>
+          <text x="235" y="292">diff_against_memory()</text>
+          <text x="235" y="386">classify_severity()</text>
+          <text x="235" y="480">write_memory()</text>
+        </g>
+        <g class="d-sub" text-anchor="middle">
+          <text x="235" y="123">Is this photo usable?</text>
+          <text x="235" y="217">Same panel? How does it fit?</text>
+          <text x="235" y="311">What changed?</text>
+          <text x="235" y="405">How bad, and what kind?</text>
+          <text x="235" y="499">new baseline, event, trace</text>
+        </g>
+
+        <!-- branch arrows -->
+        <g class="d-branch" marker-end="url(#ah-a)">
+          <line x1="350" y1="103" x2="442" y2="103"></line>
+          <line x1="350" y1="197" x2="442" y2="197"></line>
+          <line x1="350" y1="291" x2="442" y2="291"></line>
+          <line x1="350" y1="385" x2="442" y2="385"></line>
+        </g>
+
+        <!-- metric labels on the branches -->
+        <g class="d-metric" text-anchor="middle">
+          <text x="396" y="96">blur_variance</text>
+          <text x="396" y="190">inlier_ratio</text>
+          <text x="396" y="284">area_ratio</text>
+          <text x="396" y="378">score</text>
+        </g>
+
+        <!-- action boxes -->
+        <g class="d-act">
+          <rect x="450" y="80" width="300" height="46" rx="3"></rect>
+          <rect x="450" y="174" width="300" height="46" rx="3"></rect>
+          <rect x="450" y="268" width="300" height="46" rx="3"></rect>
+          <rect x="450" y="362" width="300" height="46" rx="3"></rect>
+        </g>
+
+        <g class="d-act-t">
+          <text x="466" y="101">Request recapture</text>
+          <text x="466" y="195">Retry with another detector</text>
+          <text x="466" y="289">Crop and rescan</text>
+          <text x="466" y="383">Request human approval</text>
+        </g>
+        <g class="d-act-s">
+          <text x="466" y="117">&#8220;closer&#8221;, &#8220;less backlight&#8221;</text>
+          <text x="466" y="211">or flag the asset as unrecognized</text>
+          <text x="466" y="305">the agent picks where to look closer</text>
+          <text x="466" y="399">before anything is filed</text>
+        </g>
+
+        <!-- re-entry -->
+        <line class="d-branch d-dash" x1="442" y1="314" x2="352" y2="314" marker-end="url(#ah-a)"></line>
+        <text class="d-metric" x="396" y="330" text-anchor="middle">re-enters</text>
+      </svg>
+      <figcaption>
+        Each amber branch is a point where a measured value changes the agent's next move. The metric
+        that triggers the branch is named on the arrow — that name is also the key it carries into
+        the trace. The zoom is the only branch that feeds back: the agent decides <em>where</em> to
+        look closer and re-enters the loop with a tighter frame.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">04</span><h2>The five instruments</h2></div>
+    <div class="col">
+      <p>
+        Each tool answers one question an inspector would ask, in the order they would ask it.
+      </p>
+    </div>
+
+    <ol class="tools">
+      <li>
+        <span class="n">01</span>
+        <div>
+          <h3>Is this photo usable?</h3>
+          <span class="fn">assess_quality()</span>
+        </div>
+        <p>
+          Before analysing anything, check the photograph itself. Measures three things: how sharp
+          the edges are, how many pixels are blown out to pure white or crushed to pure black, and
+          how much of the frame the panel actually fills. A photograph shot from too far away is not
+          a finding — it is a photograph to take again.
+        </p>
+      </li>
+      <li>
+        <span class="n">02</span>
+        <div>
+          <h3>Is this the same panel, and how does it fit?</h3>
+          <span class="fn">align_to_baseline()</span>
+        </div>
+        <p>
+          A new photo is never shot from the exact angle of the old one. The tool finds distinctive
+          points in both images — corners, cell junctions — and matches them. Hundreds of matches
+          means it is the same panel, and the matches say precisely how to rotate and stretch the new
+          frame onto the stored one. A handful of matches means it is not.
+        </p>
+      </li>
+      <li>
+        <span class="n">03</span>
+        <div>
+          <h3>What changed?</h3>
+          <span class="fn">diff_against_memory()</span>
+        </div>
+        <p>
+          With both frames superimposed, subtract one from the other. Wherever the result is not
+          zero, something moved. Those pixels are grouped into regions, and each region reports where
+          it sits, how large it is, and how strong the change is.
+        </p>
+      </li>
+      <li>
+        <span class="n">04</span>
+        <div>
+          <h3>I want to see that closer.</h3>
+          <span class="fn">crop_and_rescan()</span>
+        </div>
+        <p>
+          When a region is too small to judge, the agent crops it and measures again at higher
+          resolution. This is the active-perception step: nobody told it where to zoom. The region
+          comes back in full-frame coordinates so the next tool can pick it up.
+        </p>
+      </li>
+      <li>
+        <span class="n">05</span>
+        <div>
+          <h3>How bad is it, and what kind?</h3>
+          <span class="fn">classify_severity()</span>
+        </div>
+        <p>
+          Each solar defect has a distinct physical signature, and simple measurements separate them.
+          No trained model is involved yet — the thresholds below were read off the fixtures.
+        </p>
+      </li>
+    </ol>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>What you see</th>
+            <th>Brightness</th>
+            <th>Colour</th>
+            <th>Verdict</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>The cell went dark</td>
+            <td class="num">−28.7</td>
+            <td class="num lo">−6.0</td>
+            <td>Cracked cell</td>
+          </tr>
+          <tr>
+            <td>Bright, but washed out towards white</td>
+            <td class="num">+29.6</td>
+            <td class="num lo">−19.0</td>
+            <td>Hot spot</td>
+          </tr>
+          <tr>
+            <td>Bright, and shifted to another colour</td>
+            <td class="num">+54.1</td>
+            <td class="num hi">+46.4</td>
+            <td>Delamination</td>
+          </tr>
+          <tr>
+            <td>Soft change covering most of the frame</td>
+            <td class="num">+18.4</td>
+            <td class="num lo">−12.8</td>
+            <td>Soiling</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">05</span><h2>Perception decides nothing</h2></div>
+    <div class="col">
+      <p>
+        None of those five functions returns a verdict. Not one of them says "this photo is bad" or
+        "call a technician". They return <strong>numbers only</strong>.
+      </p>
+      <p>
+        That sounds backwards, and it is the most deliberate choice in the codebase. The award's bar
+        is explicit: the visual evidence must be shown to change what the system does next. If the
+        threshold were buried inside <code>assess_quality()</code>, there would be nothing to show —
+        just a function that returned <code>False</code> for reasons of its own.
+      </p>
+      <p>
+        Keeping the numbers and the thresholds apart means every decision reduces to one line that a
+        judge can read without trusting anybody:
+      </p>
+      <pre><code>{"input_metric": "inlier_ratio",
+ "value": 0.259,
+ "threshold": 0.5,
+ "branch": "unrecognized_asset"}</code></pre>
+      <div class="callout">
+        <span class="label">In plain words</span>
+        <p style="margin:0">
+          "I could not confirm this is panel A-114. Only 26% of the matched points agreed on a single
+          alignment, and I need 50%. I am not filing a defect against an asset I cannot identify."
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">06</span><h2>Measured, not promised</h2></div>
+    <div class="col">
+      <p>
+        Alignment is the load-bearing step — everything downstream assumes the two frames are the
+        same panel. Here is what it actually scores, run on this hardware, against synthetic panels
+        where the ground truth is known.
+      </p>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Pair</th>
+            <th>ORB (classical)</th>
+            <th>ALIKED + LightGlue</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Same panel, rotated 6° and scaled</td>
+            <td class="num">0.409</td>
+            <td class="num hi">0.997</td>
+          </tr>
+          <tr>
+            <td>A different panel</td>
+            <td class="num">0.038</td>
+            <td class="num">0.407</td>
+          </tr>
+          <tr>
+            <td>Pure noise</td>
+            <td class="num">0.020</td>
+            <td class="num">0.000</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <p style="margin-top:1.5rem">
+        On a correct match the alignment lands within <strong>0.38 pixels</strong> of where it should.
+        The neural detector returns 1000 keypoints with 128-dimension descriptors and costs about
+        <strong>1.5 seconds per pair on CPU</strong> — OpenCV 5's DNN engine has no GPU support, so
+        the whole system is designed for Graviton from day one.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">07</span><h2>What measuring changed</h2></div>
+    <div class="col">
+      <p>
+        Three things in that table were not what the code assumed. Each one was found by running it,
+        and each one changed the design.
+      </p>
+    </div>
+
+    <ol class="findings">
+      <li>
+        <h3>The two detectors cannot share a threshold</h3>
+        <p>
+          On the identical pair, ORB scores 0.409 and ALIKED scores 0.997 — and <em>both are
+          correct</em>. A repetitive grid of identical cells makes ORB match cell 3 against cell 7,
+          so its agreement ratio stays low even when its final alignment is accurate to 0.67 pixels.
+          A single shared threshold would make the fallback detector report "asset not recognized"
+          on every panel it ever sees.
+        </p>
+      </li>
+      <li>
+        <h3>The zoom was erasing what it zoomed into</h3>
+        <p>
+          <code>crop_and_rescan</code> normalised the contrast of each crop independently. That
+          pulls the defective crop and the clean crop towards each other and cancels the very
+          difference being examined — it measured 53 pixels of change where the full frame saw 202.
+          Normalisation now happens on the whole frame, and the crop is taken afterwards.
+        </p>
+      </li>
+      <li>
+        <h3>"Confidence" was a decision wearing a measurement's clothes</h3>
+        <p>
+          A single confidence score blended region size and intensity using two invented constants,
+          then clamped everything above 1% of the frame to the same value — destroying the ordering
+          between a large region and an enormous one, in the exact number meant to trigger the zoom.
+          It was removed; the two raw measurements travel instead.
+        </p>
+      </li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">08</span><h2>Run it yourself</h2></div>
+    <div class="col">
+      <p>
+        Two commands, no cloud account, no credentials. The neural matchers need two ONNX files that
+        are not bundled in the OpenCV wheel; the first command fetches them and checks their
+        published SHA-1.
+      </p>
+      <pre><code>make weights   <span class="comment"># 52 MB of ALIKED + LightGlue models</span>
+make test      <span class="comment"># the suite, inside the arm64 container</span></code></pre>
+      <p style="margin-top:1.25rem">
+        Expect <strong>23 passing tests</strong> on <code>aarch64</code> with OpenCV 5.0.0. The tests
+        do not need photographs: they generate synthetic solar panels in code and paint the defect
+        they want to prove onto them, so every run is reproducible.
+      </p>
+      <p>
+        One thing worth checking, because it is the honest way to read a green suite: the tests that
+        exercise the neural path skip themselves when the model files are missing. If
+        <code>make weights</code> did not run, the suite still passes — with the interesting half
+        untested.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">09</span><h2>Where the project stands</h2></div>
+    <div class="col">
+      <p>Week 2 of 9. Perception works and is tested. Nothing else is built yet.</p>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>Component</th><th>State</th><th>Week</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>arm64 container, OpenCV 5, CI</td><td><span class="pill done">built</span></td><td class="num lo">1</td></tr>
+          <tr><td>The five perception tools</td><td><span class="pill done">built</span></td><td class="num lo">2</td></tr>
+          <tr><td>Memory bank — baselines in S3 and DynamoDB</td><td><span class="pill todo">not yet</span></td><td class="num lo">3</td></tr>
+          <tr><td>MCP server, agent loop, human gate</td><td><span class="pill todo">not yet</span></td><td class="num lo">4</td></tr>
+          <tr><td>OpenTelemetry traces, trace endpoint</td><td><span class="pill todo">not yet</span></td><td class="num lo">5</td></tr>
+          <tr><td>AWS deploy, public endpoint, front end</td><td><span class="pill todo">not yet</span></td><td class="num lo">6</td></tr>
+          <tr><td>Evaluation set, metrics, failure cases</td><td><span class="pill todo">not yet</span></td><td class="num lo">7</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">10</span><h2>Known limits</h2></div>
+    <div class="col">
+      <ul class="plain">
+        <li>
+          Defect classification is a threshold heuristic over OpenCV features, not a trained
+          classifier, and the thresholds are calibrated on synthetic fixtures rather than field
+          photographs.
+        </li>
+        <li>
+          <code>inlier_ratio</code> is not comparable across detectors, so the policy layer will need
+          one threshold per detector rather than a shared one.
+        </li>
+        <li>
+          Frame coverage is estimated from the bounding box of the largest edge contour, which will
+          misread a panel photographed against a cluttered background.
+        </li>
+        <li>
+          <code>crop_and_rescan</code> buys measurement precision on a marginal region. It cannot
+          resolve optical detail the original capture never recorded — no amount of zoom invents
+          pixels.
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    afterimage · week 2 of 9 · every number on this page came from a run, not an estimate
+  </footer>
+
+</div>
+</body>
+</html>

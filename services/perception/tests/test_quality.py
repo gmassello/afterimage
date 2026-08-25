@@ -1,4 +1,4 @@
-from conftest import blurred, overexposed, partial_frame
+from services.perception.tests.panels import blurred, overexposed, partial_frame
 
 from services.perception.quality import assess_quality
 

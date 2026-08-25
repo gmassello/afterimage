@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from conftest import shifted, solar_panel
+from services.perception.tests.panels import shifted, solar_panel
 
 from services.perception.alignment import CLASSIC, NEURAL, align_to_baseline
 from services.perception.weights import neural_weights_available

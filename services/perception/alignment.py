@@ -10,12 +10,14 @@ NEURAL = "aliked+lightglue"
 CLASSIC = "orb+bf"
 MIN_MATCHES = 4
 RANSAC_REPROJECTION_THRESHOLD = 3.0
+VALID_MASK_EROSION_KERNEL = np.ones((9, 9), np.uint8)
 
 
 @dataclass(frozen=True)
 class AlignmentResult:
     homography: np.ndarray | None
     warped: np.ndarray | None
+    valid_mask: np.ndarray | None
     detector: str
     keypoints_query: int
     keypoints_train: int
@@ -89,6 +91,7 @@ def align_to_baseline(
         return AlignmentResult(
             homography=None,
             warped=None,
+            valid_mask=None,
             detector=detector,
             keypoints_query=len(image_keypoints),
             keypoints_train=len(baseline_keypoints),
@@ -104,9 +107,18 @@ def align_to_baseline(
     ).ravel()[inlier_mask]
 
     height, width = baseline.shape[:2]
+    image_height, image_width = image.shape[:2]
+    corners = np.float32(
+        [[0, 0], [image_width, 0], [image_width, image_height], [0, image_height]]
+    ).reshape(-1, 1, 2)
+    covered = np.zeros((height, width), np.uint8)
+    cv2.fillConvexPoly(
+        covered, cv2.perspectiveTransform(corners, homography).astype(np.int32), 255
+    )
     return AlignmentResult(
         homography=homography,
         warped=cv2.warpPerspective(image, homography, (width, height)),
+        valid_mask=cv2.erode(covered, VALID_MASK_EROSION_KERNEL),
         detector=detector,
         keypoints_query=len(image_keypoints),
         keypoints_train=len(baseline_keypoints),

@@ -1,5 +1,5 @@
 import pytest
-from conftest import cell_bbox, with_crack, with_delamination, with_hotspot, with_soiling
+from services.perception.tests.panels import cell_bbox, with_crack, with_delamination, with_hotspot, with_soiling
 
 from services.perception.diffing import crop_region
 from services.perception.severity import CRACK, DELAMINATION, HOTSPOT, SOILING, classify_severity

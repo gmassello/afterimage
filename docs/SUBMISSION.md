@@ -13,7 +13,7 @@ Status: `done` · `wip` · `todo`
 | Criterion | Weight | How we demonstrate it | Where the judge sees it | Status |
 |---|---|---|---|---|
 | Technical execution | 30% | OpenCV 5 `Features` used substantively — ALIKED + LightGlue align each capture to the stored baseline of the same asset; green suite on arm64 | `services/perception/alignment.py`, `services/perception/tests/` | wip |
-| Innovation | 20% | **Longitudinal memory.** No previous winner kept state across inspections of the same asset; every prior project analyses one frame or one session | `docs/TECHNICAL_REPORT.md`, video 1:30–3:15 | todo |
+| Innovation | 20% | **Longitudinal memory.** No previous winner kept state across inspections of the same asset; every prior project analyses one frame or one session. A second inspection retrieves the baseline from memory, aligns to it and locates the new defect | `services/memory/`, `services/memory/tests/test_longitudinal.py`, `docs/TECHNICAL_REPORT.md`, video 1:30–3:15 | wip |
 | Real-world impact | 20% | Preventive maintenance of solar plants, with numbers: assets per site, cost of manual inspection, what the agent saves | `docs/TECHNICAL_REPORT.md` | todo |
 | User experience | 10% | Approval queue and asset history legible without explanation | public endpoint | todo |
 | Documentation and presentation | 10% | README, technical report, both diagrams | `README.md`, `docs/` | wip |
