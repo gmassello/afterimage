@@ -17,7 +17,7 @@ Status: `done` · `wip` · `todo`
 | Real-world impact | 20% | Preventive maintenance of solar plants, with numbers: assets per site, cost of manual inspection, what the agent saves | `docs/TECHNICAL_REPORT.md` | todo |
 | User experience | 10% | Approval queue and asset history legible without explanation | public endpoint | todo |
 | Documentation and presentation | 10% | README, technical report, both diagrams | `README.md`, `docs/` | wip |
-| Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, OTel traces | `infra/`, `requirements.txt` | todo |
+| Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, per-run event traces | `infra/`, `requirements.txt` | todo |
 
 ## Agentic Vision Award
 
@@ -30,17 +30,19 @@ the visual evidence must change what the system does next."*
 | OpenCV 5 + agent integration | 30% | Five perception tools exposed over MCP; every one returns the numeric metrics the agent branches on | `services/perception/`, `services/mcp_server/server.py` | done |
 | Orchestration and appropriate autonomy | 25% | Four branches that actually fire: recapture, retry with another detector, zoom on an uncertain region, ask a human — `make demo` drives all four; every decision recorded as `{input_metric, value, threshold, branch}` | `services/agent/loop.py`, `services/agent/policy.py`, `services/agent/tests/test_loop.py` | done |
 | Task effectiveness and evaluation | 20% | Precision and recall on the evaluation set, **including failure cases** | `docs/EVALUATION.md`, `eval/results/` | todo |
-| Failure handling, observability, security, human control | 15% | One OTel span per tool call carrying the value that triggered the decision | `GET /traces/{run_id}` | todo |
-| UX and documentation | 10% | Agent loop diagram plus the trace viewer | `docs/AGENT_LOOP.md` | todo |
+| Failure handling, observability, security, human control | 15% | One span per tool call carrying args, metrics, duration and the verdict that the value triggered, persisted per run and served as JSON or a human-readable page | `services/observability/`, `services/api/app.py`, `GET /traces/{run_id}` | done |
+| UX and documentation | 10% | Agent loop diagram plus the trace viewer | `docs/AGENT_LOOP.md`, `GET /traces/{run_id}` with `Accept: text/html` | wip |
 
 ### The trace that has to exist
 
 The award needs one trace where an OpenCV number visibly changed a later decision, and a judge
 must see it **without inferring**. So the causal link is a field, not something reconstructed by
-reading several events in order:
+reading several events in order. Since stage 5 it exists: every `tool_call` event in
+`runs/{run_id}/events.json` nests the verdict under `policy`, and `make demo` prints this line,
+measured, not invented:
 
 ```json
-{"input_metric": "inlier_ratio", "value": 0.259, "threshold": 0.5, "branch": "unrecognized_asset"}
+{"input_metric": "inlier_ratio", "value": 0.0385, "threshold": 0.3, "branch": "unrecognized_asset"}
 ```
 
 The metric names are already fixed by the week 2 dataclasses — `blur_variance`, `inlier_ratio`,

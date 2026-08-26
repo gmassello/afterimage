@@ -3,13 +3,11 @@ from pathlib import Path
 
 from services.agent import policy
 from services.memory import store
+from services.observability import trace
+from services.observability.trace import write_json
 
 APPROVED = "approved"
 REJECTED = "rejected"
-
-
-def write_json(path: Path, data) -> None:
-    path.write_text(json.dumps(data, indent=2))
 
 
 def commit(asset_id: str, inspection_id: str, captured_at: str, metrics: dict, image_keys: dict) -> None:
@@ -44,6 +42,7 @@ def resolve(run_dir: Path, approved: bool) -> dict:
     record = policy.decision(
         "human_approved", 1.0 if approved else 0.0, 1.0, APPROVED if approved else REJECTED
     )
+    trace.emit(run_dir, "decision", **record)
     decisions_path = run_dir / "decisions.json"
     decisions = json.loads(decisions_path.read_text())
     decisions.append(record)

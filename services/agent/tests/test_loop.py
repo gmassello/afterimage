@@ -10,6 +10,7 @@ from services.agent.llm import ToolCall, Turn
 from services.agent.policy import Policy
 from services.agent.scripted import PolicyFollowingLLM, ScriptedLLM, seed_baseline
 from services.memory import images, store
+from services.observability import trace
 from services.perception import alignment, weights
 from services.perception.tests.panels import (
     blurred,
@@ -84,6 +85,20 @@ def test_unknown_panel_retries_then_unrecognized(tmp_path):
     assert alignments[0]["threshold"] == policy.inlier_ratio_min_neural
     assert alignments[1]["threshold"] == policy.inlier_ratio_min_classic
 
+    events = trace.read_events(result.run_dir)
+    assert events[0]["type"] == "run_started"
+    assert events[0]["run_id"] == result.run_id
+    assert events[-1]["type"] == "run_finished"
+    assert events[-1]["branch"] == "unrecognized_asset"
+    assert [e["ts"] for e in events] == sorted(e["ts"] for e in events)
+    spans = [e for e in events if e["type"] == "tool_call"]
+    assert len(spans) == 3
+    for span in spans:
+        assert span["args"]
+        assert span["metrics"]
+        assert span["duration_ms"] >= 0
+    assert spans[-1]["policy"] == alignments[1]
+
 
 @localstack
 def test_faint_change_zooms_then_auto_writes(tmp_path):
@@ -121,6 +136,12 @@ def test_severe_change_awaits_human_and_resolve_writes(tmp_path):
     assert store.current_baseline(asset)["inspection_id"] == result.run_id
     assert not (result.run_dir / "pending.json").exists()
     assert decisions_on_disk(result)[-1]["branch"] == "approved"
+
+    events = trace.read_events(result.run_dir)
+    assert any(e["type"] == "approval_requested" for e in events)
+    assert events[-1]["type"] == "decision"
+    assert events[-1]["input_metric"] == "human_approved"
+    assert events[-1]["branch"] == "approved"
 
 
 @localstack

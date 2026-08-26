@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import sys
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -12,9 +13,10 @@ from mcp.client.stdio import stdio_client
 
 from services.agent import hitl
 from services.agent import policy as policy_module
-from services.agent.hitl import write_json
 from services.agent.policy import Policy
 from services.memory import store
+from services.observability import trace
+from services.observability.trace import write_json
 from services.perception import alignment
 
 SYSTEM = (
@@ -96,6 +98,7 @@ async def run(
     captured_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     run_dir = Path(runs_dir) / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
+    trace.emit(run_dir, "run_started", run_id=run_id, asset_id=asset_id, capture_key=capture_key)
 
     decisions: list[dict] = []
     stage_metrics: dict[str, dict] = {}
@@ -107,12 +110,17 @@ async def run(
         "capture_key": capture_key,
     }
 
-    def record(decision: dict) -> dict:
+    def record(decision: dict, span: dict | None = None) -> dict:
         decisions.append(decision)
         write_json(run_dir / "decisions.json", decisions)
+        if span is None:
+            trace.emit(run_dir, "decision", **decision)
+        else:
+            trace.emit(run_dir, "tool_call", **span, policy=decision)
         return decision
 
     def finish(status: str, branch: str | None, message: str | None = None) -> RunResult:
+        trace.emit(run_dir, "run_finished", status=status, branch=branch, message=message)
         state.update(status=status, branch=branch, message=message)
         write_json(run_dir / "state.json", state)
         return RunResult(run_id, status, branch, decisions, run_dir)
@@ -123,6 +131,7 @@ async def run(
         elif branch == policy_module.NO_CHANGE:
             store.put_inspection(asset_id, run_id, captured_at, stage_metrics, image_keys)
         elif branch == policy_module.HUMAN_APPROVAL:
+            trace.emit(run_dir, "approval_requested", message=message)
             hitl.request_approval(run_dir, {
                 "run_id": run_id,
                 "asset_id": asset_id,
@@ -146,22 +155,28 @@ async def run(
     ):
         await session.initialize()
 
-        async def call(name: str, args: dict) -> dict:
+        async def call(name: str, args: dict) -> tuple[dict, dict | None]:
+            start = time.perf_counter()
             result = await session.call_tool(name, args)
+            duration_ms = round((time.perf_counter() - start) * 1000, 1)
             text = result.content[0].text if result.content else ""
-            if result.is_error:
-                return {"error": text}
-            return json.loads(text)
+            payload = {"error": text} if result.is_error else json.loads(text)
+            span = {"tool": name, "args": args, "duration_ms": duration_ms}
+            if "error" in payload:
+                trace.emit(run_dir, "tool_call", **span, error=payload["error"])
+                return payload, None
+            span["metrics"] = payload
+            return payload, span
 
         if baseline is None:
             record(policy_module.decision(
                 "baseline_exists", 0.0, 1.0, policy_module.FIRST_BASELINE
             ))
-            metrics = await call("assess_quality", {"image_key": capture_key})
+            metrics, span = await call("assess_quality", {"image_key": capture_key})
             if "error" in metrics:
                 return finish("failed", None, metrics["error"])
             stage_metrics["quality"] = metrics
-            verdict = record(policy_module.evaluate("quality", metrics, pol))
+            verdict = record(policy_module.evaluate("quality", metrics, pol), span)
             if verdict["branch"] == policy_module.RECAPTURE:
                 return finish("completed", policy_module.RECAPTURE)
             hitl.commit(asset_id, run_id, captured_at, stage_metrics, image_keys)
@@ -215,12 +230,12 @@ async def run(
                             {"error": WRONG_TOOL.format(expected=expected_tool)},
                         ))
                         continue
-                    metrics = await call(tool_call.name, tool_call.args)
+                    metrics, span = await call(tool_call.name, tool_call.args)
                     if "error" in metrics:
                         responses.append((tool_call.name, metrics))
                         continue
                     stage = STAGE_OF[tool_call.name]
-                    verdict = record(policy_module.evaluate(stage, metrics, pol))
+                    verdict = record(policy_module.evaluate(stage, metrics, pol), span)
                     stage_metrics[stage] = metrics
                     if stage == "alignment" and metrics.get("aligned_key"):
                         image_keys["aligned"] = metrics["aligned_key"]

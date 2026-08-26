@@ -6,8 +6,8 @@ Visual inspection agent with longitudinal memory for the OpenCV AI Competition 2
 The competition's week-by-week plan lives in `docs/BRIEF.md` §4. This file is the living state: what
 is closed, what comes next, and the detail of the stages that already have a design.
 
-**Today is 25 August.** The brief's calendar starts week 1 on 26 August, so the project is running
-**about ten days ahead**. That margin is real and worth not spending.
+**Stage 5 closed on 26 August**, the day the brief's calendar starts week 1, so the project is
+running **about four weeks ahead**. That margin is real and worth not spending.
 
 ---
 
@@ -17,10 +17,10 @@ is closed, what comes next, and the detail of the stages that already have a des
 |---|---|---|
 | 1 | Scaffolding — arm64 Docker, OpenCV 5, LocalStack, CI | **closed** |
 | 2 | Perception — the five tools | **closed** |
-| 2.5 | Publish the manual on GitHub Pages | **files ready, commit and push pending** |
+| 2.5 | Publish the manual on GitHub Pages | **committed; push and enabling Pages by hand, pending** |
 | 3 | Memory bank — DynamoDB + S3 | **closed** |
 | 4 | MCP + agentic loop + policy + human gate | **closed** |
-| 5 | Observability — OTel spans, trace endpoint | pending |
+| 5 | Observability — per-run event trace, trace endpoint | **closed** |
 | 6 | AWS deploy + front end + public endpoint | pending |
 | 7 | Evaluation — dataset, metrics, failure cases | pending |
 | 8 | Technical report and documentation | pending |
@@ -70,7 +70,7 @@ one `query` and nothing more:
 | `META` | the asset |
 | `INSPECTION#<captured_at>#<inspection_id>` | one capture and its metrics |
 | `BASELINE#<captured_at>` | the current baseline, carrying `superseded_by` once it stops being current |
-| `EVENT#…` | reserved for stage 5, not written yet |
+| `EVENT#…` | reserved; stage 5 kept its events on disk (`runs/{run_id}/events.json`), so it stays unwritten unless a cloud consumer needs it |
 
 The baseline is an item of its own rather than a flag on the inspection: retrieving it is one small
 read regardless of how many inspections exist, and the chain of superseded baselines *is* the
@@ -152,6 +152,46 @@ overridable via `AFTERIMAGE_GEMINI_MODEL`; tests and the default demo use script
 (`ScriptedLLM`, `PolicyFollowingLLM`) — no network, no key, deterministic. `--live` switches the
 same loop to the real API.
 
+### Closed in stage 5
+
+`services/observability/` + `services/api/`, **54 tests green in the arm64 container** (the trace
+assertions live inside the two stage-4 loop tests that already exercised those branches, instead of
+duplicating their expensive LocalStack runs). `make demo` now prints each scenario's full trace and
+re-prints it after the human gate resolves; `make dev` serves the trace endpoint on port 8000.
+
+The design decision, taken against the BRIEF's literal wording: **no OpenTelemetry SDK — a plain
+persisted event log with span-shaped events.** What the judges see is the output of
+`GET /traces/{run_id}`, not the SDK behind it; and OTel attributes cannot carry nested dicts, so
+`args`, `metrics` and the verdict would have been `json.dumps`-ed into strings inside the span and
+decoded back out — pure wrapping. If stage 8 wants the word "OpenTelemetry" in the report, an
+adapter re-emitting the same events as OTel spans is one isolated file. Zero new deps for the
+tracing itself.
+
+Each `tool_call` event is the span: `tool`, `args`, `duration_ms`, `metrics` (or `error`) and the
+policy verdict nested under `policy` — emitted as **one** event after the verdict is computed, so
+the span→verdict link travels through data flow, not file position. `run_started`, `decision`
+(first-baseline and the human resolution from `hitl.resolve`), `approval_requested` and
+`run_finished` complete the log.
+
+`hindsight`'s three debts, closed: the span stores the tool's arguments **and** what it returned;
+`trace.emit` stamps every timestamp server-side; and disk is the source of truth
+(`runs/{run_id}/events.json`), so the trace survives a restart and is shared by link.
+`decisions.json` and `state.json` are written unchanged — `events.json` subsumes `decisions.json`
+conceptually, but the dual write stays until a stage-6+ consumer justifies removing it.
+
+`GET /traces/{run_id}` (`services/api/app.py`, FastAPI): JSON by default, HTML when the request
+sends `Accept: text/html`, 404 both for a run with no events on disk and for anything not matching
+`^[0-9a-f]{12}$` (the path-traversal boundary, shared as `trace.RUN_ID_PATTERN`). It reads from
+disk on every request — idempotent by construction. Runs root via `AFTERIMAGE_RUNS_DIR`.
+
+From `hindsight`, the good part, kept: **one event generator** (`trace.emit`) and renderers as pure
+functions over the same events — `render_text` (CLI: `python -m services.observability.render
+RUN_ID`) and `render_html` (the endpoint). **SSE deferred to stage 6** with the front end that will
+consume it: re-read `events.json`, emit the delta, ~20 lines.
+
+Deps added, pinned: `fastapi==0.141.1`, `uvicorn==0.52.4`, `httpx==0.28.1` (the TestClient
+transport).
+
 ## Stage 2.5 — Publish the manual on GitHub Pages
 
 Low cost, and it can happen any time before stage 8; doing it early gives a public URL to link from
@@ -222,30 +262,10 @@ diagram scrolls inside its own container.
 
 ---
 
-## Stages 5 to 9
+## Stages 6 to 9
 
 Goal and closing condition for each, per `docs/BRIEF.md` §4, plus what is reusable from the author's
 three previous repos (`recall`, `hindsight`, `ringdown`), already reviewed.
-
-### 5 — Observability
-
-One span per tool call with inputs, metrics and the resulting decision. `GET /traces/{run_id}`
-readable by a human. Closes with a trace where an OpenCV value visibly changed the next decision.
-
-The field `hindsight` **did not** have and that is mandatory here:
-
-```json
-{"input_metric": "inlier_ratio", "value": 0.259, "threshold": 0.5, "branch": "unrecognized_asset"}
-```
-
-In `hindsight` causality ran through the prompt, not through a field: you could not *prove* that a
-value changed the decision, only infer it. Its other three debts, all to avoid: the trace stored the
-tool's arguments but not what it returned; the browser set the timestamp; and the store was an
-in-memory dict with a one-shot stream, so the trace did not survive a restart and could not be shared
-by link. Hence: persisted `events.json` + `state.json`, and an idempotent `GET /traces/{run_id}`.
-
-From `hindsight`, the good part: **one event generator, three renderers** (CLI, SSE and file) with no
-extra code.
 
 ### 6 — AWS deploy + front end + public endpoint
 

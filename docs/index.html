@@ -917,18 +917,62 @@
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">10</span><h2>Run it yourself</h2></div>
+    <div class="sec-head"><span class="marker">10</span><h2>The trace</h2></div>
     <div class="col">
       <p>
-        Two commands, no cloud account, no credentials. The neural matchers need two ONNX files that
-        are not bundled in the OpenCV wheel; the first command fetches them and checks their
-        published SHA-1.
+        The decision log answers <em>what</em> was decided. The trace answers everything else. Every
+        run leaves <code>runs/&lt;run_id&gt;/events.json</code>: one event when the run starts, one
+        span per tool call — the arguments sent, the metrics returned, the milliseconds it took, and
+        the policy verdict nested inside the span it judged — and one event when the run ends. The
+        human gate leaves events too: the approval request, and the yes or no that resolved it.
+        Timestamps come from the server, never the viewer, and the file on disk is the source of
+        truth — the trace survives a restart and travels as a link.
+      </p>
+      <p>
+        Here is the run that refused to recognize a foreign panel. The neural matcher voted, the
+        policy sent the agent back for a second opinion, and the classic matcher settled it:
+      </p>
+      <pre><code>[2026-08-26T22:32:03.493+00:00] run e860a6bbd44a started  asset=demo-50ea63  capture=assets/demo-50ea63/capture/capture.png
+[2026-08-26T22:32:03.896+00:00] assess_quality (79.7 ms)  blur_variance 322.547 &gt;= 100.0 -&gt; quality_ok
+[2026-08-26T22:32:05.108+00:00] align_to_baseline (1212.2 ms)  inlier_ratio 0.4074 &lt; 0.9 -&gt; retry_classic
+[2026-08-26T22:32:05.133+00:00] align_to_baseline (24.2 ms)  inlier_ratio 0.0385 &lt; 0.3 -&gt; unrecognized_asset
+[2026-08-26T22:32:05.133+00:00] run finished: completed (unrecognized_asset)</code></pre>
+      <div class="callout">
+        <span class="label">Read the two alignment lines</span>
+        <p style="margin:0">
+          The neural matcher scored 0.4074 against its bar of 0.90, so the policy ordered a retry
+          with the classic detector. That retry scored 0.0385 against its own bar of 0.30, and the
+          asset was declared unrecognized. Each next action was caused by the number before it —
+          and the trace proves the causality in a field, not in prose.
+        </p>
+      </div>
+      <p>
+        The same trace is served over HTTP. <code>GET /traces/&lt;run_id&gt;</code> returns the raw
+        events as JSON; a browser sending <code>Accept: text/html</code> gets the same run rendered
+        as a page, with the causal line highlighted on every span. Anything that is not a
+        well-formed run id — twelve hex characters — is a 404 before the filesystem is consulted,
+        and the endpoint reads from disk on every request, so the same run always returns the same
+        bytes. Without a server, <code>python -m services.observability.render &lt;run_id&gt;</code>
+        prints the text rendering above; the runs root is configurable with
+        <code>AFTERIMAGE_RUNS_DIR</code>.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">11</span><h2>Run it yourself</h2></div>
+    <div class="col">
+      <p>
+        A handful of commands, no cloud account, no credentials. The neural matchers need two ONNX
+        files that are not bundled in the OpenCV wheel; the first command fetches them and checks
+        their published SHA-1.
       </p>
       <pre><code>make weights   <span class="comment"># 52 MB of ALIKED + LightGlue models</span>
 make test      <span class="comment"># the suite, inside the arm64 container</span>
-make demo      <span class="comment"># the four branches, fired one by one</span></code></pre>
+make demo      <span class="comment"># the four branches, fired one by one</span>
+make dev       <span class="comment"># the stack up, trace endpoint on :8000</span></code></pre>
       <p style="margin-top:1.25rem">
-        Expect <strong>45 passing tests</strong> on <code>aarch64</code> with OpenCV 5.0.0. The tests
+        Expect <strong>54 passing tests</strong> on <code>aarch64</code> with OpenCV 5.0.0. The tests
         do not need photographs: they generate synthetic solar panels in code and paint the defect
         they want to prove onto them, so every run is reproducible.
       </p>
@@ -941,8 +985,9 @@ make demo      <span class="comment"># the four branches, fired one by one</span
       <p>
         <code>make demo</code> is the loop's closing argument: four prepared scenarios — a blurred
         capture, a foreign panel, a faint spot, a deep crack — each driven through the real MCP
-        server and the real memory, each ending on a different branch, each printing its decision
-        log. By default a scripted driver follows the verdicts so the run is deterministic; with a
+        server and the real memory, each ending on a different branch, each printing its full trace
+        — spans, durations, verdicts, and the human resolution where the gate fires. By default a
+        scripted driver follows the verdicts so the run is deterministic; with a
         Gemini API key, <code>--live</code> puts the model in the driver's seat over the same loop.
         The verdicts are computed in code either way.
       </p>
@@ -950,12 +995,12 @@ make demo      <span class="comment"># the four branches, fired one by one</span
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">11</span><h2>Where the project stands</h2></div>
+    <div class="sec-head"><span class="marker">12</span><h2>Where the project stands</h2></div>
     <div class="col">
       <p>
-        Week 4 of 9. The loop closes: perception, memory and the agent that drives them are built
-        and tested. What remains is making it observable, public, and measured against an
-        evaluation set.
+        Week 5 of 9. The loop closes and explains itself: perception, memory, the agent that drives
+        them, and the trace that proves every decision are built and tested. What remains is making
+        it public and measured against an evaluation set.
       </p>
     </div>
 
@@ -969,7 +1014,7 @@ make demo      <span class="comment"># the four branches, fired one by one</span
           <tr><td>The five perception tools</td><td><span class="pill done">built</span></td><td class="num lo">2</td></tr>
           <tr><td>Memory bank — baselines in S3 and DynamoDB</td><td><span class="pill done">built</span></td><td class="num lo">3</td></tr>
           <tr><td>MCP server, agent loop, human gate</td><td><span class="pill done">built</span></td><td class="num lo">4</td></tr>
-          <tr><td>OpenTelemetry traces, trace endpoint</td><td><span class="pill todo">not yet</span></td><td class="num lo">5</td></tr>
+          <tr><td>Per-run event trace, trace endpoint</td><td><span class="pill done">built</span></td><td class="num lo">5</td></tr>
           <tr><td>AWS deploy, public endpoint, front end</td><td><span class="pill todo">not yet</span></td><td class="num lo">6</td></tr>
           <tr><td>Evaluation set, metrics, failure cases</td><td><span class="pill todo">not yet</span></td><td class="num lo">7</td></tr>
         </tbody>
@@ -978,7 +1023,7 @@ make demo      <span class="comment"># the four branches, fired one by one</span
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">12</span><h2>Known limits</h2></div>
+    <div class="sec-head"><span class="marker">13</span><h2>Known limits</h2></div>
     <div class="col">
       <ul class="plain">
         <li>
@@ -1011,7 +1056,7 @@ make demo      <span class="comment"># the four branches, fired one by one</span
   </section>
 
   <footer>
-    afterimage · week 4 of 9 · every number on this page came from a run, not an estimate
+    afterimage · week 5 of 9 · every number on this page came from a run, not an estimate
   </footer>
 
 </div>

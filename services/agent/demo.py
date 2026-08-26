@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import json
 import uuid
 
 from services.agent import hitl, loop
@@ -8,6 +7,8 @@ from services.agent import policy as policy_module
 from services.agent.llm import GeminiLLM
 from services.agent.scripted import PolicyFollowingLLM, seed_baseline
 from services.memory import images, store
+from services.observability import trace
+from services.observability.render import render_text
 from services.perception import alignment
 from services.perception.tests.panels import (
     blurred,
@@ -42,10 +43,12 @@ def main() -> None:
         llm = GeminiLLM() if args.live else PolicyFollowingLLM(capture_key, baseline_key, detector)
         result = asyncio.run(loop.run(asset, capture_key, llm))
         print(f"\n=== {title} -> {result.branch} ({result.status}) ===")
-        print(json.dumps(result.decisions, indent=2))
+        print(render_text(trace.read_events(result.run_dir)))
         assert result.branch == expected, f"{title}: expected {expected}, got {result.branch}"
         if result.branch == policy_module.HUMAN_APPROVAL:
-            print("human gate:", json.dumps(hitl.resolve(result.run_dir, approved=True)))
+            hitl.resolve(result.run_dir, approved=True)
+            print("--- after human approval ---")
+            print(render_text(trace.read_events(result.run_dir)))
 
     print("\nall four branches fired")
 
