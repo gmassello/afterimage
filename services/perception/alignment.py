@@ -4,10 +4,15 @@ from functools import lru_cache
 import cv2
 import numpy as np
 
-from services.perception.weights import aliked_path, lightglue_path
+from services.perception.weights import aliked_path, lightglue_path, neural_weights_available
 
 NEURAL = "aliked+lightglue"
 CLASSIC = "orb+bf"
+
+
+def default_detector() -> str:
+    return NEURAL if neural_weights_available() else CLASSIC
+
 MIN_MATCHES = 4
 RANSAC_REPROJECTION_THRESHOLD = 3.0
 VALID_MASK_EROSION_KERNEL = np.ones((9, 9), np.uint8)

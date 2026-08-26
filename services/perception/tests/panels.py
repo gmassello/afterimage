@@ -20,6 +20,10 @@ def solar_panel(seed: int = 0, rows: int = ROWS, cols: int = COLS, cell: int = C
     return np.clip(panel.astype(np.int16) + noise, 0, 255).astype(np.uint8)
 
 
+def foreign_panel() -> np.ndarray:
+    return solar_panel(seed=99, rows=4, cols=7, cell=80)
+
+
 def cell_bbox(row: int, col: int, cell: int = CELL) -> tuple[int, int, int, int]:
     return BORDER + col * cell + 3, BORDER + row * cell + 3, cell - 6, cell - 6
 

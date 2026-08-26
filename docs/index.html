@@ -732,14 +732,15 @@
         judge can read without trusting anybody:
       </p>
       <pre><code>{"input_metric": "inlier_ratio",
- "value": 0.259,
- "threshold": 0.5,
+ "value": 0.038,
+ "threshold": 0.3,
  "branch": "unrecognized_asset"}</code></pre>
       <div class="callout">
         <span class="label">In plain words</span>
         <p style="margin:0">
-          "I could not confirm this is panel A-114. Only 26% of the matched points agreed on a single
-          alignment, and I need 50%. I am not filing a defect against an asset I cannot identify."
+          "I could not confirm this is panel A-114. Only 4% of the matched points agreed on a single
+          alignment, and this detector needs 30% — the neural one had already failed its own bar of
+          90%. I am not filing a defect against an asset I cannot identify."
         </p>
       </div>
     </div>
@@ -832,11 +833,91 @@
           It was removed; the two raw measurements travel instead.
         </p>
       </li>
+      <li>
+        <h3>The warp's black border was the biggest "change" in the frame</h3>
+        <p>
+          Aligning a rotated capture leaves black wherever the homography did not reach, and the diff
+          read that border as the largest changed region — 9% of the frame, burying a real cracked
+          cell six times its size under it. The fix warps a validity mask through the same
+          homography, eroded wider than the diff's own blur, so the comparison only ever runs where
+          both frames actually have pixels.
+        </p>
+      </li>
+      <li>
+        <h3>The thresholds moved the moment they were measured</h3>
+        <p>
+          The plan said "blur below 150 means recapture" — then a well-focused capture, warped into
+          the baseline's frame, measured 173, because interpolation eats half the variance of a sharp
+          image (367 before, 173 after). The faint spot painted 22 grey levels deep measured 32.7
+          after contrast normalisation. Every threshold in the policy was pinned from a run like
+          those, not from the plan's guess.
+        </p>
+      </li>
     </ol>
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">08</span><h2>Run it yourself</h2></div>
+    <div class="sec-head"><span class="marker">08</span><h2>The memory it keeps</h2></div>
+    <div class="col">
+      <p>
+        Everything the agent knows about a panel lives in one place: a single database partition per
+        asset, so its complete history — every inspection, every baseline it ever had — comes back
+        in <strong>one query</strong>. Images live in object storage, filed by asset and inspection,
+        and every derived artifact (the aligned frame, the validity mask) is stored next to the
+        capture that produced it. A run can be reconstructed from storage alone.
+      </p>
+      <p>
+        A baseline is never overwritten. When a new capture earns baseline status, the old one is
+        marked <em>superseded</em> and stays — the chain of superseded baselines <strong>is</strong>
+        the longitudinal record, the thing the project is named after. And memory stores no expiry
+        dates and no verdicts: deciding that a baseline is too old is a threshold, and thresholds
+        belong to the policy, same as everywhere else.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">09</span><h2>Who decides what</h2></div>
+    <div class="col">
+      <p>
+        The loop is now running. A language model drives the five instruments over MCP — it chooses
+        the words for the operator and passes the arguments along. What it does <strong>not</strong>
+        do is decide. After every tool result, plain code compares the numbers against the policy's
+        thresholds, writes the verdict into the run's decision log, and hands the model the verdict
+        it must follow. A model that tries to conclude something the numbers do not support gets its
+        submission rejected, with the mandated branch named in the refusal.
+      </p>
+      <p>
+        This is the field manual's earlier promise kept: perception reports, policy decides, and the
+        model narrates. Here is a real run — a faint spot, painted 22 grey levels deep, on a capture
+        taken from a different angle:
+      </p>
+      <pre><code>{"input_metric": "blur_variance",  "value": 173.7,  "threshold": 100,  "branch": "quality_ok"}
+{"input_metric": "inlier_ratio",   "value": 0.9987, "threshold": 0.9,  "branch": "aligned"}
+{"input_metric": "mean_delta",     "value": 32.68,  "threshold": 35,   "branch": "crop_and_rescan"}
+{"input_metric": "area_ratio",     "value": 0.7237, "threshold": 0.02, "branch": "change_confirmed"}
+{"input_metric": "score",          "value": 0.2431, "threshold": 0.4,  "branch": "auto_write"}</code></pre>
+      <div class="callout">
+        <span class="label">Read the third line</span>
+        <p style="margin:0">
+          The change measured 32.68 against a confirmation bar of 35 — not enough to trust, too much
+          to ignore. So the agent zoomed into the region it chose itself, re-measured with four times
+          the pixels, and the zoomed reading (0.72 of the crop, against a bar of 0.02) confirmed it.
+          A number caused the zoom, and the log proves it.
+        </p>
+      </div>
+      <p>
+        The fourth branch is the one that stops the machine. When severity crosses its bar, nothing
+        is written: the run parks itself as <em>awaiting approval</em> with everything a reviewer
+        needs, and only a human's explicit yes commits the inspection and promotes the new baseline.
+        The approval — or the rejection — is recorded as a decision like any other, with the human
+        as the metric.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">10</span><h2>Run it yourself</h2></div>
     <div class="col">
       <p>
         Two commands, no cloud account, no credentials. The neural matchers need two ONNX files that
@@ -844,9 +925,10 @@
         published SHA-1.
       </p>
       <pre><code>make weights   <span class="comment"># 52 MB of ALIKED + LightGlue models</span>
-make test      <span class="comment"># the suite, inside the arm64 container</span></code></pre>
+make test      <span class="comment"># the suite, inside the arm64 container</span>
+make demo      <span class="comment"># the four branches, fired one by one</span></code></pre>
       <p style="margin-top:1.25rem">
-        Expect <strong>23 passing tests</strong> on <code>aarch64</code> with OpenCV 5.0.0. The tests
+        Expect <strong>45 passing tests</strong> on <code>aarch64</code> with OpenCV 5.0.0. The tests
         do not need photographs: they generate synthetic solar panels in code and paint the defect
         they want to prove onto them, so every run is reproducible.
       </p>
@@ -856,13 +938,25 @@ make test      <span class="comment"># the suite, inside the arm64 container</sp
         <code>make weights</code> did not run, the suite still passes — with the interesting half
         untested.
       </p>
+      <p>
+        <code>make demo</code> is the loop's closing argument: four prepared scenarios — a blurred
+        capture, a foreign panel, a faint spot, a deep crack — each driven through the real MCP
+        server and the real memory, each ending on a different branch, each printing its decision
+        log. By default a scripted driver follows the verdicts so the run is deterministic; with a
+        Gemini API key, <code>--live</code> puts the model in the driver's seat over the same loop.
+        The verdicts are computed in code either way.
+      </p>
     </div>
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">09</span><h2>Where the project stands</h2></div>
+    <div class="sec-head"><span class="marker">11</span><h2>Where the project stands</h2></div>
     <div class="col">
-      <p>Week 2 of 9. Perception works and is tested. Nothing else is built yet.</p>
+      <p>
+        Week 4 of 9. The loop closes: perception, memory and the agent that drives them are built
+        and tested. What remains is making it observable, public, and measured against an
+        evaluation set.
+      </p>
     </div>
 
     <div class="scroll">
@@ -873,8 +967,8 @@ make test      <span class="comment"># the suite, inside the arm64 container</sp
         <tbody>
           <tr><td>arm64 container, OpenCV 5, CI</td><td><span class="pill done">built</span></td><td class="num lo">1</td></tr>
           <tr><td>The five perception tools</td><td><span class="pill done">built</span></td><td class="num lo">2</td></tr>
-          <tr><td>Memory bank — baselines in S3 and DynamoDB</td><td><span class="pill todo">not yet</span></td><td class="num lo">3</td></tr>
-          <tr><td>MCP server, agent loop, human gate</td><td><span class="pill todo">not yet</span></td><td class="num lo">4</td></tr>
+          <tr><td>Memory bank — baselines in S3 and DynamoDB</td><td><span class="pill done">built</span></td><td class="num lo">3</td></tr>
+          <tr><td>MCP server, agent loop, human gate</td><td><span class="pill done">built</span></td><td class="num lo">4</td></tr>
           <tr><td>OpenTelemetry traces, trace endpoint</td><td><span class="pill todo">not yet</span></td><td class="num lo">5</td></tr>
           <tr><td>AWS deploy, public endpoint, front end</td><td><span class="pill todo">not yet</span></td><td class="num lo">6</td></tr>
           <tr><td>Evaluation set, metrics, failure cases</td><td><span class="pill todo">not yet</span></td><td class="num lo">7</td></tr>
@@ -884,7 +978,7 @@ make test      <span class="comment"># the suite, inside the arm64 container</sp
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">10</span><h2>Known limits</h2></div>
+    <div class="sec-head"><span class="marker">12</span><h2>Known limits</h2></div>
     <div class="col">
       <ul class="plain">
         <li>
@@ -893,12 +987,19 @@ make test      <span class="comment"># the suite, inside the arm64 container</sp
           photographs.
         </li>
         <li>
-          <code>inlier_ratio</code> is not comparable across detectors, so the policy layer will need
-          one threshold per detector rather than a shared one.
+          <code>inlier_ratio</code> is not comparable across detectors, so the policy holds one
+          threshold per detector — 0.90 for the neural pair, 0.30 for ORB — never a shared one.
         </li>
         <li>
-          Frame coverage is estimated from the bounding box of the largest edge contour, which will
-          misread a panel photographed against a cluttered background.
+          Frame coverage is estimated from the bounding box of the largest edge contour, which
+          misreads panels against cluttered backgrounds — and reads near zero on the synthetic
+          fixtures, so that quality check ships disabled by default until it is recalibrated on
+          field photographs.
+        </li>
+        <li>
+          Every policy threshold is calibrated on synthetic fixtures, like the severity heuristic
+          those thresholds gate. Field photographs will move them; that is what the evaluation week
+          is for.
         </li>
         <li>
           <code>crop_and_rescan</code> buys measurement precision on a marginal region. It cannot
@@ -910,7 +1011,7 @@ make test      <span class="comment"># the suite, inside the arm64 container</sp
   </section>
 
   <footer>
-    afterimage · week 2 of 9 · every number on this page came from a run, not an estimate
+    afterimage · week 4 of 9 · every number on this page came from a run, not an estimate
   </footer>
 
 </div>

@@ -27,8 +27,8 @@ the visual evidence must change what the system does next."*
 
 | Criterion | Weight | How we demonstrate it | Where the judge sees it | Status |
 |---|---|---|---|---|
-| OpenCV 5 + agent integration | 30% | Five perception tools exposed over MCP; every one returns the numeric metrics the agent branches on | `services/perception/`, `services/mcp_server/` | wip |
-| Orchestration and appropriate autonomy | 25% | Four branches that actually fire: recapture, retry with another detector, zoom on an uncertain region, ask a human | `services/agent/loop.py`, `services/agent/policy.py` | todo |
+| OpenCV 5 + agent integration | 30% | Five perception tools exposed over MCP; every one returns the numeric metrics the agent branches on | `services/perception/`, `services/mcp_server/server.py` | done |
+| Orchestration and appropriate autonomy | 25% | Four branches that actually fire: recapture, retry with another detector, zoom on an uncertain region, ask a human — `make demo` drives all four; every decision recorded as `{input_metric, value, threshold, branch}` | `services/agent/loop.py`, `services/agent/policy.py`, `services/agent/tests/test_loop.py` | done |
 | Task effectiveness and evaluation | 20% | Precision and recall on the evaluation set, **including failure cases** | `docs/EVALUATION.md`, `eval/results/` | todo |
 | Failure handling, observability, security, human control | 15% | One OTel span per tool call carrying the value that triggered the decision | `GET /traces/{run_id}` | todo |
 | UX and documentation | 10% | Agent loop diagram plus the trace viewer | `docs/AGENT_LOOP.md` | todo |
@@ -87,3 +87,11 @@ Written as we go, not the night before. Admitting a limit costs less than a judg
 - Frame coverage is estimated from the bounding box of the largest edge contour, which will misread
   panels against cluttered backgrounds.
 - Alignment costs ~1.5 s per pair on CPU. The DNN engine in OpenCV 5 has no GPU support.
+- The frame-coverage quality check is disabled by default (`coverage_ratio_min=0.0`): the contour
+  heuristic reads ~0 on synthetic fixtures. On real captures it must be re-enabled via env and
+  recalibrated.
+- Policy thresholds (`blur_variance_min=100`, `mean_delta_confirm=35`, `severity_score_approve=0.4`)
+  are calibrated on synthetic fixtures, like the severity heuristic they gate.
+- Tests and the default demo drive the loop with a scripted policy-following LLM; `--live` runs the
+  same loop against Gemini. The branch verdicts are computed in code either way — the LLM cannot
+  override a policy verdict, so determinism of the decisions does not depend on the model.

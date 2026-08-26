@@ -19,7 +19,7 @@ is closed, what comes next, and the detail of the stages that already have a des
 | 2 | Perception — the five tools | **closed** |
 | 2.5 | Publish the manual on GitHub Pages | **files ready, commit and push pending** |
 | 3 | Memory bank — DynamoDB + S3 | **closed** |
-| 4 | MCP + agentic loop + policy + human gate | pending |
+| 4 | MCP + agentic loop + policy + human gate | **closed** |
 | 5 | Observability — OTel spans, trace endpoint | pending |
 | 6 | AWS deploy + front end + public endpoint | pending |
 | 7 | Evaluation — dataset, metrics, failure cases | pending |
@@ -103,6 +103,55 @@ crop margin reaches the invalid border, stage 4 will see it.
 
 ---
 
+### Closed in stage 4
+
+`services/mcp_server/` + `services/agent/`, **45 tests green in the arm64 container** (23 new), and
+`make demo` drives the four action branches end to end against the real MCP server and LocalStack.
+
+The design decision that satisfies the award's hard requirement: **the policy evaluates agent-side,
+in code, after every tool result.** MCP tools return perception metrics only; `loop.py` runs
+`policy.evaluate(stage, metrics)` and records `{"input_metric", "value", "threshold", "branch"}` —
+pass verdicts included — before injecting the verdict into the function response the LLM sees. The
+LLM (Gemini, `google-genai`, manual `FunctionDeclaration` conversion so its automatic function
+calling can never bypass the injection) orchestrates and phrases the operator message; it cannot
+override a verdict — a `submit` with the wrong branch comes back as an error tool result naming the
+mandated one. Causality is a field, not prompt archaeology.
+
+One threshold per detector, as stage 2 demanded: `inlier_ratio_min_neural=0.90`,
+`inlier_ratio_min_classic=0.30`. The other defaults were pinned by measuring the fixtures in the
+container, and two of them moved off the plan's guesses:
+
+| metric | measured | default pinned |
+|---|---|---|
+| `blur_variance` clean / blurred / warped recapture | 367.6 / 1.8 / ~173 | `min 100` — the warp's interpolation eats half the variance |
+| region `mean_delta` faint spot / crack | 32.7 / 46.6 | `confirm 35` — CLAHE amplifies the raw pixel delta of 22 |
+| `coverage_ratio` clean panel | 0.001 | check disabled (0.0) — the contour heuristic reads ~0 on synthetic fixtures; ponytail-marked, raise via env on real captures |
+
+The HITL gate is a partition, not a branch: on `human_approval` the loop persists
+`runs/{run_id}/pending.json` and returns `awaiting_approval`; the memory write lives in
+`hitl.resolve()`, reached by `--resume RUN_ID --approve|--reject` or an interactive y/n. Stage 6's
+approval queue is "list `runs/*/pending.json`, call `resolve()`".
+
+Facts verified against the binaries, not the docs:
+
+- **`mcp` 2.x renamed FastMCP to `MCPServer`** (`mcp.server.mcpserver`); tool results arrive as JSON
+  text content, and `structured_content` stays `None` unless the tool declares an output schema —
+  the loop parses `content[0].text`.
+- `Tool.input_schema` (snake_case) feeds `google-genai`'s `parameters_json_schema` directly — no
+  hand-written schema conversion.
+- ⚠️ **LocalStack state survives `docker-compose run`.** Only `down` clears it. The stage-4 tests use
+  unique asset ids per run; `test_longitudinal.py` (stage 3) has fixed ids and fails against a warm
+  LocalStack left by manual runs — `make test` is safe because it tears down, but a stray
+  `docker-compose run` session before it is not.
+- The "different panel" that alignment must reject needs different *geometry*
+  (`solar_panel(seed=99, rows=4, cols=7, cell=80)`); a different seed with the same grid aligns at
+  0.99+ because the cell layout is the feature.
+
+Deps added, pinned: `mcp==2.1.1`, `google-genai==2.20.0`. Model default `gemini-2.5-flash`,
+overridable via `AFTERIMAGE_GEMINI_MODEL`; tests and the default demo use scripted drivers
+(`ScriptedLLM`, `PolicyFollowingLLM`) — no network, no key, deterministic. `--live` switches the
+same loop to the real API.
+
 ## Stage 2.5 — Publish the manual on GitHub Pages
 
 Low cost, and it can happen any time before stage 8; doing it early gives a public URL to link from
@@ -173,22 +222,10 @@ diagram scrolls inside its own container.
 
 ---
 
-## Stages 4 to 9
+## Stages 5 to 9
 
 Goal and closing condition for each, per `docs/BRIEF.md` §4, plus what is reusable from the author's
 three previous repos (`recall`, `hindsight`, `ringdown`), already reviewed.
-
-### 4 — MCP + loop + policy + human gate
-
-An MCP server exposing the five tools; the loop with its four actions; thresholds in `policy.py`,
-configurable, **with one threshold per detector**. Every decision records which value triggered it.
-Closes with the full loop running locally and all four branches firing.
-
-From `hindsight`: the phase orchestrator with its `critical` flag (a critical phase aborts, a
-non-critical one continues with partial state) — 68 lines with a 12-line test; **the human gate is a
-partition of the phase list**, not a branch inside the loop. And the tool loop with its guards: a
-premature submit discarded, `ValidationError` returned to the model as an error tool result, a "last
-chance" before turns run out. From `recall`: thresholds as a single readable config.
 
 ### 5 — Observability
 

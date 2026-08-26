@@ -1,0 +1,235 @@
+import asyncio
+import json
+import os
+import sys
+import uuid
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+from services.agent import hitl
+from services.agent import policy as policy_module
+from services.agent.hitl import write_json
+from services.agent.policy import Policy
+from services.memory import store
+from services.perception import alignment
+
+SYSTEM = (
+    "You are a visual inspection agent for solar panels with longitudinal memory. "
+    "Inspect the capture by calling the perception tools in order: assess_quality, "
+    "align_to_baseline, diff_against_memory, crop_and_rescan only when mandated, "
+    "classify_severity. Every tool result carries a 'policy' verdict computed in code "
+    "from calibrated thresholds; you MUST follow its 'branch' - your judgment covers "
+    "phrasing the operator-facing message and passing the right arguments, never "
+    "overriding a verdict. When the verdict is terminal, call submit with that exact "
+    "branch and one concrete sentence for the operator (e.g. recapture guidance built "
+    "from the failing metric). Never fabricate metrics; only tool results count."
+)
+
+SUBMIT = "submit"
+SUBMIT_TOOL = {
+    "name": SUBMIT,
+    "description": "Finish the inspection with the branch mandated by the last policy verdict.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "branch": {"type": "string"},
+            "message": {"type": "string"},
+        },
+        "required": ["branch", "message"],
+    },
+}
+
+STAGE_OF = {
+    "assess_quality": "quality",
+    "align_to_baseline": "alignment",
+    "diff_against_memory": "diff",
+    "crop_and_rescan": "rescan",
+    "classify_severity": "severity",
+}
+
+NEXT_TOOL = {
+    policy_module.QUALITY_OK: "align_to_baseline",
+    policy_module.RETRY_CLASSIC: "align_to_baseline",
+    policy_module.ALIGNED: "diff_against_memory",
+    policy_module.CROP_AND_RESCAN: "crop_and_rescan",
+    policy_module.CHANGE_CONFIRMED: "classify_severity",
+}
+
+NUDGE = "You did not call any tool. Call {expected} to continue the inspection."
+PREMATURE_SUBMIT = (
+    "You called submit in the same turn as other tools, so you have not seen their "
+    "results yet. The submission was discarded."
+)
+WRONG_BRANCH = (
+    "The policy verdict mandates branch {expected!r}, not {got!r}. "
+    "Call submit again with the mandated branch."
+)
+WRONG_TOOL = "The policy verdict mandates calling {expected!r} next."
+LAST_CHANCE = (
+    "You are almost out of turns. Call submit NOW with the branch of the last policy verdict."
+)
+
+
+@dataclass
+class RunResult:
+    run_id: str
+    status: str
+    branch: str | None
+    decisions: list[dict]
+    run_dir: Path
+
+
+async def run(
+    asset_id: str,
+    capture_key: str,
+    llm,
+    policy: Policy | None = None,
+    max_turns: int = 12,
+    runs_dir: str | Path = "runs",
+) -> RunResult:
+    pol = policy or Policy.from_env()
+    run_id = uuid.uuid4().hex[:12]
+    captured_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    run_dir = Path(runs_dir) / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    decisions: list[dict] = []
+    stage_metrics: dict[str, dict] = {}
+    image_keys = {"capture": capture_key}
+    state = {
+        "run_id": run_id,
+        "asset_id": asset_id,
+        "captured_at": captured_at,
+        "capture_key": capture_key,
+    }
+
+    def record(decision: dict) -> dict:
+        decisions.append(decision)
+        write_json(run_dir / "decisions.json", decisions)
+        return decision
+
+    def finish(status: str, branch: str | None, message: str | None = None) -> RunResult:
+        state.update(status=status, branch=branch, message=message)
+        write_json(run_dir / "state.json", state)
+        return RunResult(run_id, status, branch, decisions, run_dir)
+
+    def conclude(branch: str, message: str) -> RunResult:
+        if branch == policy_module.AUTO_WRITE:
+            hitl.commit(asset_id, run_id, captured_at, stage_metrics, image_keys)
+        elif branch == policy_module.NO_CHANGE:
+            store.put_inspection(asset_id, run_id, captured_at, stage_metrics, image_keys)
+        elif branch == policy_module.HUMAN_APPROVAL:
+            hitl.request_approval(run_dir, {
+                "run_id": run_id,
+                "asset_id": asset_id,
+                "captured_at": captured_at,
+                "metrics": stage_metrics,
+                "image_keys": image_keys,
+                "message": message,
+            })
+            return finish("awaiting_approval", branch, message)
+        return finish("completed", branch, message)
+
+    baseline = store.current_baseline(asset_id)
+    params = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "services.mcp_server.server"],
+        env=dict(os.environ),
+    )
+    async with (
+        stdio_client(params) as (read, write),
+        ClientSession(read, write) as session,
+    ):
+        await session.initialize()
+
+        async def call(name: str, args: dict) -> dict:
+            result = await session.call_tool(name, args)
+            text = result.content[0].text if result.content else ""
+            if result.is_error:
+                return {"error": text}
+            return json.loads(text)
+
+        if baseline is None:
+            record(policy_module.decision(
+                "baseline_exists", 0.0, 1.0, policy_module.FIRST_BASELINE
+            ))
+            metrics = await call("assess_quality", {"image_key": capture_key})
+            if "error" in metrics:
+                return finish("failed", None, metrics["error"])
+            stage_metrics["quality"] = metrics
+            verdict = record(policy_module.evaluate("quality", metrics, pol))
+            if verdict["branch"] == policy_module.RECAPTURE:
+                return finish("completed", policy_module.RECAPTURE)
+            hitl.commit(asset_id, run_id, captured_at, stage_metrics, image_keys)
+            return finish("completed", policy_module.FIRST_BASELINE)
+
+        baseline_key = baseline["image_key"]
+        detector = alignment.default_detector()
+        listed = (await session.list_tools()).tools
+        tools = [
+            {"name": t.name, "description": t.description or "", "input_schema": t.input_schema}
+            for t in listed
+        ]
+        tools.append(SUBMIT_TOOL)
+
+        expected_tool = "assess_quality"
+        expected_branch: str | None = None
+        history: list[dict] = [{
+            "role": "user",
+            "text": (
+                f"Inspect asset {asset_id}. Capture: {capture_key}. Baseline: {baseline_key}. "
+                f"Start with assess_quality, and use detector {detector!r} when aligning "
+                f"(on a retry_classic verdict, align again with detector {alignment.CLASSIC!r})."
+            ),
+        }]
+
+        for turn_index in range(max_turns):
+            turn = await asyncio.to_thread(llm.generate, SYSTEM, history, tools)
+            if not turn.calls:
+                history.append({"role": "model", "text": turn.text or "(no content)"})
+                history.append({"role": "user", "text": NUDGE.format(expected=expected_tool)})
+                continue
+
+            history.append({"role": "model", "text": turn.text, "calls": turn.calls})
+            responses: list[tuple[str, dict]] = []
+            if len(turn.calls) == 1 and turn.calls[0].name == SUBMIT:
+                got = turn.calls[0].args.get("branch")
+                if expected_branch is not None and got == expected_branch:
+                    return conclude(got, turn.calls[0].args.get("message", ""))
+                responses.append((
+                    SUBMIT,
+                    {"error": WRONG_BRANCH.format(expected=expected_branch, got=got)},
+                ))
+            else:
+                for tool_call in turn.calls:
+                    if tool_call.name == SUBMIT:
+                        responses.append((SUBMIT, {"error": PREMATURE_SUBMIT}))
+                        continue
+                    if tool_call.name != expected_tool:
+                        responses.append((
+                            tool_call.name,
+                            {"error": WRONG_TOOL.format(expected=expected_tool)},
+                        ))
+                        continue
+                    metrics = await call(tool_call.name, tool_call.args)
+                    if "error" in metrics:
+                        responses.append((tool_call.name, metrics))
+                        continue
+                    stage = STAGE_OF[tool_call.name]
+                    verdict = record(policy_module.evaluate(stage, metrics, pol))
+                    stage_metrics[stage] = metrics
+                    if stage == "alignment" and metrics.get("aligned_key"):
+                        image_keys["aligned"] = metrics["aligned_key"]
+                        image_keys["valid_mask"] = metrics["valid_mask_key"]
+                    expected_tool = NEXT_TOOL.get(verdict["branch"], SUBMIT)
+                    expected_branch = verdict["branch"] if expected_tool == SUBMIT else None
+                    responses.append((tool_call.name, {"metrics": metrics, "policy": verdict}))
+            history.append({"role": "tool", "responses": responses})
+            if turn_index == max_turns - 2:
+                history.append({"role": "user", "text": LAST_CHANCE})
+
+    return finish("failed", None, f"no submit within {max_turns} turns")
