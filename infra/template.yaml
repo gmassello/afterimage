@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: afterimage - visual inspection agent with longitudinal memory (Lambda + S3 + DynamoDB)
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: ECR image URI pushed by deploy.sh, e.g. <account>.dkr.ecr.<region>.amazonaws.com/afterimage:<tag>
+  GoogleApiKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: Gemini API key. Empty falls back to the deterministic scripted driver.
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageUri: !Ref ImageUri
+      Architectures: [arm64]
+      MemorySize: 2048
+      Timeout: 900
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          AFTERIMAGE_TABLE: !Ref Table
+          AFTERIMAGE_BUCKET: !Ref Bucket
+          AFTERIMAGE_RUNS_S3: '1'
+          GOOGLE_API_KEY: !Ref GoogleApiKey
+      FunctionUrlConfig:
+        AuthType: NONE
+      PermissionsBoundary: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${AWS::StackName}-permissions-boundary'
+      LoggingConfig:
+        LogGroup: !Ref ApiLogGroup
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref Table
+        - S3CrudPolicy:
+            BucketName: !Ref Bucket
+
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${AWS::StackName}-api'
+      RetentionInDays: 30
+
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref AWS::StackName
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-everything
+            Status: Enabled
+            ExpirationInDays: 60
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+
+  WarmerRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(5 minutes)
+      Targets:
+        - Id: warm-api
+          Arn: !GetAtt ApiFunction.Arn
+          Input: >-
+            {"version":"2.0","routeKey":"$default","rawPath":"/health","rawQueryString":"",
+            "headers":{"accept":"application/json"},"requestContext":{"http":{"method":"GET",
+            "path":"/health","protocol":"HTTP/1.1","sourceIp":"127.0.0.1","userAgent":"warmer"}},
+            "isBase64Encoded":false}
+
+  WarmerPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ApiFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt WarmerRule.Arn
+
+Outputs:
+  FunctionUrl:
+    Description: Public URL of the app
+    Value: !GetAtt ApiFunctionUrl.FunctionUrl

@@ -1,0 +1,39 @@
+name: Deploy
+
+on: workflow_dispatch
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: make test
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Deploy
+        run: ./deploy.sh
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+
+      - name: Why the stack failed
+        if: failure()
+        run: |
+          ID=$(aws cloudformation list-stacks \
+            --query "reverse(sort_by(StackSummaries[?StackName=='afterimage'], &CreationTime))[0].StackId" \
+            --output text)
+          [ "$ID" = "None" ] || aws cloudformation describe-stack-events --stack-name "$ID" \
+            --query "StackEvents[?contains(ResourceStatus,'FAILED')].[LogicalResourceId,ResourceStatusReason]" \
+            --output text

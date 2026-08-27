@@ -18,4 +18,4 @@ eval:
 	@echo "eval: not implemented yet (week 7)" && exit 1
 
 deploy:
-	@echo "deploy: not implemented yet (week 6)" && exit 1
+	./deploy.sh

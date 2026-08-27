@@ -8,7 +8,7 @@ Built for the [OpenCV AI Competition 2026](https://opencv26.devpost.com/) — Ag
 
 ## Architecture
 
-An agentic loop where every OpenCV result changes what the system does next: capture quality gates recapture requests, feature alignment (OpenCV 5 `Features`: ALIKED + LightGlue) anchors the image to the stored baseline of the same asset, diffing against memory triggers active zoom on uncertain regions, and severity gates human approval before any ticket is opened. Perception runs in an arm64 OpenCV 5 container on AWS (ECS Fargate on Graviton), memory lives in DynamoDB + S3, and every decision is emitted as an OpenTelemetry span carrying the numeric value that triggered it.
+An agentic loop where every OpenCV result changes what the system does next: capture quality gates recapture requests, feature alignment (OpenCV 5 `Features`: ALIKED + LightGlue) anchors the image to the stored baseline of the same asset, diffing against memory triggers active zoom on uncertain regions, and severity gates human approval before any ticket is opened. Perception runs in an arm64 OpenCV 5 container on AWS Lambda (Graviton), memory lives in DynamoDB + S3, and every decision is emitted as an event in the per-run trace carrying the numeric value that triggered it.
 
 Full brief and weekly plan: [`docs/BRIEF.md`](docs/BRIEF.md).
 
@@ -30,7 +30,44 @@ make demo      # drive the agent loop through all four action branches locally
 `docker-compose run --rm app python -m services.agent.demo --live` to let Gemini orchestrate the
 same loop over MCP. Either way the branch verdicts are computed in code by the policy.
 
+## Deploy
+
+The app runs as a single arm64 Lambda container image behind a Function URL: FastAPI serves the
+site (upload, asset history, approval queue, trace viewer) and runs the agent loop inside the
+request; run artefacts persist under `runs/` in the app bucket (`AFTERIMAGE_RUNS_S3=1`), so traces
+survive redeploys and cold sandboxes.
+
+One-time bootstrap:
+
+```bash
+# immutable IDs for the OIDC sub claim (already baked into the template default)
+gh api repos/gmassello/afterimage --jq '{repo_id: .id, owner_id: .owner.id}'
+
+aws cloudformation deploy --template-file infra/github-oidc.yaml \
+    --stack-name afterimage-github-oidc --capabilities CAPABILITY_NAMED_IAM
+
+# GitHub: secrets.AWS_ROLE_ARN (RoleArn output above), secrets.GOOGLE_API_KEY, vars.AWS_REGION
+```
+
+Then either run the **Deploy** workflow (Actions → Deploy → run), or locally:
+
+```bash
+GOOGLE_API_KEY=... make deploy   # ECR + docker buildx arm64 + CloudFormation, idempotent
+```
+
+The deploy prints the public URL. Endpoints: `/` (assets + upload), `/assets/{id}` (history),
+`/queue` (human approvals), `/traces/{run_id}` (per-run trace, JSON or HTML), `/health`.
+
 ## Status
+
+Week 6: the public endpoint. The same FastAPI that serves traces now serves the whole product —
+upload a capture and the agent loop runs live (Gemini over MCP, policy verdicts in code), the
+approval queue resolves the human gate, and the asset history shows every inspection and baseline.
+Deployed by IaC (`infra/`) through GitHub OIDC with a permissions boundary; run traces live in S3.
+
+Week 5: observability. Every run persists `runs/{run_id}/events.json` — one span per tool call with
+its arguments, metrics, duration and the policy verdict that the value triggered — served by
+`GET /traces/{run_id}` as JSON or a human-readable page.
 
 Week 4: the agent. `services/mcp_server/` exposes the five perception tools over MCP (images
 travel as S3 keys, never inline), and `services/agent/` runs the loop: an LLM (Gemini) orchestrates

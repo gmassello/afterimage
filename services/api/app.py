@@ -1,20 +1,93 @@
 import os
+import re
+import uuid
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
+from services.agent import hitl, loop
+from services.api import pages
+from services.memory import images, runs, store
 from services.observability.render import load_run, render_html
 from services.observability.trace import RUN_ID_PATTERN
 
+ASSET_ID_PATTERN = re.compile(r"^[a-z0-9-]{1,64}$")
+# ponytail: the Function URL rejects bodies over 6 MB anyway; this guard is for local uvicorn
+MAX_UPLOAD_BYTES = 6 * 1024 * 1024
+
 app = FastAPI(title="afterimage")
+
+
+def _runs_dir() -> Path:
+    return Path(os.environ.get("AFTERIMAGE_RUNS_DIR", "runs"))
+
+
+@app.get("/health")
+def health():
+    return {"ok": True}
+
+
+@app.get("/")
+def index():
+    return HTMLResponse(pages.index_page(store.list_assets()))
+
+
+@app.get("/assets/{asset_id}")
+def asset_history(asset_id: str):
+    if not ASSET_ID_PATTERN.fullmatch(asset_id):
+        raise HTTPException(status_code=404, detail="asset not found")
+    return HTMLResponse(pages.asset_page(asset_id, store.history(asset_id)))
+
+
+@app.post("/inspections")
+async def create_inspection(asset_id: str = Form(...), image: UploadFile = File(...)):
+    if not ASSET_ID_PATTERN.fullmatch(asset_id):
+        raise HTTPException(status_code=400, detail="asset_id must match [a-z0-9-]{1,64}")
+    data = await image.read()
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="image larger than 6 MB")
+    try:
+        capture = images.decode(data)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="not a decodable image")
+    store.put_asset(asset_id)
+    capture_key = images.put_image(asset_id, uuid.uuid4().hex[:12], "capture", capture)
+    result = await loop.run(asset_id, capture_key, runs_dir=_runs_dir())
+    return RedirectResponse(f"/traces/{result.run_id}", status_code=303)
+
+
+@app.get("/queue")
+def queue():
+    return HTMLResponse(pages.queue_page(runs.pending(_runs_dir())))
+
+
+@app.post("/queue/{run_id}/{verdict}")
+def resolve_pending(run_id: str, verdict: str):
+    if verdict not in ("approve", "reject") or not RUN_ID_PATTERN.fullmatch(run_id):
+        raise HTTPException(status_code=404, detail="not found")
+    try:
+        hitl.resolve(_runs_dir() / run_id, approved=verdict == "approve")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="nothing pending for this run")
+    return RedirectResponse("/queue", status_code=303)
+
+
+@app.get("/images/{key:path}")
+def image(key: str):
+    try:
+        images.ids_from_key(key)
+        body = images.get_png(key)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="image not found")
+    return Response(body, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @app.get("/traces/{run_id}")
 def get_trace(run_id: str, request: Request):
     if not RUN_ID_PATTERN.fullmatch(run_id):
         raise HTTPException(status_code=404, detail="trace not found")
-    run_dir = Path(os.environ.get("AFTERIMAGE_RUNS_DIR", "runs")) / run_id
+    run_dir = _runs_dir() / run_id
     state, events = load_run(run_dir)
     if not events:
         raise HTTPException(status_code=404, detail="trace not found")

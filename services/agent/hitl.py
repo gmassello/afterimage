@@ -1,10 +1,8 @@
-import json
 from pathlib import Path
 
 from services.agent import policy
-from services.memory import store
+from services.memory import runs, store
 from services.observability import trace
-from services.observability.trace import write_json
 
 APPROVED = "approved"
 REJECTED = "rejected"
@@ -21,16 +19,15 @@ def commit(asset_id: str, inspection_id: str, captured_at: str, metrics: dict, i
     )
 
 
-def request_approval(run_dir: Path, payload: dict) -> Path:
-    path = Path(run_dir) / "pending.json"
-    write_json(path, payload)
-    return path
+def request_approval(run_dir: Path, payload: dict) -> None:
+    runs.write(run_dir, runs.PENDING, payload)
 
 
 def resolve(run_dir: Path, approved: bool) -> dict:
     run_dir = Path(run_dir)
-    pending_path = run_dir / "pending.json"
-    payload = json.loads(pending_path.read_text())
+    payload = runs.read(run_dir, runs.PENDING)
+    if payload is None:
+        raise FileNotFoundError(run_dir / runs.PENDING)
     if approved:
         commit(
             payload["asset_id"],
@@ -43,13 +40,9 @@ def resolve(run_dir: Path, approved: bool) -> dict:
         "human_approved", 1.0 if approved else 0.0, 1.0, APPROVED if approved else REJECTED
     )
     trace.emit(run_dir, "decision", **record)
-    decisions_path = run_dir / "decisions.json"
-    decisions = json.loads(decisions_path.read_text())
-    decisions.append(record)
-    write_json(decisions_path, decisions)
-    state_path = run_dir / "state.json"
-    state = json.loads(state_path.read_text())
+    runs.append(run_dir, "decisions.json", record)
+    state = runs.read(run_dir, "state.json") or {}
     state["status"] = record["branch"]
-    write_json(state_path, state)
-    pending_path.unlink()
+    runs.write(run_dir, "state.json", state)
+    runs.delete(run_dir, runs.PENDING)
     return record

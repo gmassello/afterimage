@@ -13,10 +13,11 @@ from mcp.client.stdio import stdio_client
 
 from services.agent import hitl
 from services.agent import policy as policy_module
+from services.agent.llm import GeminiLLM
 from services.agent.policy import Policy
-from services.memory import store
+from services.agent.scripted import PolicyFollowingLLM
+from services.memory import runs, store
 from services.observability import trace
-from services.observability.trace import write_json
 from services.perception import alignment
 
 SYSTEM = (
@@ -88,7 +89,7 @@ class RunResult:
 async def run(
     asset_id: str,
     capture_key: str,
-    llm,
+    llm=None,
     policy: Policy | None = None,
     max_turns: int = 12,
     runs_dir: str | Path = "runs",
@@ -97,7 +98,6 @@ async def run(
     run_id = uuid.uuid4().hex[:12]
     captured_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     run_dir = Path(runs_dir) / run_id
-    run_dir.mkdir(parents=True, exist_ok=True)
     trace.emit(run_dir, "run_started", run_id=run_id, asset_id=asset_id, capture_key=capture_key)
 
     decisions: list[dict] = []
@@ -112,7 +112,7 @@ async def run(
 
     def record(decision: dict, span: dict | None = None) -> dict:
         decisions.append(decision)
-        write_json(run_dir / "decisions.json", decisions)
+        runs.write(run_dir, "decisions.json", decisions)
         if span is None:
             trace.emit(run_dir, "decision", **decision)
         else:
@@ -122,7 +122,7 @@ async def run(
     def finish(status: str, branch: str | None, message: str | None = None) -> RunResult:
         trace.emit(run_dir, "run_finished", status=status, branch=branch, message=message)
         state.update(status=status, branch=branch, message=message)
-        write_json(run_dir / "state.json", state)
+        runs.write(run_dir, "state.json", state)
         return RunResult(run_id, status, branch, decisions, run_dir)
 
     def conclude(branch: str, message: str) -> RunResult:
@@ -184,6 +184,12 @@ async def run(
 
         baseline_key = baseline["image_key"]
         detector = alignment.default_detector()
+        if llm is None:
+            llm = (
+                GeminiLLM()
+                if os.environ.get("GOOGLE_API_KEY")
+                else PolicyFollowingLLM(capture_key, baseline_key, detector)
+            )
         listed = (await session.list_tools()).tools
         tools = [
             {"name": t.name, "description": t.description or "", "input_schema": t.input_schema}

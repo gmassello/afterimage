@@ -18,9 +18,11 @@ def _s3():
 
 def ensure_bucket() -> None:
     client = _s3()
+    region = client.meta.region_name
+    kwargs = {} if region in (None, "us-east-1") else {"CreateBucketConfiguration": {"LocationConstraint": region}}
     try:
-        client.create_bucket(Bucket=BUCKET)
-    except client.exceptions.BucketAlreadyOwnedByYou:
+        client.create_bucket(Bucket=BUCKET, **kwargs)
+    except (client.exceptions.BucketAlreadyOwnedByYou, client.exceptions.BucketAlreadyExists):
         pass
 
 
@@ -41,11 +43,22 @@ def ids_from_key(key: str) -> tuple[str, str]:
     return parts[1], parts[2]
 
 
+def decode(data: bytes) -> np.ndarray:
+    image = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError("not a decodable image")
+    return image
+
+
+def get_png(key: str) -> bytes:
+    try:
+        return _s3().get_object(Bucket=BUCKET, Key=key)["Body"].read()
+    except _s3().exceptions.NoSuchKey:
+        raise ValueError(f"s3://{BUCKET}/{key} does not exist")
+
+
 def get_image(key: str) -> np.ndarray:
     if key in _cache:
         return _cache[key]
-    body = _s3().get_object(Bucket=BUCKET, Key=key)["Body"].read()
-    image = cv2.imdecode(np.frombuffer(body, dtype=np.uint8), cv2.IMREAD_COLOR)
-    if image is None:
-        raise ValueError(f"s3://{BUCKET}/{key} is not a decodable image")
+    image = _cache[key] = decode(get_png(key))
     return image

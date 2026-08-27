@@ -3,13 +3,13 @@ import html
 import json
 from pathlib import Path
 
+from services.memory import runs
 from services.observability import trace
 
 
 def load_run(run_dir: Path) -> tuple[dict, list[dict]]:
     run_dir = Path(run_dir)
-    state_path = run_dir / "state.json"
-    state = json.loads(state_path.read_text()) if state_path.exists() else {}
+    state = runs.read(run_dir, "state.json") or {}
     return state, trace.read_events(run_dir)
 
 

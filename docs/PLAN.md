@@ -17,11 +17,11 @@ running **about four weeks ahead**. That margin is real and worth not spending.
 |---|---|---|
 | 1 | Scaffolding — arm64 Docker, OpenCV 5, LocalStack, CI | **closed** |
 | 2 | Perception — the five tools | **closed** |
-| 2.5 | Publish the manual on GitHub Pages | **committed; push and enabling Pages by hand, pending** |
+| 2.5 | Publish the manual on GitHub Pages | **closed** — live at https://gmassello.github.io/afterimage/ |
 | 3 | Memory bank — DynamoDB + S3 | **closed** |
 | 4 | MCP + agentic loop + policy + human gate | **closed** |
 | 5 | Observability — per-run event trace, trace endpoint | **closed** |
-| 6 | AWS deploy + front end + public endpoint | pending |
+| 6 | AWS deploy + front end + public endpoint | **code closed; OIDC bootstrap and first deploy by hand, pending** |
 | 7 | Evaluation — dataset, metrics, failure cases | pending |
 | 8 | Technical report and documentation | pending |
 | 9 | Video, polish, submission | pending |
@@ -129,8 +129,9 @@ container, and two of them moved off the plan's guesses:
 
 The HITL gate is a partition, not a branch: on `human_approval` the loop persists
 `runs/{run_id}/pending.json` and returns `awaiting_approval`; the memory write lives in
-`hitl.resolve()`, reached by `--resume RUN_ID --approve|--reject` or an interactive y/n. Stage 6's
-approval queue is "list `runs/*/pending.json`, call `resolve()`".
+`hitl.resolve()`, reached by `--resume RUN_ID --approve|--reject` or an interactive y/n. Stage 6
+built exactly that queue: `GET /queue` lists the pending payloads (S3 prefix in prod, disk glob
+locally) and `POST /queue/{run_id}/approve|reject` calls `resolve()`.
 
 Facts verified against the binaries, not the docs:
 
@@ -191,6 +192,57 @@ consume it: re-read `events.json`, emit the delta, ~20 lines.
 
 Deps added, pinned: `fastapi==0.141.1`, `uvicorn==0.52.4`, `httpx==0.28.1` (the TestClient
 transport).
+
+### Closed in stage 6
+
+`services/api/` grew from one endpoint to the whole product, `infra/` holds the two stacks, and
+**62 tests green in the arm64 container** (8 new). The public app: `/` (assets + upload),
+`/assets/{id}` (history with baselines), `/queue` (the human gate), `/traces/{run_id}` (unchanged),
+`/health`, `/images/{key}`.
+
+The compute decision, taken against the brief's literal wording: **Lambda container image arm64 +
+Lambda Web Adapter + Function URL, not ECS Fargate.** Same Graviton silicon, near-zero cost, no
+ALB, and the existing Dockerfile gained only two lines (the LWA extension copy and a `CMD`); the
+compose stack is untouched because the extension is inert outside the Lambda runtime. Cold start is
+mitigated by an EventBridge rule that replays a `/health` Function URL event every 5 minutes.
+
+The consequence: `runs/` left the local disk. `services/memory/runs.py` is the single storage seam —
+disk by default (tests, demo, CLI unchanged), S3 under `runs/{run_id}/` in the app bucket when
+`AFTERIMAGE_RUNS_S3=1` (the Lambda env). The env var is read inside each call, never at import —
+the module-level trap that would have frozen the choice at first import. `trace.emit`, the loop,
+`hitl` and the renderers all route through it; traces now survive redeploys and are shared by link.
+
+The judge-facing run is **live Gemini**: `POST /inspections` runs the loop synchronously inside the
+request (BackgroundTasks dies when the Lambda sandbox freezes; the Function URL allows up to 15
+minutes and a live run takes ~30-60 s) and 303-redirects to the trace. Without `GOOGLE_API_KEY`
+the same endpoint falls back to the deterministic `PolicyFollowingLLM` — which is what the endpoint
+tests exercise, no network, no key.
+
+Anti-abuse, deliberately minimal: 8 MB upload cap, `^[a-z0-9-]{1,64}$` on asset ids, and
+`ReservedConcurrentExecutions: 10` as an infra-level rate limit. No auth — Basic Auth breaks the
+video recording (a lesson already paid for).
+
+IaC split: the app stack (`infra/template.yaml`, SAM) owns table, bucket
+(`afterimage-${AccountId}`, 60-day lifecycle so nothing expires inside the judging window), log
+retention and the warmer; `infra/github-oidc.yaml` (one manual deploy, `CAPABILITY_NAMED_IAM`)
+owns the OIDC provider, the deploy role and the permissions boundary scoped to exactly the table
+and bucket. `ensure_table`/`ensure_bucket` remain LocalStack-only — the Lambda role cannot create
+resources, by design. ECR is created idempotently by `deploy.sh`, which also carries recall's
+lessons: credential preflight, `ROLLBACK_COMPLETE` deletion, secrets via a deleted temp file, and
+`--provenance=false` on buildx — **Lambda rejects buildx manifest lists**.
+
+Facts verified against the binaries, not the docs:
+
+- `ensure_bucket()` was broken outside us-east-1 (`create_bucket` needs `CreateBucketConfiguration`
+  there) and only caught `BucketAlreadyOwnedByYou`; fixed for both.
+- FastAPI needs `python-multipart` for `Form`/`File` — added, pinned (`0.0.32`).
+- The sub claim in the OIDC trust policy uses immutable IDs:
+  `repo:gmassello@12966514/afterimage@1344329963:ref:refs/heads/main`.
+
+Deps added, pinned: `python-multipart==0.0.32`.
+
+**Pending by hand**: deploy the OIDC stack, load `secrets.AWS_ROLE_ARN`, `secrets.GOOGLE_API_KEY`
+and `vars.AWS_REGION` in GitHub, run the Deploy workflow, and verify the URL from another network.
 
 ## Stage 2.5 — Publish the manual on GitHub Pages
 
@@ -258,32 +310,21 @@ overflow. Dark theme forced, and no text ends up illegible — that is the class
 page built on colour tokens. Narrowed to phone width: the body does not scroll horizontally and the
 diagram scrolls inside its own container.
 
-⚠️ This is **not** the "working web endpoint" the rubric asks for. That one is the app on AWS, stage 6.
+⚠️ This is **not** the "working web endpoint" the rubric asks for. That one is the app on AWS,
+built in stage 6 (pending its first deploy).
 
 ---
 
-## Stages 6 to 9
+## Stages 7 to 9
 
 Goal and closing condition for each, per `docs/BRIEF.md` §4, plus what is reusable from the author's
-three previous repos (`recall`, `hindsight`, `ringdown`), already reviewed.
+three previous repos (`recall`, `hindsight`, `ringdown`), already reviewed. (Stage 6 was built as
+planned from `recall` and `ringdown` — see "Closed in stage 6".)
 
-### 6 — AWS deploy + front end + public endpoint
-
-ECS Fargate arm64 or equivalent, S3 + DynamoDB, IaC, minimal front end. Closes with a public URL a
-judge can use.
-
-From `recall`: a GitHub OIDC stack **separate from the app stack**, with a permissions boundary — it
-saves half a day, and the trap in the `sub` claim (GitHub emits immutable IDs, not names) is
-documented. Plus an idempotent `deploy.sh`: credential preflight, detecting and deleting a stack in
-`ROLLBACK_COMPLETE`, arm64 build.
-
-From `ringdown`: the entire front end is 123 lines of FastAPI returning HTML, with 13 of CSS and a
-3-line auto-refresh. For "history + approval queue" that is literally enough.
-
-⚠️ **The endpoint cannot go to sleep.** Judging runs from 27 October to 9 November and a judge will
-open the link. Budget AWS through 10 November.
-⚠️ **No Basic Auth**: it opens a native dialog that blocks browser automation, and that breaks both
-the video recording and any screenshot.
+⚠️ Standing rules for the endpoint, still in force through judging: **it cannot go to sleep**
+(judging runs 27 October – 9 November; budget AWS through 10 November) and **no Basic Auth**
+(it opens a native dialog that blocks browser automation, breaking the video recording and any
+screenshot).
 
 ### 7 — Evaluation
 

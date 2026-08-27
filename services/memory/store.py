@@ -4,7 +4,7 @@ from decimal import Decimal
 from functools import lru_cache
 
 import boto3
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Attr, Key
 
 TABLE = os.environ.get("AFTERIMAGE_TABLE", "afterimage")
 
@@ -114,6 +114,12 @@ def current_baseline(asset_id: str) -> dict | None:
         Limit=1,
     )["Items"]
     return _plain(items[0]) if items else None
+
+
+def list_assets() -> list[dict]:
+    # ponytail: full table scan; fine at demo scale, add an index if assets pass a few thousand
+    items = _table().scan(FilterExpression=Attr("sk").eq(META))["Items"]
+    return sorted((_plain(item) for item in items), key=lambda item: item["asset_id"])
 
 
 def history(asset_id: str) -> list[dict]:

@@ -15,9 +15,9 @@ Status: `done` · `wip` · `todo`
 | Technical execution | 30% | OpenCV 5 `Features` used substantively — ALIKED + LightGlue align each capture to the stored baseline of the same asset; green suite on arm64 | `services/perception/alignment.py`, `services/perception/tests/` | wip |
 | Innovation | 20% | **Longitudinal memory.** No previous winner kept state across inspections of the same asset; every prior project analyses one frame or one session. A second inspection retrieves the baseline from memory, aligns to it and locates the new defect | `services/memory/`, `services/memory/tests/test_longitudinal.py`, `docs/TECHNICAL_REPORT.md`, video 1:30–3:15 | wip |
 | Real-world impact | 20% | Preventive maintenance of solar plants, with numbers: assets per site, cost of manual inspection, what the agent saves | `docs/TECHNICAL_REPORT.md` | todo |
-| User experience | 10% | Approval queue and asset history legible without explanation | public endpoint | todo |
+| User experience | 10% | Approval queue and asset history legible without explanation | public endpoint (`/`, `/queue`, `/assets/{id}`) | wip |
 | Documentation and presentation | 10% | README, technical report, both diagrams | `README.md`, `docs/` | wip |
-| Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, per-run event traces | `infra/`, `requirements.txt` | todo |
+| Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, per-run event traces | `infra/template.yaml`, `infra/github-oidc.yaml`, `deploy.sh`, `requirements.txt` | wip |
 
 ## Agentic Vision Award
 
@@ -63,7 +63,10 @@ each one is compared against, is the policy's business.
 - [ ] 2. Repository accessible to judges (public, or private with access granted)
 - [x] 3. Exact pins in `requirements.txt` and build/run instructions that work on a clean machine
 - [ ] 4. Two diagrams: infrastructure **and** the agent loop — the second is mandatory for the award
-- [ ] 5. Public web endpoint, no login or with demo credentials in the report
+- [ ] 5. Public web endpoint, no login or with demo credentials in the report — built (Lambda
+      container + Function URL, no auth); pending the OIDC bootstrap and first deploy, then paste
+      the URL here. Judge's path: `/` → upload a capture → the live trace → `/queue` to approve →
+      `/assets/{id}` for the longitudinal history
 - [ ] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted
 - [ ] 7. Evaluation evidence in `eval/results/` and `docs/EVALUATION.md`, **including failure cases**
 

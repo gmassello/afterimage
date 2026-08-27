@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: GitHub Actions OIDC provider and deploy role for the afterimage stack
+
+Parameters:
+  GitHubSubject:
+    Type: String
+    Default: repo:gmassello@12966514/afterimage@1344329963:ref:refs/heads/main
+    Description: >-
+      OIDC sub claim of the runs allowed to assume the role. GitHub emits immutable owner and
+      repository IDs, not names - read them with
+      `gh api repos/OWNER/REPO --jq '{repo_id:.id, owner_id:.owner.id}'` instead of composing
+      the claim by hand.
+  AppStackName:
+    Type: String
+    Default: afterimage
+    Description: Must match STACK_NAME in deploy.sh - it scopes the IAM permissions.
+
+Resources:
+  PermissionsBoundary:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${AppStackName}-permissions-boundary'
+      Description: >-
+        Ceiling for every role the deploy creates. A role carrying this boundary can never
+        exceed what the afterimage Lambda actually needs, no matter what policies get attached.
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: !Sub 'arn:aws:logs:*:${AWS::AccountId}:*'
+          - Effect: Allow
+            Action: dynamodb:*
+            Resource: !Sub 'arn:aws:dynamodb:*:${AWS::AccountId}:table/${AppStackName}'
+          - Effect: Allow
+            Action: s3:*
+            Resource:
+              - !Sub 'arn:aws:s3:::${AppStackName}-${AWS::AccountId}'
+              - !Sub 'arn:aws:s3:::${AppStackName}-${AWS::AccountId}/*'
+
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: afterimage-github-deploy
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Ref GitHubSubject
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/PowerUserAccess
+      Policies:
+        - PolicyName: sam-managed-roles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:PutRolePermissionsBoundary
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AppStackName}-*'
+                Condition:
+                  StringEquals:
+                    iam:PermissionsBoundary: !Ref PermissionsBoundary
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AppStackName}-*'
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: lambda.amazonaws.com
+              - Effect: Allow
+                Action:
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:GetRolePolicy
+                  - iam:ListRolePolicies
+                  - iam:ListAttachedRolePolicies
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/${AppStackName}-*'
+
+Outputs:
+  RoleArn:
+    Description: Value for the AWS_ROLE_ARN secret in GitHub
+    Value: !GetAtt DeployRole.Arn
