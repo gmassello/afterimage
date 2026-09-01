@@ -74,7 +74,7 @@ Resources:
         Rules:
           - Id: expire-everything
             Status: Enabled
-            ExpirationInDays: 60
+            ExpirationInDays: 180
             AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 7
 

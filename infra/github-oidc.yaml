@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: GitHub Actions OIDC provider and deploy role for the afterimage stack
+Description: GitHub Actions deploy role for the afterimage stack
 
 Parameters:
   GitHubSubject:
@@ -9,7 +9,7 @@ Parameters:
       OIDC sub claim of the runs allowed to assume the role. GitHub emits immutable owner and
       repository IDs, not names - read them with
       `gh api repos/OWNER/REPO --jq '{repo_id:.id, owner_id:.owner.id}'` instead of composing
-      the claim by hand.
+      the claim by hand. The sibling `recall` stack deploys green with this exact shape.
   AppStackName:
     Type: String
     Default: afterimage
@@ -41,12 +41,6 @@ Resources:
               - !Sub 'arn:aws:s3:::${AppStackName}-${AWS::AccountId}'
               - !Sub 'arn:aws:s3:::${AppStackName}-${AWS::AccountId}/*'
 
-  GitHubOidcProvider:
-    Type: AWS::IAM::OIDCProvider
-    Properties:
-      Url: https://token.actions.githubusercontent.com
-      ClientIdList: [sts.amazonaws.com]
-
   DeployRole:
     Type: AWS::IAM::Role
     Properties:
@@ -56,7 +50,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              Federated: !Ref GitHubOidcProvider
+              Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
             Action: sts:AssumeRoleWithWebIdentity
             Condition:
               StringEquals:
