@@ -6,8 +6,8 @@ Visual inspection agent with longitudinal memory for the OpenCV AI Competition 2
 The competition's week-by-week plan lives in `docs/BRIEF.md` §4. This file is the living state: what
 is closed, what comes next, and the detail of the stages that already have a design.
 
-**Stage 5 closed on 26 August**, the day the brief's calendar starts week 1, so the project is
-running **about four weeks ahead**. That margin is real and worth not spending.
+**Stage 6 closed on 2 September** against a brief that schedules it for 30 September – 6 October, so
+the project is running **about four weeks ahead**. That margin is real and worth not spending.
 
 ---
 
@@ -21,7 +21,7 @@ running **about four weeks ahead**. That margin is real and worth not spending.
 | 3 | Memory bank — DynamoDB + S3 | **closed** |
 | 4 | MCP + agentic loop + policy + human gate | **closed** |
 | 5 | Observability — per-run event trace, trace endpoint | **closed** |
-| 6 | AWS deploy + front end + public endpoint | **code closed; OIDC bootstrap and first deploy by hand, pending** |
+| 6 | AWS deploy + front end + public endpoint | **closed** — live at https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ |
 | 7 | Evaluation — dataset, metrics, failure cases | pending |
 | 8 | Technical report and documentation | pending |
 | 9 | Video, polish, submission | pending |
@@ -148,7 +148,8 @@ Facts verified against the binaries, not the docs:
   (`solar_panel(seed=99, rows=4, cols=7, cell=80)`); a different seed with the same grid aligns at
   0.99+ because the cell layout is the feature.
 
-Deps added, pinned: `mcp==2.1.1`, `google-genai==2.20.0`. Model default `gemini-2.5-flash`,
+Deps added, pinned: `mcp==2.1.1`, `google-genai==2.20.0`. Model default `gemini-3.6-flash` (it was `gemini-2.5-flash`
+until the stage-6 deploy hit its retirement — see "Closed in stage 6"),
 overridable via `AFTERIMAGE_GEMINI_MODEL`; tests and the default demo use scripted drivers
 (`ScriptedLLM`, `PolicyFollowingLLM`) — no network, no key, deterministic. `--live` switches the
 same loop to the real API.
@@ -218,7 +219,7 @@ minutes and a live run takes ~30-60 s) and 303-redirects to the trace. Without `
 the same endpoint falls back to the deterministic `PolicyFollowingLLM` — which is what the endpoint
 tests exercise, no network, no key.
 
-Anti-abuse, deliberately minimal: 8 MB upload cap, `^[a-z0-9-]{1,64}$` on asset ids, and
+Anti-abuse, deliberately minimal: 6 MB upload cap (`services/api/app.py`, the Function URL body limit), `^[a-z0-9-]{1,64}$` on asset ids, and
 `ReservedConcurrentExecutions: 10` as an infra-level rate limit. No auth — Basic Auth breaks the
 video recording (a lesson already paid for).
 
@@ -241,8 +242,74 @@ Facts verified against the binaries, not the docs:
 
 Deps added, pinned: `python-multipart==0.0.32`.
 
-**Pending by hand**: deploy the OIDC stack, load `secrets.AWS_ROLE_ARN`, `secrets.GOOGLE_API_KEY`
-and `vars.AWS_REGION` in GitHub, run the Deploy workflow, and verify the URL from another network.
+### Deployed — what the first deploy cost, in facts
+
+Live at **<https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/>** in account `236058984017`
+(the same one `recall` uses), us-east-1, deployed 2 September from GitHub Actions over OIDC. The
+bootstrap ran once by hand from CloudShell, so no AWS credential ever touched a local disk.
+
+Four things only a real deploy could have found. The first two were caught before spending a
+deploy, by reading the account instead of trusting the template:
+
+- ⚠️ **The OIDC provider already existed.** `recall/infra/github-oidc.yaml` creates
+  `AWS::IAM::OIDCProvider` for `token.actions.githubusercontent.com`, and AWS allows exactly one
+  per URL per account. The resource left this template; the role now references the deterministic
+  ARN `arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com`.
+- ⚠️ **The S3 lifecycle expired inside the judging window.** `ExpirationInDays: 60` from a
+  2 September deploy deletes everything on 31 October — judging runs 27 October to 9 November, so
+  the demo baselines and traces would have vanished mid-evaluation. Now 180.
+- ⚠️ **`ReservedConcurrentExecutions: 10` cannot be set in this account.** Its Lambda quota *is* 10
+  concurrent executions and AWS refuses to reserve any while keeping 10 unreserved, so no value is
+  valid. Dropped: the account limit already imposes the same ceiling the property was buying.
+- ⚠️ **`gemini-2.5-flash` is retired for new users** (`404 NOT_FOUND`, "Please update your code to
+  use models/gemini-3.6-flash"). Migrating the default surfaced the real bug below.
+
+#### The bug the deploy found
+
+⚠️ **Gemini 3.x signs every `functionCall` it emits, and the loop threw the signature away.**
+`llm._content()` rebuilt each model turn with `types.Part.from_function_call(name, args)` — which
+carries no signature — so the next request came back `400 INVALID_ARGUMENT: Function call is
+missing a thought_signature in functionCall parts`. It never appeared under `gemini-2.5-flash`,
+which signs nothing; it is structural to thinking models and would have broken every multi-turn run.
+
+The fix travels through data, like the policy verdict does: `ToolCall` gained
+`thought_signature: bytes | None`, `generate()` reads `part.thought_signature` off the response and
+`_content()` assigns it back onto the rebuilt part. Verified against the SDK, not the docs: the
+field is `Part.thought_signature` (`bytes`), `from_function_call()` does not accept it, and the
+round trip serialises `{function_call, thought_signature}` to the wire.
+
+#### Verified against the public URL, not localhost
+
+Six of the seven branches, driven by real Gemini and real captures over HTTPS:
+
+| branch | the number that triggered it |
+|---|---|
+| `first_baseline` | `baseline_exists` 0 vs 1 |
+| `recapture` (ACTION 1) | `blur_variance` 1.77 vs 100 |
+| `aligned` | `inlier_ratio` 1.0 vs 0.90 — ALIKED + LightGlue, 23.3 s on Graviton |
+| `change_confirmed` → `human_approval` (ACTION 4) | `mean_delta` 60.65 vs 35, then `score` 0.449 vs 0.40 |
+| resolved gate | `human_approved` 1.0 → `approved` |
+| `auto_write` | `score` 0.285 vs 0.40 |
+| `no_change` | `changed_ratio` 0.0002 |
+
+`blur_variance` read 368.5 on a clean panel against the 367.6 measured on fixtures in stage 2 —
+OpenCV 5 behaves identically on Graviton. And the trace of each run was read back by a **different**
+Lambda invocation than the one that wrote it, which is what proves `AFTERIMAGE_RUNS_S3=1` works.
+
+⚠️ **`crop_and_rescan` (ACTION 3) was not reproduced against the endpoint.** It needs a change large
+enough for the diff to find a region but with `mean_delta` under 35, and four fixtures at
+`with_faint_spot` deltas 10, 16 and 22 landed on either side (`changed_ratio` 0.0 / 0.0002, or
+`mean_delta` 39.5). The branch is green in the stage-4 tests; finding the fixture that reproduces it
+live belongs to stage 7, which is where the `severity.py` heuristic gets calibrated anyway.
+
+**Cost, measured rather than estimated.** Cost Explorer over the account: $0 in June, $0.0020 in
+July, **$0.0138 in August** with `recall` running the whole month. afterimage is the first
+container-image workload in the account — there was no ECR repository at all — so it adds roughly
+$1/month, nearly all of it ECR storage for the ~2 GB arm64 image under the 5-image lifecycle.
+Lambda itself stays inside the perpetual free tier: the 5-minute warmer burns ~1,700 GB-s a month
+against 400,000 free.
+
+**Still pending**: open the URL from another network (mobile data, not WiFi).
 
 ## Stage 2.5 — Publish the manual on GitHub Pages
 

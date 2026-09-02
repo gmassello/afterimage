@@ -4,6 +4,8 @@ A visual inspection agent that remembers. It inspects physical assets from photo
 
 Built for the [OpenCV AI Competition 2026](https://opencv26.devpost.com/) — Agentic Vision path.
 
+**[Try the live agent](https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/)** — upload a capture, watch the loop decide, read the trace. No login.
+
 **[Read the field manual](https://gmassello.github.io/afterimage/)** — a plain-language walkthrough of what the agent measures, what it decides, and why.
 
 ## Architecture

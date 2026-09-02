@@ -54,7 +54,7 @@ each one is compared against, is the policy's business.
 |---|---|---|
 | ACTION 1 — request recapture | `blur_variance` | falls under `GaussianBlur` |
 | ACTION 2 — retry with another detector / unrecognized asset | `inlier_ratio` | 0.997 same panel vs 0.407 different panel (ALIKED) |
-| ACTION 3 — crop and rescan | `area_ratio` | 0.0008 of the frame → 0.68 of the crop, measured with 4× the pixels |
+| ACTION 3 — crop and rescan | `area_ratio` | 0.0008 of the frame → 0.68 of the crop, measured with 4× the pixels. ⚠️ Green in tests; **not yet reproduced against the public endpoint** — see stage 7 |
 | ACTION 4 — request human approval | `score` | rises with the magnitude of the change |
 
 ## Deliverables
@@ -63,16 +63,19 @@ each one is compared against, is the policy's business.
 - [ ] 2. Repository accessible to judges (public, or private with access granted)
 - [x] 3. Exact pins in `requirements.txt` and build/run instructions that work on a clean machine
 - [ ] 4. Two diagrams: infrastructure **and** the agent loop — the second is mandatory for the award
-- [ ] 5. Public web endpoint, no login or with demo credentials in the report — built (Lambda
-      container + Function URL, no auth); pending the OIDC bootstrap and first deploy, then paste
-      the URL here. Judge's path: `/` → upload a capture → the live trace → `/queue` to approve →
-      `/assets/{id}` for the longitudinal history
+- [x] 5. Public web endpoint, no login — **<https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/>**
+      (Lambda container on Graviton + Function URL, no auth). Judge's path: `/` → upload a capture →
+      the live trace → `/queue` to approve → `/assets/{id}` for the longitudinal history.
+      Deployed 2 September from GitHub Actions over OIDC; every branch below was walked against
+      this URL, not against localhost
 - [ ] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted
 - [ ] 7. Evaluation evidence in `eval/results/` and `docs/EVALUATION.md`, **including failure cases**
 
 ## Final checklist
 
-- [ ] Endpoint tested from another network, and budgeted to stay alive until 10 November (judging runs 27 Oct – 9 Nov)
+- [ ] Endpoint tested from another network, and budgeted to stay alive until 10 November (judging runs 27 Oct – 9 Nov).
+      Cost measured, not estimated: the account billed $0.0138 in August with the sibling `recall` stack running all month;
+      afterimage adds ~$1/month, almost all of it ECR storage for the 2 GB arm64 image
 - [ ] No credentials anywhere in git history
 - [ ] The trace linked from the report
 - [ ] Video recorded against the public URL, not localhost
