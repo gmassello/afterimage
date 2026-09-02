@@ -29,7 +29,7 @@ the visual evidence must change what the system does next."*
 |---|---|---|---|---|
 | OpenCV 5 + agent integration | 30% | Five perception tools exposed over MCP; every one returns the numeric metrics the agent branches on | `services/perception/`, `services/mcp_server/server.py` | done |
 | Orchestration and appropriate autonomy | 25% | Four branches that actually fire: recapture, retry with another detector, zoom on an uncertain region, ask a human — `make demo` drives all four; every decision recorded as `{input_metric, value, threshold, branch}` | `services/agent/loop.py`, `services/agent/policy.py`, `services/agent/tests/test_loop.py` | done |
-| Task effectiveness and evaluation | 20% | Precision and recall on the evaluation set, **including failure cases** | `docs/EVALUATION.md`, `eval/results/` | todo |
+| Task effectiveness and evaluation | 20% | 23 scenarios, 12 of them on real photographs: branch accuracy 0.8696, defect macro F1 0.9513, mean IoU 0.8258, and three failure cases analysed to root cause | `docs/EVALUATION.md`, `eval/results/latest/` | done |
 | Failure handling, observability, security, human control | 15% | One span per tool call carrying args, metrics, duration and the verdict that the value triggered, persisted per run and served as JSON or a human-readable page | `services/observability/`, `services/api/app.py`, `GET /traces/{run_id}` | done |
 | UX and documentation | 10% | Agent loop diagram plus the trace viewer | `docs/AGENT_LOOP.md`, `GET /traces/{run_id}` with `Accept: text/html` | wip |
 
@@ -54,7 +54,7 @@ each one is compared against, is the policy's business.
 |---|---|---|
 | ACTION 1 — request recapture | `blur_variance` | falls under `GaussianBlur` |
 | ACTION 2 — retry with another detector / unrecognized asset | `inlier_ratio` | 0.997 same panel vs 0.407 different panel (ALIKED) |
-| ACTION 3 — crop and rescan | `area_ratio` | 0.0008 of the frame → 0.68 of the crop, measured with 4× the pixels. ⚠️ Green in tests; **not yet reproduced against the public endpoint** — see stage 7 |
+| ACTION 3 — crop and rescan | `area_ratio` | 0.0008 of the frame → 0.68 of the crop, measured with 4× the pixels. Reproduced against the public endpoint on 2 September: `mean_delta` 33.3427 vs 35.0 → `crop_and_rescan`, then `area_ratio` 0.1702 vs 0.02 ([live trace](https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/traces/90472757e472)) |
 | ACTION 4 — request human approval | `score` | rises with the magnitude of the change |
 
 ## Deliverables
@@ -69,7 +69,10 @@ each one is compared against, is the policy's business.
       Deployed 2 September from GitHub Actions over OIDC; every branch below was walked against
       this URL, not against localhost
 - [ ] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted
-- [ ] 7. Evaluation evidence in `eval/results/` and `docs/EVALUATION.md`, **including failure cases**
+- [x] 7. Evaluation evidence in `eval/results/latest/` and `docs/EVALUATION.md`, **including failure cases** —
+      23 scenarios (11 synthetic, 12 on licensed real photographs), branch accuracy 0.8696, defect macro F1 0.9513.
+      Three failures analysed to root cause, and `eval/tests/test_published_numbers.py` fails CI if the page and
+      the artefact disagree
 
 ## Final checklist
 
@@ -85,7 +88,11 @@ each one is compared against, is the policy's business.
 Written as we go, not the night before. Admitting a limit costs less than a judge finding it.
 
 - Defect classification is a threshold heuristic over OpenCV features, not a trained classifier.
-  Thresholds are calibrated on synthetic fixtures; see `services/perception/severity.py`.
+  Stage 7 measured it rather than assuming: macro F1 0.9513 with precision 1.0 on all four classes,
+  so no classifier is warranted. See `docs/EVALUATION.md`.
+- `severity.score` is `mean_delta / 64.0` and ignores the label the classifier just produced, so a
+  defect covering a small area can score under the approval threshold and be written automatically —
+  measured once, at 0.3412 vs 0.40, on a real photograph.
 - `crop_and_rescan` re-measures the same capture at higher resolution. It buys measurement
   precision on a marginal region, not new optical detail — it cannot resolve what the original
   capture never recorded.
@@ -95,11 +102,14 @@ Written as we go, not the night before. Admitting a limit costs less than a judg
 - Frame coverage is estimated from the bounding box of the largest edge contour, which will misread
   panels against cluttered backgrounds.
 - Alignment costs ~1.5 s per pair on CPU. The DNN engine in OpenCV 5 has no GPU support.
-- The frame-coverage quality check is disabled by default (`coverage_ratio_min=0.0`): the contour
-  heuristic reads ~0 on synthetic fixtures. On real captures it must be re-enabled via env and
-  recalibrated.
+- The frame-coverage quality check is disabled by default (`coverage_ratio_min=0.0`). Stage 7
+  measured it on real photographs: healthy captures span 0.0032 to 0.6357, a 200-fold spread, so no
+  single global default works. It is a per-deployment setting, calibrated from a sample of that
+  site's own captures.
 - Policy thresholds (`blur_variance_min=100`, `mean_delta_confirm=35`, `severity_score_approve=0.4`)
-  are calibrated on synthetic fixtures, like the severity heuristic they gate.
+  were calibrated on synthetic fixtures and then checked against 12 real photographs in stage 7.
+  `mean_delta_confirm` leaves the zoom branch a two-point-wide window (33.34 and 34.37 enter it,
+  35.54 does not), which is narrow but reproducible on demand.
 - Tests and the default demo drive the loop with a scripted policy-following LLM; `--live` runs the
   same loop against Gemini. The branch verdicts are computed in code either way — the LLM cannot
   override a policy verdict, so determinism of the decisions does not depend on the model.

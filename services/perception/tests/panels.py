@@ -3,6 +3,8 @@ import numpy as np
 
 
 ROWS, COLS, CELL, BORDER = 6, 10, 60, 20
+FAINT_SPOT_FRACTION = 0.35
+HOTSPOT_RADIUS_FRACTION = 1 / 3
 
 
 def solar_panel(seed: int = 0, rows: int = ROWS, cols: int = COLS, cell: int = CELL) -> np.ndarray:
@@ -38,34 +40,51 @@ def contains(bbox: tuple[int, int, int, int], point: tuple[int, int]) -> bool:
     return x <= point[0] < x + width and y <= point[1] < y + height
 
 
-def with_crack(panel: np.ndarray, row: int, col: int) -> np.ndarray:
-    damaged = panel.copy()
-    x, y, width, height = cell_bbox(row, col)
+def crack_at(image: np.ndarray, bbox: tuple[int, int, int, int]) -> np.ndarray:
+    damaged = image.copy()
+    x, y, width, height = bbox
     damaged[y : y + height, x : x + width] //= 3
     cv2.line(damaged, (x + 2, y + 2), (x + width - 2, y + height - 2), (10, 10, 10), 2)
     return damaged
 
 
-def with_hotspot(panel: np.ndarray, row: int, col: int) -> np.ndarray:
-    damaged = panel.copy()
-    x, y, width, height = cell_bbox(row, col)
-    cv2.circle(damaged, (x + width // 2, y + height // 2), width // 3, (200, 210, 235), -1)
+def hotspot_at(image: np.ndarray, bbox: tuple[int, int, int, int]) -> np.ndarray:
+    damaged = image.copy()
+    x, y, width, height = bbox
+    radius = int(width * HOTSPOT_RADIUS_FRACTION)
+    cv2.circle(damaged, (x + width // 2, y + height // 2), radius, (200, 210, 235), -1)
     return damaged
 
 
-def with_delamination(panel: np.ndarray, row: int, col: int) -> np.ndarray:
-    damaged = panel.copy()
-    x, y, width, height = cell_bbox(row, col)
+def delamination_at(image: np.ndarray, bbox: tuple[int, int, int, int]) -> np.ndarray:
+    damaged = image.copy()
+    x, y, width, height = bbox
     damaged[y : y + height, x : x + width] = (40, 170, 200)
     return damaged
 
 
-def with_faint_spot(panel: np.ndarray, row: int, col: int, delta: int = 22) -> np.ndarray:
-    damaged = panel.copy()
-    x, y, width, height = cell_bbox(row, col)
-    patch = damaged[y : y + int(height * 0.35), x : x + int(width * 0.35)]
+def faint_spot_at(image: np.ndarray, bbox: tuple[int, int, int, int], delta: int = 22) -> np.ndarray:
+    damaged = image.copy()
+    x, y, width, height = bbox
+    patch = damaged[y : y + int(height * FAINT_SPOT_FRACTION), x : x + int(width * FAINT_SPOT_FRACTION)]
     patch[:] = np.clip(patch.astype(np.int16) - delta, 0, 255).astype(np.uint8)
     return damaged
+
+
+def with_crack(panel: np.ndarray, row: int, col: int) -> np.ndarray:
+    return crack_at(panel, cell_bbox(row, col))
+
+
+def with_hotspot(panel: np.ndarray, row: int, col: int) -> np.ndarray:
+    return hotspot_at(panel, cell_bbox(row, col))
+
+
+def with_delamination(panel: np.ndarray, row: int, col: int) -> np.ndarray:
+    return delamination_at(panel, cell_bbox(row, col))
+
+
+def with_faint_spot(panel: np.ndarray, row: int, col: int, delta: int = 22) -> np.ndarray:
+    return faint_spot_at(panel, cell_bbox(row, col), delta)
 
 
 def with_soiling(panel: np.ndarray) -> np.ndarray:

@@ -8,6 +8,10 @@ Built for the [OpenCV AI Competition 2026](https://opencv26.devpost.com/) — Ag
 
 **[Read the field manual](https://gmassello.github.io/afterimage/)** — a plain-language walkthrough of what the agent measures, what it decides, and why.
 
+**[Read the evaluation](docs/EVALUATION.md)** — 23 scenarios, 12 of them on real photographs of solar
+modules. Branch accuracy **0.8696**, defect macro F1 **0.9513**, mean IoU **0.8258** — and the three
+cases where it fails, each traced to a root cause. Reproduce with `make eval`.
+
 ## Architecture
 
 An agentic loop where every OpenCV result changes what the system does next: capture quality gates recapture requests, feature alignment (OpenCV 5 `Features`: ALIKED + LightGlue) anchors the image to the stored baseline of the same asset, diffing against memory triggers active zoom on uncertain regions, and severity gates human approval before any ticket is opened. Perception runs in an arm64 OpenCV 5 container on AWS Lambda (Graviton), memory lives in DynamoDB + S3, and every decision is emitted as an event in the per-run trace carrying the numeric value that triggered it.
@@ -26,6 +30,7 @@ make weights   # download the ALIKED and LightGlue ONNX models into models/ (52 
 make dev       # build the image and start the full local stack (LocalStack S3 + DynamoDB)
 make test      # run the test suite inside the container
 make demo      # drive the agent loop through all four action branches locally
+make eval      # score the agent over eval/dataset/scenarios.json, writing eval/results/latest/
 ```
 
 `make demo` uses a scripted driver by default; add `GOOGLE_API_KEY` to the environment and run

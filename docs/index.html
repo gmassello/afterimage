@@ -998,9 +998,8 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
     <div class="sec-head"><span class="marker">12</span><h2>Where the project stands</h2></div>
     <div class="col">
       <p>
-        Week 5 of 9. The loop closes and explains itself: perception, memory, the agent that drives
-        them, and the trace that proves every decision are built and tested. What remains is making
-        it public and measured against an evaluation set.
+        Week 7 of 9. The loop closes, explains itself, runs in public and now has a score. What
+        remains is the written report and the video.
       </p>
     </div>
 
@@ -1015,8 +1014,8 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
           <tr><td>Memory bank — baselines in S3 and DynamoDB</td><td><span class="pill done">built</span></td><td class="num lo">3</td></tr>
           <tr><td>MCP server, agent loop, human gate</td><td><span class="pill done">built</span></td><td class="num lo">4</td></tr>
           <tr><td>Per-run event trace, trace endpoint</td><td><span class="pill done">built</span></td><td class="num lo">5</td></tr>
-          <tr><td>AWS deploy, public endpoint, front end</td><td><span class="pill todo">not yet</span></td><td class="num lo">6</td></tr>
-          <tr><td>Evaluation set, metrics, failure cases</td><td><span class="pill todo">not yet</span></td><td class="num lo">7</td></tr>
+          <tr><td>AWS deploy, public endpoint, front end</td><td><span class="pill done">built</span></td><td class="num lo">6</td></tr>
+          <tr><td>Evaluation set, metrics, failure cases</td><td><span class="pill done">built</span></td><td class="num lo">7</td></tr>
         </tbody>
       </table>
     </div>
@@ -1028,23 +1027,29 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
       <ul class="plain">
         <li>
           Defect classification is a threshold heuristic over OpenCV features, not a trained
-          classifier, and the thresholds are calibrated on synthetic fixtures rather than field
-          photographs.
+          classifier. Week 7 measured it on 23 scenarios, twelve of them real photographs of solar
+          modules: macro F1 0.9513, with precision 1.0 on all four defect classes. The heuristic
+          holds, so no classifier was built — but every lesion in that set was injected by us, so
+          this measures robustness on real texture, not field detection rates.
         </li>
         <li>
           <code>inlier_ratio</code> is not comparable across detectors, so the policy holds one
           threshold per detector — 0.90 for the neural pair, 0.30 for ORB — never a shared one.
         </li>
         <li>
-          Frame coverage is estimated from the bounding box of the largest edge contour, which
-          misreads panels against cluttered backgrounds — and reads near zero on the synthetic
-          fixtures, so that quality check ships disabled by default until it is recalibrated on
-          field photographs.
+          Frame coverage is estimated from the bounding box of the largest edge contour, and week 7
+          showed why that check still ships disabled: across healthy real photographs it reads
+          anywhere from 0.0032 to 0.6357, a two-hundred-fold spread on images that are all perfectly
+          usable. No single default separates a good capture from a badly framed one, so it stays a
+          per-site setting rather than a promise.
         </li>
         <li>
-          Every policy threshold is calibrated on synthetic fixtures, like the severity heuristic
-          those thresholds gate. Field photographs will move them; that is what the evaluation week
-          is for.
+          The agent scores 0.8696 on picking the right branch, and it never once asked a human to
+          look at something that did not warrant it. It fails in three ways worth knowing: a
+          half-framed photo gets rejected for the wrong reason, a very bright defect can trip the
+          exposure check before anyone looks at the defect itself, and a small but serious defect can
+          be filed automatically instead of escalated, because severity scores how much changed and
+          ignores what its own classifier just called it.
         </li>
         <li>
           <code>crop_and_rescan</code> buys measurement precision on a marginal region. It cannot
@@ -1056,7 +1061,7 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
   </section>
 
   <footer>
-    afterimage · week 5 of 9 · every number on this page came from a run, not an estimate
+    afterimage · week 7 of 9 · every number on this page came from a run, not an estimate
   </footer>
 
 </div>

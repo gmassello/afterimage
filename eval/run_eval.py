@@ -1,0 +1,196 @@
+import argparse
+import asyncio
+import json
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+from eval import metrics as metrics_module
+from eval import scenarios as scenarios_module
+from services.agent import loop
+from services.agent.scripted import PolicyFollowingLLM, seed_baseline
+from services.memory import images, store
+from services.observability import trace
+from services.perception import alignment
+
+NO_DEFECT = "NONE"
+
+
+def _severity_label(events) -> str:
+    for event in events:
+        if event.get("tool") == "classify_severity":
+            return event["metrics"]["label"]
+    return NO_DEFECT
+
+
+def _quality_metrics(events) -> dict:
+    for event in events:
+        if event.get("tool") == "assess_quality":
+            return event["metrics"]
+    return {}
+
+
+def _located_bbox(decisions) -> list | None:
+    boxes = [d["extra"]["bbox"] for d in decisions if "extra" in d and "bbox" in d["extra"]]
+    return boxes[-1] if boxes else None
+
+
+def _deciding_number(decisions) -> str:
+    if not decisions:
+        return "no decision recorded"
+    last = decisions[-1]
+    return f"{last['input_metric']} {last['value']} vs {last['threshold']}"
+
+
+def run_scenario(scenario: dict, runs_dir: Path) -> dict:
+    baseline, capture, truth_bbox = scenarios_module.materialise(scenario)
+    asset = f"eval-{scenario['id']}-{uuid.uuid4().hex[:6]}"
+    baseline_key = None
+    if scenario.get("seed_baseline", True):
+        baseline_key = seed_baseline(asset, baseline)
+    else:
+        store.put_asset(asset)
+    capture_key = images.put_image(asset, "capture", "capture", capture)
+    llm = PolicyFollowingLLM(capture_key, baseline_key, alignment.default_detector())
+    result = asyncio.run(loop.run(asset, capture_key, llm, runs_dir=runs_dir))
+    events = trace.read_events(result.run_dir)
+    expected = scenario["expect"]
+    path = [decision["branch"] for decision in result.decisions]
+    located = _located_bbox(result.decisions)
+    record = {
+        "id": scenario["id"],
+        "source": "real" if "file" in scenario["base"] else "synthetic",
+        "run_id": result.run_id,
+        "status": result.status,
+        "expected_branch": expected["branch"],
+        "branch": result.branch,
+        "branch_ok": result.branch == expected["branch"],
+        "expected_defect": expected.get("defect", NO_DEFECT),
+        "score_defect": scenario.get("score_defect", True),
+        "defect": _severity_label(events),
+        "path": path,
+        "expected_in_path": [b for b in expected.get("path_contains", []) if b not in path],
+        "truth_bbox": list(truth_bbox) if truth_bbox else None,
+        "located_bbox": located,
+        "iou": metrics_module.iou(truth_bbox, located) if truth_bbox and located else None,
+        "quality": _quality_metrics(events),
+        "deciding_number": _deciding_number(result.decisions),
+        "decisions": result.decisions,
+    }
+    record["defect_ok"] = not record["score_defect"] or record["defect"] == record["expected_defect"]
+    record["passed"] = record["branch_ok"] and record["defect_ok"] and not record["expected_in_path"]
+    return record
+
+
+def summarise(records: list[dict]) -> dict:
+    branch_pairs = [(r["expected_branch"], r["branch"] or "failed") for r in records]
+    defect_pairs = [(r["expected_defect"], r["defect"]) for r in records if r["score_defect"]]
+    ious = [r["iou"] for r in records if r["iou"] is not None]
+    branch_report = metrics_module.per_class(branch_pairs)
+    defect_report = metrics_module.per_class(defect_pairs)
+    return {
+        "scenarios": len(records),
+        "real": sum(1 for r in records if r["source"] == "real"),
+        "synthetic": sum(1 for r in records if r["source"] == "synthetic"),
+        "passed": sum(1 for r in records if r["passed"]),
+        "branch": {
+            "accuracy": metrics_module.accuracy(branch_pairs),
+            "macro": metrics_module.macro(branch_report),
+            "per_class": branch_report,
+        },
+        "defect": {
+            "accuracy": metrics_module.accuracy(defect_pairs),
+            "macro": metrics_module.macro(defect_report),
+            "per_class": defect_report,
+        },
+        "localisation": {
+            "measured": len(ious),
+            "mean_iou": round(sum(ious) / len(ious), 4) if ious else None,
+            "at_least_half": sum(1 for value in ious if value >= 0.5),
+        },
+    }
+
+
+def _table(report: dict, title: str) -> list[str]:
+    lines = [f"### {title}", "", "| Class | Support | Precision | Recall | F1 |", "|---|---:|---:|---:|---:|"]
+    for label, row in sorted(report.items()):
+        lines.append(
+            f"| `{label}` | {row['support']} | {row['precision']} | {row['recall']} | {row['f1']} |"
+        )
+    return lines + [""]
+
+
+def render_summary(records: list[dict], summary: dict) -> str:
+    lines = [
+        "# Evaluation results",
+        "",
+        f"Generated by `make eval` at {summary['generated_at']}.",
+        f"{summary['scenarios']} scenarios — {summary['synthetic']} synthetic, {summary['real']} on real",
+        f"photographs. {summary['passed']} passed every assertion (branch, defect class and required path).",
+        "",
+        f"Branch accuracy **{summary['branch']['accuracy']}**, macro F1 {summary['branch']['macro']['f1']}. "
+        f"Defect accuracy **{summary['defect']['accuracy']}**, macro F1 {summary['defect']['macro']['f1']}.",
+        "",
+    ]
+    lines += _table(summary["branch"]["per_class"], "Agent branch")
+    lines += _table(summary["defect"]["per_class"], "Defect class")
+    localisation = summary["localisation"]
+    lines += [
+        "### Localisation",
+        "",
+        f"Mean IoU **{localisation['mean_iou']}** over {localisation['measured']} scenarios where a "
+        f"region was both injected and detected; {localisation['at_least_half']} of them at IoU ≥ 0.5.",
+        "",
+        "### Where it fails",
+        "",
+    ]
+    failures = [r for r in records if not r["passed"]]
+    if not failures:
+        lines.append("No scenario failed in this run.")
+    else:
+        lines += ["| Scenario | Expected | Got | Deciding number |", "|---|---|---|---|"]
+        for record in failures:
+            got = record["branch"] or "failed"
+            if not record["defect_ok"]:
+                got += f" / {record['defect']}"
+            expected = record["expected_branch"]
+            if record["expected_defect"] != NO_DEFECT:
+                expected += f" / {record['expected_defect']}"
+            lines.append(f"| `{record['id']}` | {expected} | {got} | {record['deciding_number']} |")
+    return "\n".join(lines) + "\n"
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Score the agent over the evaluation dataset.")
+    parser.add_argument("--scenarios", default=None, help="path to a scenarios manifest")
+    parser.add_argument("--out", default="eval/results/latest", help="directory for results")
+    parser.add_argument("--filter", default=None, help="only run scenarios whose id contains this")
+    args = parser.parse_args()
+
+    store.ensure_table()
+    images.ensure_bucket()
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+
+    scenarios = scenarios_module.load(args.scenarios)
+    if args.filter:
+        scenarios = [s for s in scenarios if args.filter in s["id"]]
+    if not scenarios:
+        raise SystemExit("no scenarios selected")
+
+    records = []
+    for index, scenario in enumerate(scenarios, 1):
+        record = run_scenario(scenario, out / "runs")
+        records.append(record)
+        mark = "ok  " if record["passed"] else "FAIL"
+        print(f"[{index:>2}/{len(scenarios)}] {mark} {record['id']:<38} {record['branch']}")
+
+    summary = summarise(records)
+    summary["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    (out / "results.json").write_text(json.dumps({"summary": summary, "scenarios": records}, indent=2) + "\n")
+    (out / "summary.md").write_text(render_summary(records, summary))
+    print(f"\n{summary['passed']}/{summary['scenarios']} passed — wrote {out}/results.json and summary.md")
+
+
+if __name__ == "__main__":
+    main()

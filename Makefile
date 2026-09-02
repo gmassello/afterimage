@@ -9,13 +9,13 @@ dev: weights
 	$(COMPOSE) up --build
 
 test: weights
-	$(COMPOSE) run --rm --build app python -m pytest services/ -v; status=$$?; $(COMPOSE) down; exit $$status
+	$(COMPOSE) run --rm --build app python -m pytest services/ eval/ -v; status=$$?; $(COMPOSE) down; exit $$status
 
 demo: weights
 	$(COMPOSE) run --rm --build app python -m services.agent.demo; status=$$?; $(COMPOSE) down; exit $$status
 
-eval:
-	@echo "eval: not implemented yet (week 7)" && exit 1
+eval: weights
+	$(COMPOSE) run --rm --build app python -m eval.run_eval $(ARGS); status=$$?; $(COMPOSE) down; exit $$status
 
 deploy:
 	./deploy.sh

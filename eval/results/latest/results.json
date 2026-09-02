@@ -1,0 +1,1549 @@
+{
+  "summary": {
+    "scenarios": 23,
+    "real": 12,
+    "synthetic": 11,
+    "passed": 20,
+    "branch": {
+      "accuracy": 0.8696,
+      "macro": {
+        "precision": 0.8556,
+        "recall": 0.9333,
+        "f1": 0.8815
+      },
+      "per_class": {
+        "auto_write": {
+          "support": 2,
+          "true_positives": 2,
+          "false_positives": 1,
+          "false_negatives": 0,
+          "precision": 0.6667,
+          "recall": 1.0,
+          "f1": 0.8
+        },
+        "first_baseline": {
+          "support": 1,
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "human_approval": {
+          "support": 10,
+          "true_positives": 8,
+          "false_positives": 0,
+          "false_negatives": 2,
+          "precision": 1.0,
+          "recall": 0.8,
+          "f1": 0.8889
+        },
+        "no_change": {
+          "support": 3,
+          "true_positives": 3,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "recapture": {
+          "support": 5,
+          "true_positives": 4,
+          "false_positives": 1,
+          "false_negatives": 1,
+          "precision": 0.8,
+          "recall": 0.8,
+          "f1": 0.8
+        },
+        "unrecognized_asset": {
+          "support": 2,
+          "true_positives": 2,
+          "false_positives": 1,
+          "false_negatives": 0,
+          "precision": 0.6667,
+          "recall": 1.0,
+          "f1": 0.8
+        }
+      }
+    },
+    "defect": {
+      "accuracy": 0.9524,
+      "macro": {
+        "precision": 0.9833,
+        "recall": 0.9333,
+        "f1": 0.9513
+      },
+      "per_class": {
+        "NONE": {
+          "support": 11,
+          "true_positives": 11,
+          "false_positives": 1,
+          "false_negatives": 0,
+          "precision": 0.9167,
+          "recall": 1.0,
+          "f1": 0.9565
+        },
+        "crack": {
+          "support": 3,
+          "true_positives": 3,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "delamination": {
+          "support": 3,
+          "true_positives": 3,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        },
+        "hotspot": {
+          "support": 3,
+          "true_positives": 2,
+          "false_positives": 0,
+          "false_negatives": 1,
+          "precision": 1.0,
+          "recall": 0.6667,
+          "f1": 0.8
+        },
+        "soiling": {
+          "support": 1,
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0
+        }
+      }
+    },
+    "localisation": {
+      "measured": 10,
+      "mean_iou": 0.8258,
+      "at_least_half": 9
+    },
+    "generated_at": "2026-09-02T21:27:50+00:00"
+  },
+  "scenarios": [
+    {
+      "id": "first-baseline-synthetic",
+      "source": "synthetic",
+      "run_id": "499a865e728d",
+      "status": "completed",
+      "expected_branch": "first_baseline",
+      "branch": "first_baseline",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "first_baseline",
+        "quality_ok"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 367.5985,
+        "mean_brightness": 77.7214,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.000859
+      },
+      "deciding_number": "blur_variance 367.5985 vs 100.0",
+      "decisions": [
+        {
+          "input_metric": "baseline_exists",
+          "value": 0.0,
+          "threshold": 1.0,
+          "branch": "first_baseline"
+        },
+        {
+          "input_metric": "blur_variance",
+          "value": 367.5985,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "recapture-blur-synthetic",
+      "source": "synthetic",
+      "run_id": "9b41caa59a31",
+      "status": "completed",
+      "expected_branch": "recapture",
+      "branch": "recapture",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "recapture"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 1.7652,
+        "mean_brightness": 77.7084,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.0
+      },
+      "deciding_number": "blur_variance 1.7652 vs 100.0",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 1.7652,
+          "threshold": 100.0,
+          "branch": "recapture"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "recapture-overexposed-synthetic",
+      "source": "synthetic",
+      "run_id": "66c7ef3c1bf2",
+      "status": "completed",
+      "expected_branch": "recapture",
+      "branch": "recapture",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "recapture"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 206.5273,
+        "mean_brightness": 245.631,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.387531,
+        "coverage_ratio": 0.0
+      },
+      "deciding_number": "mean_brightness 245.631 vs 220.0",
+      "decisions": [
+        {
+          "input_metric": "mean_brightness",
+          "value": 245.631,
+          "threshold": 220.0,
+          "branch": "recapture"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "recapture-partial-frame-synthetic",
+      "source": "synthetic",
+      "run_id": "fb52128641cc",
+      "status": "completed",
+      "expected_branch": "recapture",
+      "branch": "unrecognized_asset",
+      "branch_ok": false,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "quality_ok",
+        "retry_classic",
+        "unrecognized_asset"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 212.6922,
+        "mean_brightness": 89.3743,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.0
+      },
+      "deciding_number": "inlier_ratio 0.0602 vs 0.3",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 212.6922,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.3597,
+          "threshold": 0.9,
+          "branch": "retry_classic"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.0602,
+          "threshold": 0.3,
+          "branch": "unrecognized_asset"
+        }
+      ],
+      "defect_ok": true,
+      "passed": false
+    },
+    {
+      "id": "unrecognized-asset-synthetic",
+      "source": "synthetic",
+      "run_id": "2d8b4f7b020c",
+      "status": "completed",
+      "expected_branch": "unrecognized_asset",
+      "branch": "unrecognized_asset",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "quality_ok",
+        "retry_classic",
+        "unrecognized_asset"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 322.547,
+        "mean_brightness": 77.0144,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.001389
+      },
+      "deciding_number": "inlier_ratio 0.0385 vs 0.3",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 322.547,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.4074,
+          "threshold": 0.9,
+          "branch": "retry_classic"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.0385,
+          "threshold": 0.3,
+          "branch": "unrecognized_asset"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "no-change-synthetic",
+      "source": "synthetic",
+      "run_id": "9ab88496816a",
+      "status": "completed",
+      "expected_branch": "no_change",
+      "branch": "no_change",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "no_change"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 172.9942,
+        "mean_brightness": 77.2331,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.002227
+      },
+      "deciding_number": "changed_ratio 0.0 vs 0.0",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 172.9942,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9975,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "changed_ratio",
+          "value": 0.0,
+          "threshold": 0.0,
+          "branch": "no_change"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "crack-synthetic",
+      "source": "synthetic",
+      "run_id": "770bb35e563c",
+      "status": "awaiting_approval",
+      "expected_branch": "human_approval",
+      "branch": "human_approval",
+      "branch_ok": true,
+      "expected_defect": "crack",
+      "score_defect": true,
+      "defect": "crack",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "change_confirmed",
+        "human_approval"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        263,
+        143,
+        54,
+        54
+      ],
+      "located_bbox": [
+        263,
+        142,
+        54,
+        56
+      ],
+      "iou": 0.9643,
+      "quality": {
+        "blur_variance": 173.661,
+        "mean_brightness": 76.6498,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.014773
+      },
+      "deciding_number": "score 0.4467 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 173.661,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9987,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 45.5615,
+          "threshold": 35.0,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              263,
+              142,
+              54,
+              56
+            ],
+            "area_ratio": 0.010992
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.4467,
+          "threshold": 0.4,
+          "branch": "human_approval"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "hotspot-synthetic",
+      "source": "synthetic",
+      "run_id": "8924c14ad3fb",
+      "status": "awaiting_approval",
+      "expected_branch": "human_approval",
+      "branch": "human_approval",
+      "branch_ok": true,
+      "expected_defect": "hotspot",
+      "score_defect": true,
+      "defect": "hotspot",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "change_confirmed",
+        "human_approval"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        392,
+        92,
+        36,
+        36
+      ],
+      "located_bbox": [
+        391,
+        91,
+        39,
+        39
+      ],
+      "iou": 0.8521,
+      "quality": {
+        "blur_variance": 185.3229,
+        "mean_brightness": 77.8055,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.008461
+      },
+      "deciding_number": "score 0.9139 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 185.3229,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9975,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 122.0454,
+          "threshold": 35.0,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              391,
+              91,
+              39,
+              39
+            ],
+            "area_ratio": 0.004648
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.9139,
+          "threshold": 0.4,
+          "branch": "human_approval"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "delamination-synthetic",
+      "source": "synthetic",
+      "run_id": "ec94fff1862d",
+      "status": "awaiting_approval",
+      "expected_branch": "human_approval",
+      "branch": "human_approval",
+      "branch_ok": true,
+      "expected_defect": "delamination",
+      "score_defect": true,
+      "defect": "delamination",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "change_confirmed",
+        "human_approval"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        143,
+        263,
+        54,
+        54
+      ],
+      "located_bbox": [
+        142,
+        261,
+        57,
+        57
+      ],
+      "iou": 0.8975,
+      "quality": {
+        "blur_variance": 176.1621,
+        "mean_brightness": 78.4467,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.014773
+      },
+      "deciding_number": "score 0.8723 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 176.1621,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9974,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 124.8388,
+          "threshold": 35.0,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              142,
+              261,
+              57,
+              57
+            ],
+            "area_ratio": 0.012238
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.8723,
+          "threshold": 0.4,
+          "branch": "human_approval"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "soiling-synthetic",
+      "source": "synthetic",
+      "run_id": "b3fc1a0a9405",
+      "status": "awaiting_approval",
+      "expected_branch": "human_approval",
+      "branch": "human_approval",
+      "branch_ok": true,
+      "expected_defect": "soiling",
+      "score_defect": true,
+      "defect": "soiling",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "change_confirmed",
+        "human_approval"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": [
+        117,
+        80,
+        409,
+        246
+      ],
+      "iou": null,
+      "quality": {
+        "blur_variance": 173.0645,
+        "mean_brightness": 96.7698,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.002227
+      },
+      "deciding_number": "score 0.4522 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 173.0645,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9968,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 59.7545,
+          "threshold": 35.0,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              117,
+              80,
+              409,
+              246
+            ],
+            "area_ratio": 0.266879
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.4522,
+          "threshold": 0.4,
+          "branch": "human_approval"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "faint-spot-synthetic",
+      "source": "synthetic",
+      "run_id": "a3104c4aafed",
+      "status": "completed",
+      "expected_branch": "auto_write",
+      "branch": "auto_write",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": false,
+      "defect": "crack",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "crop_and_rescan",
+        "change_confirmed",
+        "auto_write"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        443,
+        203,
+        18,
+        18
+      ],
+      "located_bbox": [
+        443,
+        203,
+        18,
+        17
+      ],
+      "iou": 0.9444,
+      "quality": {
+        "blur_variance": 173.1789,
+        "mean_brightness": 77.2036,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.002227
+      },
+      "deciding_number": "score 0.2431 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 173.1789,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9975,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 32.6839,
+          "threshold": 35.0,
+          "branch": "crop_and_rescan",
+          "extra": {
+            "bbox": [
+              445,
+              204,
+              14,
+              15
+            ],
+            "area_ratio": 0.000754
+          }
+        },
+        {
+          "input_metric": "area_ratio",
+          "value": 0.7237,
+          "threshold": 0.02,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              443,
+              203,
+              18,
+              17
+            ],
+            "area_ratio": 0.723684
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.2431,
+          "threshold": 0.4,
+          "branch": "auto_write"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "crack-real-closeup",
+      "source": "real",
+      "run_id": "2289fbadccf4",
+      "status": "awaiting_approval",
+      "expected_branch": "human_approval",
+      "branch": "human_approval",
+      "branch_ok": true,
+      "expected_defect": "crack",
+      "score_defect": true,
+      "defect": "crack",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "change_confirmed",
+        "human_approval"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        336,
+        223,
+        96,
+        63
+      ],
+      "located_bbox": [
+        329,
+        217,
+        106,
+        71
+      ],
+      "iou": 0.8036,
+      "quality": {
+        "blur_variance": 1064.0321,
+        "mean_brightness": 122.1157,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.002352,
+        "coverage_ratio": 0.14034
+      },
+      "deciding_number": "score 0.6798 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 1064.0321,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9988,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 67.7646,
+          "threshold": 35.0,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              329,
+              217,
+              106,
+              71
+            ],
+            "area_ratio": 0.015061
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.6798,
+          "threshold": 0.4,
+          "branch": "human_approval"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "crack-real-israel-center",
+      "source": "real",
+      "run_id": "17d04e934334",
+      "status": "awaiting_approval",
+      "expected_branch": "human_approval",
+      "branch": "human_approval",
+      "branch_ok": true,
+      "expected_defect": "crack",
+      "score_defect": true,
+      "defect": "crack",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "change_confirmed",
+        "human_approval"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        209,
+        360,
+        71,
+        96
+      ],
+      "located_bbox": [
+        207,
+        359,
+        74,
+        98
+      ],
+      "iou": 0.9399,
+      "quality": {
+        "blur_variance": 904.5847,
+        "mean_brightness": 68.4123,
+        "clipped_dark_ratio": 3.8e-05,
+        "clipped_bright_ratio": 0.000543,
+        "coverage_ratio": 0.032867
+      },
+      "deciding_number": "score 0.4715 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 904.5847,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9987,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 59.0673,
+          "threshold": 35.0,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              207,
+              359,
+              74,
+              98
+            ],
+            "area_ratio": 0.014487
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.4715,
+          "threshold": 0.4,
+          "branch": "human_approval"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "hotspot-real-plain",
+      "source": "real",
+      "run_id": "5455e850a11a",
+      "status": "completed",
+      "expected_branch": "human_approval",
+      "branch": "recapture",
+      "branch_ok": false,
+      "expected_defect": "hotspot",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "recapture"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        158,
+        192,
+        26,
+        26
+      ],
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 335.4877,
+        "mean_brightness": 161.7333,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.308587,
+        "coverage_ratio": 0.004843
+      },
+      "deciding_number": "clipped_bright_ratio 0.3086 vs 0.3",
+      "decisions": [
+        {
+          "input_metric": "clipped_bright_ratio",
+          "value": 0.3086,
+          "threshold": 0.3,
+          "branch": "recapture"
+        }
+      ],
+      "defect_ok": false,
+      "passed": false
+    },
+    {
+      "id": "hotspot-real-cleaning",
+      "source": "real",
+      "run_id": "70f788aca67f",
+      "status": "awaiting_approval",
+      "expected_branch": "human_approval",
+      "branch": "human_approval",
+      "branch_ok": true,
+      "expected_defect": "hotspot",
+      "score_defect": true,
+      "defect": "hotspot",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "change_confirmed",
+        "human_approval"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        336,
+        220,
+        64,
+        64
+      ],
+      "located_bbox": [
+        330,
+        218,
+        73,
+        74
+      ],
+      "iou": 0.7582,
+      "quality": {
+        "blur_variance": 2854.1247,
+        "mean_brightness": 109.982,
+        "clipped_dark_ratio": 7.2e-05,
+        "clipped_bright_ratio": 0.000236,
+        "coverage_ratio": 0.168133
+      },
+      "deciding_number": "score 0.8009 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 2854.1247,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 1.0,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 115.1452,
+          "threshold": 35.0,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              330,
+              218,
+              73,
+              74
+            ],
+            "area_ratio": 0.010525
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.8009,
+          "threshold": 0.4,
+          "branch": "human_approval"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "delamination-real-jetion",
+      "source": "real",
+      "run_id": "9ad23d0c608e",
+      "status": "awaiting_approval",
+      "expected_branch": "human_approval",
+      "branch": "human_approval",
+      "branch_ok": true,
+      "expected_defect": "delamination",
+      "score_defect": true,
+      "defect": "delamination",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "change_confirmed",
+        "human_approval"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        240,
+        320,
+        72,
+        96
+      ],
+      "located_bbox": [
+        236,
+        318,
+        79,
+        105
+      ],
+      "iou": 0.8333,
+      "quality": {
+        "blur_variance": 1146.0192,
+        "mean_brightness": 130.1827,
+        "clipped_dark_ratio": 0.000125,
+        "clipped_bright_ratio": 0.00035,
+        "coverage_ratio": 0.635663
+      },
+      "deciding_number": "score 1.0 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 1146.0192,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9988,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 115.8461,
+          "threshold": 35.0,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              236,
+              318,
+              79,
+              105
+            ],
+            "area_ratio": 0.015706
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 1.0,
+          "threshold": 0.4,
+          "branch": "human_approval"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "delamination-real-packed",
+      "source": "real",
+      "run_id": "923f2c2e45d0",
+      "status": "completed",
+      "expected_branch": "human_approval",
+      "branch": "auto_write",
+      "branch_ok": false,
+      "expected_defect": "delamination",
+      "score_defect": true,
+      "defect": "delamination",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "change_confirmed",
+        "auto_write"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        360,
+        270,
+        96,
+        72
+      ],
+      "located_bbox": [
+        358,
+        282,
+        99,
+        61
+      ],
+      "iou": 0.801,
+      "quality": {
+        "blur_variance": 480.2673,
+        "mean_brightness": 112.1284,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.0,
+        "coverage_ratio": 0.0222
+      },
+      "deciding_number": "score 0.3412 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 480.2673,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.9976,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 72.0161,
+          "threshold": 35.0,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              358,
+              282,
+              99,
+              61
+            ],
+            "area_ratio": 0.007494
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.3412,
+          "threshold": 0.4,
+          "branch": "auto_write"
+        }
+      ],
+      "defect_ok": true,
+      "passed": false
+    },
+    {
+      "id": "faint-spot-real-et-solar",
+      "source": "real",
+      "run_id": "52c5e8149532",
+      "status": "completed",
+      "expected_branch": "auto_write",
+      "branch": "auto_write",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": false,
+      "defect": "crack",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "crop_and_rescan",
+        "change_confirmed",
+        "auto_write"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": [
+        320,
+        240,
+        39,
+        29
+      ],
+      "located_bbox": [
+        338,
+        244,
+        21,
+        25
+      ],
+      "iou": 0.4642,
+      "quality": {
+        "blur_variance": 2237.0408,
+        "mean_brightness": 101.7814,
+        "clipped_dark_ratio": 1.3e-05,
+        "clipped_bright_ratio": 0.006177,
+        "coverage_ratio": 0.0555
+      },
+      "deciding_number": "score 0.2596 vs 0.4",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 2237.0408,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 1.0,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "mean_delta",
+          "value": 33.3427,
+          "threshold": 35.0,
+          "branch": "crop_and_rescan",
+          "extra": {
+            "bbox": [
+              338,
+              242,
+              22,
+              27
+            ],
+            "area_ratio": 0.000596
+          }
+        },
+        {
+          "input_metric": "area_ratio",
+          "value": 0.1702,
+          "threshold": 0.02,
+          "branch": "change_confirmed",
+          "extra": {
+            "bbox": [
+              338,
+              244,
+              21,
+              25
+            ],
+            "area_ratio": 0.170153
+          }
+        },
+        {
+          "input_metric": "score",
+          "value": 0.2596,
+          "threshold": 0.4,
+          "branch": "auto_write"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "no-change-real-et-solar",
+      "source": "real",
+      "run_id": "5c13ca999a82",
+      "status": "completed",
+      "expected_branch": "no_change",
+      "branch": "no_change",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "no_change"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 1175.1055,
+        "mean_brightness": 78.4586,
+        "clipped_dark_ratio": 0.015679,
+        "clipped_bright_ratio": 0.014604,
+        "coverage_ratio": 0.087542
+      },
+      "deciding_number": "changed_ratio 0.0024 vs 0.0",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 1175.1055,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 1.0,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "changed_ratio",
+          "value": 0.0024,
+          "threshold": 0.0,
+          "branch": "no_change"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "no-change-real-warehouse",
+      "source": "real",
+      "run_id": "389fd2df5ea2",
+      "status": "completed",
+      "expected_branch": "no_change",
+      "branch": "no_change",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "quality_ok",
+        "aligned",
+        "no_change"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 415.3272,
+        "mean_brightness": 117.1472,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.000723,
+        "coverage_ratio": 0.003169
+      },
+      "deciding_number": "changed_ratio 0.0002 vs 0.0",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 415.3272,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 1.0,
+          "threshold": 0.9,
+          "branch": "aligned"
+        },
+        {
+          "input_metric": "changed_ratio",
+          "value": 0.0002,
+          "threshold": 0.0,
+          "branch": "no_change"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "recapture-blur-real-rooftop",
+      "source": "real",
+      "run_id": "f780f784b956",
+      "status": "completed",
+      "expected_branch": "recapture",
+      "branch": "recapture",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "recapture"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 3.1798,
+        "mean_brightness": 122.275,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.014791,
+        "coverage_ratio": 0.06926
+      },
+      "deciding_number": "blur_variance 3.1798 vs 100.0",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 3.1798,
+          "threshold": 100.0,
+          "branch": "recapture"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "recapture-overexposed-real-ground",
+      "source": "real",
+      "run_id": "ec976aa371f9",
+      "status": "completed",
+      "expected_branch": "recapture",
+      "branch": "recapture",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "recapture"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 465.5761,
+        "mean_brightness": 249.7079,
+        "clipped_dark_ratio": 0.0,
+        "clipped_bright_ratio": 0.873199,
+        "coverage_ratio": 0.005821
+      },
+      "deciding_number": "mean_brightness 249.7079 vs 220.0",
+      "decisions": [
+        {
+          "input_metric": "mean_brightness",
+          "value": 249.7079,
+          "threshold": 220.0,
+          "branch": "recapture"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    },
+    {
+      "id": "unrecognized-asset-real-marine",
+      "source": "real",
+      "run_id": "8d0a4bd64a8f",
+      "status": "completed",
+      "expected_branch": "unrecognized_asset",
+      "branch": "unrecognized_asset",
+      "branch_ok": true,
+      "expected_defect": "NONE",
+      "score_defect": true,
+      "defect": "NONE",
+      "path": [
+        "quality_ok",
+        "retry_classic",
+        "unrecognized_asset"
+      ],
+      "expected_in_path": [],
+      "truth_bbox": null,
+      "located_bbox": null,
+      "iou": null,
+      "quality": {
+        "blur_variance": 4077.475,
+        "mean_brightness": 122.2663,
+        "clipped_dark_ratio": 0.000297,
+        "clipped_bright_ratio": 0.0185,
+        "coverage_ratio": 0.126686
+      },
+      "deciding_number": "inlier_ratio 0.0102 vs 0.3",
+      "decisions": [
+        {
+          "input_metric": "blur_variance",
+          "value": 4077.475,
+          "threshold": 100.0,
+          "branch": "quality_ok"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.2609,
+          "threshold": 0.9,
+          "branch": "retry_classic"
+        },
+        {
+          "input_metric": "inlier_ratio",
+          "value": 0.0102,
+          "threshold": 0.3,
+          "branch": "unrecognized_asset"
+        }
+      ],
+      "defect_ok": true,
+      "passed": true
+    }
+  ]
+}

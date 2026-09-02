@@ -1,0 +1,490 @@
+[
+  {
+    "id": "first-baseline-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "seed_baseline": false,
+    "capture": [],
+    "expect": {
+      "branch": "first_baseline"
+    }
+  },
+  {
+    "id": "recapture-blur-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture": [
+      [
+        "blurred",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "recapture"
+    }
+  },
+  {
+    "id": "recapture-overexposed-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture": [
+      [
+        "overexposed",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "recapture"
+    }
+  },
+  {
+    "id": "recapture-partial-frame-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture": [
+      [
+        "partial_frame",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "recapture"
+    }
+  },
+  {
+    "id": "unrecognized-asset-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture_base": {
+      "foreign": true
+    },
+    "capture": [],
+    "expect": {
+      "branch": "unrecognized_asset"
+    }
+  },
+  {
+    "id": "no-change-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture": [
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "no_change"
+    }
+  },
+  {
+    "id": "crack-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture": [
+      [
+        "with_crack",
+        {
+          "row": 2,
+          "col": 4
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "crack"
+    }
+  },
+  {
+    "id": "hotspot-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture": [
+      [
+        "with_hotspot",
+        {
+          "row": 1,
+          "col": 6
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "hotspot"
+    }
+  },
+  {
+    "id": "delamination-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture": [
+      [
+        "with_delamination",
+        {
+          "row": 4,
+          "col": 2
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "delamination"
+    }
+  },
+  {
+    "id": "soiling-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture": [
+      [
+        "with_soiling",
+        {}
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "soiling"
+    }
+  },
+  {
+    "id": "faint-spot-synthetic",
+    "base": {
+      "synthetic": {
+        "seed": 0
+      }
+    },
+    "capture": [
+      [
+        "with_faint_spot",
+        {
+          "row": 3,
+          "col": 7,
+          "delta": 22
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "auto_write",
+      "path_contains": [
+        "crop_and_rescan"
+      ]
+    },
+    "score_defect": false
+  },
+  {
+    "id": "crack-real-closeup",
+    "base": {
+      "file": "panel_front_closeup.jpg"
+    },
+    "capture": [
+      [
+        "crack_at",
+        {
+          "region": [
+            0.42,
+            0.42,
+            0.12,
+            0.12
+          ]
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "crack"
+    }
+  },
+  {
+    "id": "crack-real-israel-center",
+    "base": {
+      "file": "panel_israel_center.jpg"
+    },
+    "capture": [
+      [
+        "crack_at",
+        {
+          "region": [
+            0.35,
+            0.45,
+            0.12,
+            0.12
+          ]
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "crack"
+    }
+  },
+  {
+    "id": "hotspot-real-plain",
+    "base": {
+      "file": "panel_front_plain.jpg"
+    },
+    "capture": [
+      [
+        "hotspot_at",
+        {
+          "region": [
+            0.45,
+            0.4,
+            0.12,
+            0.12
+          ]
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "hotspot"
+    }
+  },
+  {
+    "id": "hotspot-real-cleaning",
+    "base": {
+      "file": "module_soiled_cleaning.jpg"
+    },
+    "capture": [
+      [
+        "hotspot_at",
+        {
+          "region": [
+            0.4,
+            0.5,
+            0.12,
+            0.12
+          ]
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "hotspot"
+    }
+  },
+  {
+    "id": "delamination-real-jetion",
+    "base": {
+      "file": "module_jetion.jpg"
+    },
+    "capture": [
+      [
+        "delamination_at",
+        {
+          "region": [
+            0.4,
+            0.4,
+            0.12,
+            0.12
+          ]
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "delamination"
+    }
+  },
+  {
+    "id": "delamination-real-packed",
+    "base": {
+      "file": "modules_packed.jpg"
+    },
+    "capture": [
+      [
+        "delamination_at",
+        {
+          "region": [
+            0.45,
+            0.45,
+            0.12,
+            0.12
+          ]
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "delamination"
+    }
+  },
+  {
+    "id": "faint-spot-real-et-solar",
+    "base": {
+      "file": "module_et_solar_1.jpg"
+    },
+    "capture": [
+      [
+        "faint_spot_at",
+        {
+          "region": [
+            0.4,
+            0.4,
+            0.14,
+            0.14
+          ],
+          "delta": 16
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "auto_write",
+      "path_contains": [
+        "crop_and_rescan"
+      ]
+    },
+    "score_defect": false
+  },
+  {
+    "id": "no-change-real-et-solar",
+    "base": {
+      "file": "module_et_solar_2.jpg"
+    },
+    "capture": [
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "no_change"
+    }
+  },
+  {
+    "id": "no-change-real-warehouse",
+    "base": {
+      "file": "array_warehouse.jpg"
+    },
+    "capture": [
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "no_change"
+    }
+  },
+  {
+    "id": "recapture-blur-real-rooftop",
+    "base": {
+      "file": "array_rooftop.jpg"
+    },
+    "capture": [
+      [
+        "blurred",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "recapture"
+    }
+  },
+  {
+    "id": "recapture-overexposed-real-ground",
+    "base": {
+      "file": "array_ground_mounted.jpg"
+    },
+    "capture": [
+      [
+        "overexposed",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "recapture"
+    }
+  },
+  {
+    "id": "unrecognized-asset-real-marine",
+    "base": {
+      "file": "array_marine.jpg"
+    },
+    "capture_base": {
+      "file": "array_rooftop.jpg"
+    },
+    "capture": [],
+    "expect": {
+      "branch": "unrecognized_asset"
+    }
+  }
+]

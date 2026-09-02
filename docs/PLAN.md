@@ -6,8 +6,8 @@ Visual inspection agent with longitudinal memory for the OpenCV AI Competition 2
 The competition's week-by-week plan lives in `docs/BRIEF.md` §4. This file is the living state: what
 is closed, what comes next, and the detail of the stages that already have a design.
 
-**Stage 6 closed on 2 September** against a brief that schedules it for 30 September – 6 October, so
-the project is running **about four weeks ahead**. That margin is real and worth not spending.
+**Stage 7 closed on 2 September** against a brief that schedules it for 7 – 13 October, so the
+project is running **about five weeks ahead**. That margin is real and worth not spending.
 
 ---
 
@@ -22,7 +22,7 @@ the project is running **about four weeks ahead**. That margin is real and worth
 | 4 | MCP + agentic loop + policy + human gate | **closed** |
 | 5 | Observability — per-run event trace, trace endpoint | **closed** |
 | 6 | AWS deploy + front end + public endpoint | **closed** — live at https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ |
-| 7 | Evaluation — dataset, metrics, failure cases | pending |
+| 7 | Evaluation — dataset, metrics, failure cases | **closed** — 23 scenarios, branch accuracy 0.8696, see `docs/EVALUATION.md` |
 | 8 | Technical report and documentation | pending |
 | 9 | Video, polish, submission | pending |
 
@@ -296,11 +296,10 @@ Six of the seven branches, driven by real Gemini and real captures over HTTPS:
 OpenCV 5 behaves identically on Graviton. And the trace of each run was read back by a **different**
 Lambda invocation than the one that wrote it, which is what proves `AFTERIMAGE_RUNS_S3=1` works.
 
-⚠️ **`crop_and_rescan` (ACTION 3) was not reproduced against the endpoint.** It needs a change large
-enough for the diff to find a region but with `mean_delta` under 35, and four fixtures at
-`with_faint_spot` deltas 10, 16 and 22 landed on either side (`changed_ratio` 0.0 / 0.0002, or
-`mean_delta` 39.5). The branch is green in the stage-4 tests; finding the fixture that reproduces it
-live belongs to stage 7, which is where the `severity.py` heuristic gets calibrated anyway.
+**`crop_and_rescan` (ACTION 3) was not reproduced against the endpoint during this stage.** It needs
+a change large enough for the diff to find a region but with `mean_delta` under 35, and four fixtures
+at `with_faint_spot` deltas 10, 16 and 22 landed on either side. Stage 7 found the window and closed
+this — see below.
 
 **Cost, measured rather than estimated.** Cost Explorer over the account: $0 in June, $0.0020 in
 July, **$0.0138 in August** with `recall` running the whole month. afterimage is the first
@@ -310,6 +309,62 @@ Lambda itself stays inside the perpetual free tier: the 5-minute warmer burns ~1
 against 400,000 free.
 
 **Still pending**: open the URL from another network (mobile data, not WiFi).
+
+### Closed in stage 7
+
+`make eval` runs 23 declarative scenarios from `eval/dataset/scenarios.json` through the real agent
+loop — same `loop.py`, same MCP tools, same policy thresholds the endpoint runs — with the scripted
+driver in place of Gemini. That substitution costs nothing: `policy.evaluate()` computes every
+branch in code and the loop rejects a submit naming the wrong branch, so the model cannot move a
+threshold. It buys a table that is identical on every run, with no network and no tokens.
+
+Eleven scenarios are synthetic; twelve run on **real photographs of photovoltaic modules** from
+Wikimedia Commons, committed under `eval/dataset/base/` with per-file attribution in `SOURCES.md`.
+Lesions are injected, which is what makes the ground truth exact and what limits the claim: this
+measures whether the thresholds survive real photographic texture, not field detection rates.
+
+| Metric | Value |
+|---|---|
+| Scenarios passing every assertion | 20 / 23 |
+| Branch accuracy · macro F1 | 0.8696 · 0.8815 |
+| Defect accuracy · macro F1 | 0.9524 · 0.9513 |
+| Mean IoU of the located region | 0.8258 (9 of 10 at ≥ 0.5) |
+| `human_approval` precision | 1.0 — it never escalated something that did not warrant it |
+
+**The two verdicts the stage owed, both now answered with a number:**
+
+- **`severity.py` holds.** The `# ponytail:` note said to replace the heuristic with a trained
+  classifier if the classes did not separate. Macro F1 0.9513, precision 1.0 on all four classes,
+  and the single recall miss is an exposure gate firing first, not a class confusion. **No
+  classifier is warranted**, and the note now has a measured reason to stay unspent.
+- **`coverage_ratio_min` stays at 0.0.** Real photographs gave the first honest reading and it is
+  worse than "synthetic images are unrepresentative": healthy captures span **0.0032 to 0.6357**, a
+  200-fold spread, while a good synthetic panel reads 0.0009. No global default separates them. It
+  is documented as a per-deployment setting with 0.0032 as the measured floor, or the contour
+  heuristic gets replaced by segmentation — the upgrade path the code comment already names.
+
+**ACTION 3 reproduced, and the window measured.** Sweeping the injected darkening on a real photo:
+deltas 10–14 detect no region at all, **16 → `mean_delta` 33.34** and **18 → 34.37** both take the
+zoom branch, and 20 → 35.54 crosses `mean_delta_confirm` and confirms without zooming. The branch is
+not rare, it is **two points wide** — stage 6 was sampling it by hand. It then ran green against the
+public endpoint with **all five decision values identical to the local container to four decimals**
+(`blur_variance` 2237.0408, `inlier_ratio` 1.0, `mean_delta` 33.3427, `area_ratio` 0.1702, `score`
+0.2596) — the second-channel check: the numbers that drive the decisions do not move between where
+they are measured and where they are served.
+[Live trace](https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/traces/90472757e472).
+
+**Three failures, kept and analysed rather than tuned away.** A partially framed capture is rejected
+for the wrong reason (`inlier_ratio` 0.0602, so the operator hears "wrong asset" instead of "step
+back"); a bright defect can trip the exposure gate before it is ever assessed
+(`clipped_bright_ratio` 0.3086 vs 0.30), which is the only reason `hotspot` recall is 0.6667; and
+severity underestimates a small-area defect (`score` 0.3412 vs 0.40) because `score` is
+`mean_delta / 64.0` and **ignores the label the classifier just produced**. That third one is
+structural, not a bad threshold — and it is deliberately not fixed here, because rewriting a scoring
+function on the strength of one scenario is the overfitting this dataset exists to prevent.
+
+Anti-drift, borrowed from `hindsight`: `eval/tests/test_published_numbers.py` parses every headline
+figure and every table row out of `docs/EVALUATION.md` and fails the suite if the page and
+`eval/results/latest/results.json` disagree. Verified by falsifying a number and watching it fail.
 
 ## Stage 2.5 — Publish the manual on GitHub Pages
 
