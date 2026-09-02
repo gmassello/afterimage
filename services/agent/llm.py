@@ -43,7 +43,7 @@ def _content(entry: dict):
 
 class GeminiLLM:
     def __init__(self, model: str | None = None):
-        self.model = model or os.environ.get("AFTERIMAGE_GEMINI_MODEL", "gemini-2.5-flash")
+        self.model = model or os.environ.get("AFTERIMAGE_GEMINI_MODEL", "gemini-3.6-flash")
 
     def generate(self, system: str, history: list[dict], tools: list[dict]) -> Turn:
         from google.genai import types
