@@ -7,6 +7,7 @@ from functools import lru_cache
 class ToolCall:
     name: str
     args: dict
+    thought_signature: bytes | None = None
 
 
 @dataclass(frozen=True)
@@ -37,7 +38,9 @@ def _content(entry: dict):
     if entry.get("text"):
         parts.append(types.Part.from_text(text=entry["text"]))
     for call in entry.get("calls", ()):
-        parts.append(types.Part.from_function_call(name=call.name, args=call.args))
+        part = types.Part.from_function_call(name=call.name, args=call.args)
+        part.thought_signature = call.thought_signature
+        parts.append(part)
     return types.Content(role=entry["role"], parts=parts)
 
 
@@ -67,7 +70,11 @@ class GeminiLLM:
         parts = response.candidates[0].content.parts or []
         text = " ".join(part.text for part in parts if part.text) or None
         calls = tuple(
-            ToolCall(part.function_call.name, dict(part.function_call.args or {}))
+            ToolCall(
+                part.function_call.name,
+                dict(part.function_call.args or {}),
+                part.thought_signature,
+            )
             for part in parts
             if part.function_call
         )
