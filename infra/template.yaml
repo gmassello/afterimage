@@ -21,7 +21,8 @@ Resources:
       Architectures: [arm64]
       MemorySize: 2048
       Timeout: 900
-      ReservedConcurrentExecutions: 10
+      # ponytail: the account's Lambda quota is 10 concurrent executions and AWS refuses to reserve
+      # any of them, so the account limit already is the rate limit; restore this if the quota is raised
       Environment:
         Variables:
           AFTERIMAGE_TABLE: !Ref Table
