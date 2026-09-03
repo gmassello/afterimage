@@ -13,10 +13,10 @@ Status: `done` · `wip` · `todo`
 | Criterion | Weight | How we demonstrate it | Where the judge sees it | Status |
 |---|---|---|---|---|
 | Technical execution | 30% | OpenCV 5 `Features` used substantively — ALIKED + LightGlue align each capture to the stored baseline of the same asset; green suite on arm64 | `services/perception/alignment.py`, `services/perception/tests/` | wip |
-| Innovation | 20% | **Longitudinal memory.** No previous winner kept state across inspections of the same asset; every prior project analyses one frame or one session. A second inspection retrieves the baseline from memory, aligns to it and locates the new defect | `services/memory/`, `services/memory/tests/test_longitudinal.py`, `docs/TECHNICAL_REPORT.md`, video 1:30–3:15 | wip |
-| Real-world impact | 20% | Preventive maintenance of solar plants, with numbers: assets per site, cost of manual inspection, what the agent saves | `docs/TECHNICAL_REPORT.md` | todo |
+| Innovation | 20% | **Longitudinal memory.** No previous winner kept state across inspections of the same asset; every prior project analyses one frame or one session. A second inspection retrieves the baseline from memory, aligns to it and locates the new defect | `services/memory/`, `services/memory/tests/test_longitudinal.py`, [`docs/TECHNICAL_REPORT.md` §3](TECHNICAL_REPORT.md#3-what-makes-this-different-longitudinal-memory), video 1:30–3:15 | done |
+| Real-world impact | 20% | Preventive maintenance of solar plants, argued from cited primary sources: ~2,900 modules per MW, PID degrading ~15%/year in affected modules and partially reversible if caught before saturation, soiling at 5–20% annual loss — every figure with organism, year and URL, and the absence of a published early-detection ROI stated rather than invented | [`docs/TECHNICAL_REPORT.md` §2](TECHNICAL_REPORT.md#2-why-change-over-time-is-the-right-thing-to-measure) | done |
 | User experience | 10% | Approval queue and asset history legible without explanation | public endpoint (`/`, `/queue`, `/assets/{id}`) | wip |
-| Documentation and presentation | 10% | README, technical report, both diagrams | `README.md`, `docs/` | wip |
+| Documentation and presentation | 10% | README, a self-contained technical report, and both diagrams — the agent loop and the infrastructure, the second also published on GitHub Pages | `README.md`, [`docs/TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md), <https://gmassello.github.io/afterimage/> | done |
 | Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, per-run event traces | `infra/template.yaml`, `infra/github-oidc.yaml`, `deploy.sh`, `requirements.txt` | wip |
 
 ## Agentic Vision Award
@@ -31,7 +31,7 @@ the visual evidence must change what the system does next."*
 | Orchestration and appropriate autonomy | 25% | Four branches that actually fire: recapture, retry with another detector, zoom on an uncertain region, ask a human — `make demo` drives all four; every decision recorded as `{input_metric, value, threshold, branch}` | `services/agent/loop.py`, `services/agent/policy.py`, `services/agent/tests/test_loop.py` | done |
 | Task effectiveness and evaluation | 20% | 23 scenarios, 12 of them on real photographs: branch accuracy 0.8696, defect macro F1 0.9513, mean IoU 0.8258, and three failure cases analysed to root cause | `docs/EVALUATION.md`, `eval/results/latest/` | done |
 | Failure handling, observability, security, human control | 15% | One span per tool call carrying args, metrics, duration and the verdict that the value triggered, persisted per run and served as JSON or a human-readable page | `services/observability/`, `services/api/app.py`, `GET /traces/{run_id}` | done |
-| UX and documentation | 10% | Agent loop diagram plus the trace viewer | `docs/AGENT_LOOP.md`, `GET /traces/{run_id}` with `Accept: text/html` | wip |
+| UX and documentation | 10% | Agent loop diagram plus the trace viewer | [`docs/TECHNICAL_REPORT.md` §6](TECHNICAL_REPORT.md#6-the-agentic-loop) and the field manual §03, `GET /traces/{run_id}` with `Accept: text/html` | done |
 
 ### The trace that has to exist
 
@@ -59,16 +59,18 @@ each one is compared against, is the policy's business.
 
 ## Deliverables
 
-- [ ] 1. Technical report — `docs/TECHNICAL_REPORT.md`: problem, users, architecture, OpenCV 5 implementation, AWS deploy, evaluation, limitations, responsible use
+- [x] 1. Technical report — [`docs/TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md): problem, users, real-world impact with cited sources, architecture, OpenCV 5 implementation, the agentic loop, AWS deploy, evaluation, limitations, responsible use. Self-contained; the headline evaluation figures in it are asserted against `eval/results/latest/results.json` by `eval/tests/test_published_numbers.py`
 - [ ] 2. Repository accessible to judges (public, or private with access granted)
 - [x] 3. Exact pins in `requirements.txt` and build/run instructions that work on a clean machine
-- [ ] 4. Two diagrams: infrastructure **and** the agent loop — the second is mandatory for the award
+- [x] 4. Two diagrams: infrastructure **and** the agent loop, both as Mermaid in [`docs/TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md) §4 and §6. The loop is additionally drawn as inline SVG in the field manual §03, and the infrastructure diagram is published on GitHub Pages §11
 - [x] 5. Public web endpoint, no login — **<https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/>**
       (Lambda container on Graviton + Function URL, no auth). Judge's path: `/` → upload a capture →
       the live trace → `/queue` to approve → `/assets/{id}` for the longitudinal history.
       Deployed 2 September from GitHub Actions over OIDC; every branch below was walked against
       this URL, not against localhost
-- [ ] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted
+- [ ] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted — script written and
+      timed in [`docs/VIDEO_SCRIPT.md`](VIDEO_SCRIPT.md), including the state the demo needs before
+      recording and the fallback trace. Only the recording is outstanding
 - [x] 7. Evaluation evidence in `eval/results/latest/` and `docs/EVALUATION.md`, **including failure cases** —
       23 scenarios (11 synthetic, 12 on licensed real photographs), branch accuracy 0.8696, defect macro F1 0.9513.
       Three failures analysed to root cause, and `eval/tests/test_published_numbers.py` fails CI if the page and

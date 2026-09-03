@@ -8,6 +8,10 @@ Built for the [OpenCV AI Competition 2026](https://opencv26.devpost.com/) — Ag
 
 **[Read the field manual](https://gmassello.github.io/afterimage/)** — a plain-language walkthrough of what the agent measures, what it decides, and why.
 
+**[Read the technical report](docs/TECHNICAL_REPORT.md)** — problem, real-world impact with cited
+sources, architecture, the OpenCV 5 implementation, the agentic loop, the AWS deploy and the limits.
+Both required diagrams live in it.
+
 **[Read the evaluation](docs/EVALUATION.md)** — 23 scenarios, 12 of them on real photographs of solar
 modules. Branch accuracy **0.8696**, defect macro F1 **0.9513**, mean IoU **0.8258** — and the three
 cases where it fails, each traced to a root cause. Reproduce with `make eval`.
@@ -66,6 +70,20 @@ The deploy prints the public URL. Endpoints: `/` (assets + upload), `/assets/{id
 `/queue` (human approvals), `/traces/{run_id}` (per-run trace, JSON or HTML), `/health`.
 
 ## Status
+
+Week 8: the written record. [`docs/TECHNICAL_REPORT.md`](docs/TECHNICAL_REPORT.md) is the
+self-contained report a judge reads end to end — with the infrastructure and agent-loop diagrams, the
+degradation literature that makes longitudinal comparison the right measurement, and the measured
+limits. The infrastructure diagram is also published on the
+[field manual](https://gmassello.github.io/afterimage/), and the five-minute video is scripted and
+timed in [`docs/VIDEO_SCRIPT.md`](docs/VIDEO_SCRIPT.md). The report's headline figures are asserted
+against `eval/results/latest/results.json` by the test suite, so the page cannot drift from the run.
+
+Week 7: evaluation. `make eval` scores the real agent loop over 23 declarative scenarios — 11
+synthetic, 12 on licensed photographs of real photovoltaic modules — with the scripted driver, so the
+table is identical on every run. It answered the two questions the code was carrying: the severity
+heuristic holds (macro F1 0.9513, precision 1.0 on every defect class) and `coverage_ratio_min`
+cannot be enabled with a global default, because healthy real captures span 0.0032 to 0.6357.
 
 Week 6: the public endpoint. The same FastAPI that serves traces now serves the whole product —
 upload a capture and the agent loop runs live (Gemini over MCP, policy verdicts in code), the

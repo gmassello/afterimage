@@ -6,8 +6,8 @@ Visual inspection agent with longitudinal memory for the OpenCV AI Competition 2
 The competition's week-by-week plan lives in `docs/BRIEF.md` §4. This file is the living state: what
 is closed, what comes next, and the detail of the stages that already have a design.
 
-**Stage 7 closed on 2 September** against a brief that schedules it for 7 – 13 October, so the
-project is running **about five weeks ahead**. That margin is real and worth not spending.
+**Stage 8 closed on 2 September** against a brief that schedules it for 14 – 20 October, so the
+project is running **about six weeks ahead**. That margin is real and worth not spending.
 
 ---
 
@@ -23,7 +23,7 @@ project is running **about five weeks ahead**. That margin is real and worth not
 | 5 | Observability — per-run event trace, trace endpoint | **closed** |
 | 6 | AWS deploy + front end + public endpoint | **closed** — live at https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ |
 | 7 | Evaluation — dataset, metrics, failure cases | **closed** — 23 scenarios, branch accuracy 0.8696, see `docs/EVALUATION.md` |
-| 8 | Technical report and documentation | pending |
+| 8 | Technical report, diagrams and video script | **closed** — see `docs/TECHNICAL_REPORT.md` |
 | 9 | Video, polish, submission | pending |
 
 ### Closed in stage 1
@@ -365,6 +365,54 @@ function on the strength of one scenario is the overfitting this dataset exists 
 Anti-drift, borrowed from `hindsight`: `eval/tests/test_published_numbers.py` parses every headline
 figure and every table row out of `docs/EVALUATION.md` and fails the suite if the page and
 `eval/results/latest/results.json` disagree. Verified by falsifying a number and watching it fail.
+
+### Closed in stage 8
+
+`docs/TECHNICAL_REPORT.md` — the self-contained document a judge reads end to end, in the order
+`SUBMISSION.md` demands: problem and users, real-world impact, longitudinal memory, architecture, the
+OpenCV 5 implementation, the agentic loop, deploy and responsible operation, evaluation, limitations,
+and how to reproduce it. It links out for detail rather than duplicating; the only figures it repeats
+are the headline ones, and those are now asserted by the test suite.
+
+**Both mandatory diagrams, in Mermaid inside the report** — no build step, no new dependency, and
+GitHub renders them natively. §4 is the infrastructure; §6 is the agent loop with every branch
+labelled by the metric and threshold that trigger it.
+
+**The impact section is argued from primary literature, and says what it could not find.** The
+sources that survived vetting are IEA-PVPS Task 13 (T13-09:2017 and T13-30:2025), Jordan et al. 2016
+on degradation rates, and Köntges et al. 2011 on microcracks. They support the one claim the project
+actually needs: **a defect is a curve, not an event** — PID runs ~15%/year in affected modules and is
+partially reversible before saturation, a microcrack under 8% of cell area costs nothing today and
+may cost the module later, soiling costs 5–20% a year depending on site. All of which is an argument
+for measuring against the same asset's past.
+
+Rejected on the way in, and the report says so: every inspection-cost figure that only appears on the
+blog of a vendor selling inspections, and the NREL and EPRI cost reports we could identify but not
+open to verify. **There is no published ROI for early detection** — the literature documents the
+mechanism, not the money — and inventing one would have been the easiest thing in the report to
+disprove.
+
+**One diagram went to GitHub Pages, not two.** The plan said both; §03 of the manual already draws
+the agent loop as hand-written inline SVG, so a Mermaid twin of it would have been the same picture
+twice, drawn two ways, drifting apart. Only the infrastructure diagram was missing, so only that one
+was added — as §11, with `mermaid.run()` called manually and the theme read from the page's own CSS
+custom properties, so it follows the light and dark palettes instead of hard-coding a third one. It
+is the first `<script>` this page has ever carried, and it is deferred to the end of `<body>`: if the
+CDN is unreachable the rest of the manual is unaffected.
+
+**Verified by rendering, not by assuming.** Both diagram sources were fed through `mermaid.parse()`
+in a browser, and the page was served over local HTTP and screenshotted in dark theme to confirm the
+subgraph titles fit and nothing overlaps. The first attempt failed that check — long subgraph titles
+were clipped and the nested cluster label collided with its first node — and the titles were
+shortened until it passed.
+
+`docs/VIDEO_SCRIPT.md` — the five minutes, timed against `BRIEF.md` §7, with the words to say, the
+action on screen for each block, and a pre-flight list of the state the demo needs. It names the
+failure case to show on camera, because a judge trusts a project that shows where it breaks.
+
+Anti-drift extended: `eval/tests/test_published_numbers.py` now also parses the report's headline
+figures and scenario counts, so neither published page can drift from the artefact.
+
 
 ## Stage 2.5 — Publish the manual on GitHub Pages
 

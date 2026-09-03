@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 PAGE = Path("docs/EVALUATION.md")
+REPORT = Path("docs/TECHNICAL_REPORT.md")
 RESULTS = Path("eval/results/latest/results.json")
 
 pytestmark = pytest.mark.skipif(
@@ -34,6 +35,25 @@ def test_headline_figures_match_the_artefact(published, measured):
     assert _claim(published, r"Defect accuracy \*\*([\d.]+)\*\*") == str(measured["defect"]["accuracy"])
     assert _claim(published, r"Defect accuracy.*?macro F1 \*\*([\d.]+)\*\*") == str(measured["defect"]["macro"]["f1"])
     assert _claim(published, r"Mean IoU \*\*([\d.]+)\*\*") == str(measured["localisation"]["mean_iou"])
+
+
+def test_the_report_restates_the_same_figures(measured):
+    report = REPORT.read_text()
+    assert _claim(report, r"Branch accuracy \| \*\*([\d.]+)\*\*") == str(measured["branch"]["accuracy"])
+    assert _claim(report, r"Branch accuracy.*?macro F1 \*\*([\d.]+)\*\*") == str(measured["branch"]["macro"]["f1"])
+    assert _claim(report, r"Defect classification accuracy \| \*\*([\d.]+)\*\*") == str(
+        measured["defect"]["accuracy"]
+    )
+    assert _claim(report, r"Defect classification accuracy.*?macro F1 \*\*([\d.]+)\*\*") == str(
+        measured["defect"]["macro"]["f1"]
+    )
+    assert _claim(report, r"Mean IoU of the located region \| \*\*([\d.]+)\*\*") == str(
+        measured["localisation"]["mean_iou"]
+    )
+    assert _claim(report, r"\*\*(\d+) passed\*\*") == str(measured["passed"])
+    assert _claim(report, r"\*\*(\d+) scenarios\*\*") == str(measured["scenarios"])
+    assert _claim(report, r"\*\* . (\d+) synthetic") == str(measured["synthetic"])
+    assert _claim(report, r"synthetic and (\d+) built on") == str(measured["real"])
 
 
 def test_scenario_counts_match_the_artefact(published, measured):

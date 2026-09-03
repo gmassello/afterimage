@@ -213,6 +213,23 @@
   .d-act-s { font-family: var(--sans); font-size: 10.5px; fill: var(--muted); }
   .d-rail-t{ font-family: var(--mono); font-size: 10px;   fill: var(--cool); }
 
+  .diagram .mermaid {
+    margin: 0;
+    padding: 1.5rem 0;
+    overflow-x: auto;
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    color: var(--muted);
+    white-space: pre-wrap;
+  }
+
+  .diagram .mermaid[data-processed] {
+    white-space: normal;
+    text-align: center;
+  }
+
+  .diagram .mermaid svg { max-width: 100%; height: auto; }
+
   figcaption {
     font-size: var(--step--1);
     color: var(--muted);
@@ -960,7 +977,68 @@
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">11</span><h2>Run it yourself</h2></div>
+    <div class="sec-head"><span class="marker">11</span><h2>The cloud it runs in</h2></div>
+    <div class="col">
+      <p>
+        Everything above happens inside a single container image on one AWS Lambda function. There is
+        no separate inference service, no queue, no orchestrator: the agent loop is a function call
+        made while your upload is still open, which is why the trace is ready by the time the page
+        redirects. The same diagram opens the
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/TECHNICAL_REPORT.md">technical report</a>.
+      </p>
+    </div>
+
+    <figure class="diagram">
+      <pre class="mermaid">
+flowchart TB
+    Browser["Operator browser<br/>no login"]
+
+    subgraph deploy["Deploy"]
+        GHA["GitHub Actions<br/>ubuntu-24.04-arm"]
+        ECRR["ECR repository<br/>lifecycle keeps the last 5 images"]
+        CFN["CloudFormation and SAM<br/>infra/template.yaml"]
+        GHA --&gt;|"OIDC, sub pinned to the<br/>immutable owner and repo IDs"| CFN
+        GHA --&gt;|"docker buildx, linux/arm64"| ECRR
+    end
+
+    subgraph aws["AWS us-east-1"]
+        URL["Lambda Function URL<br/>AuthType NONE"]
+
+        subgraph fn["One container"]
+            LWA["Lambda Web Adapter<br/>arm64 Graviton, 2048 MB, 900 s"]
+            API["FastAPI, serves the whole site"]
+            LOOP["Agent loop<br/>policy evaluated in code"]
+            MCPS["MCP server, five perception tools"]
+            CV["OpenCV 5.0.0 headless<br/>ALIKED and LightGlue ONNX"]
+            LWA --&gt; API --&gt; LOOP --&gt; MCPS --&gt; CV
+        end
+
+        DDB[("DynamoDB, one table<br/>the asset, its inspections<br/>and its chain of baselines")]
+        S3B[("S3, captures and traces<br/>objects expire at 180 days")]
+        LOGS["CloudWatch Logs<br/>kept 30 days"]
+        EB["EventBridge, every 5 minutes"]
+    end
+
+    Browser --&gt;|"uploads a capture"| URL
+    URL --&gt; LWA
+    LOOP &lt;--&gt; DDB
+    LOOP &lt;--&gt; S3B
+    fn --&gt; LOGS
+    EB --&gt;|"a synthetic /health, to keep it warm"| URL
+    CFN --&gt; fn
+    ECRR --&gt;|"the image, tagged with the git SHA"| fn
+      </pre>
+      <figcaption>
+        The deploy carries no stored credentials: GitHub federates over OIDC into a role whose trust
+        is pinned to numeric owner and repository IDs, and a permissions boundary caps that role at
+        this stack's own table, bucket and logs. Nothing else in the account is reachable from a
+        build.
+      </figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="marker">12</span><h2>Run it yourself</h2></div>
     <div class="col">
       <p>
         A handful of commands, no cloud account, no credentials. The neural matchers need two ONNX
@@ -995,11 +1073,14 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">12</span><h2>Where the project stands</h2></div>
+    <div class="sec-head"><span class="marker">13</span><h2>Where the project stands</h2></div>
     <div class="col">
       <p>
-        Week 7 of 9. The loop closes, explains itself, runs in public and now has a score. What
-        remains is the written report and the video.
+        Week 8 of 9. The loop closes, explains itself, runs in public, has a score, and now has the
+        document that explains it end to end: the
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/TECHNICAL_REPORT.md">technical report</a>,
+        which is where this manual sends you when you want the numbers rather than the plain-language
+        version. What remains is the video.
       </p>
     </div>
 
@@ -1016,13 +1097,14 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
           <tr><td>Per-run event trace, trace endpoint</td><td><span class="pill done">built</span></td><td class="num lo">5</td></tr>
           <tr><td>AWS deploy, public endpoint, front end</td><td><span class="pill done">built</span></td><td class="num lo">6</td></tr>
           <tr><td>Evaluation set, metrics, failure cases</td><td><span class="pill done">built</span></td><td class="num lo">7</td></tr>
+          <tr><td>Technical report, both diagrams, video script</td><td><span class="pill done">built</span></td><td class="num lo">8</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">13</span><h2>Known limits</h2></div>
+    <div class="sec-head"><span class="marker">14</span><h2>Known limits</h2></div>
     <div class="col">
       <ul class="plain">
         <li>
@@ -1061,9 +1143,36 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
   </section>
 
   <footer>
-    afterimage · week 7 of 9 · every number on this page came from a run, not an estimate
+    afterimage · week 8 of 9 · every number on this page came from a run, not an estimate
   </footer>
 
 </div>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs";
+  const palette = (name) =>
+    getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: "strict",
+    theme: "base",
+    fontFamily: '"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif',
+    themeVariables: {
+      background: palette("--ground"),
+      primaryColor: palette("--surface"),
+      primaryTextColor: palette("--ink"),
+      primaryBorderColor: palette("--line"),
+      lineColor: palette("--muted"),
+      secondaryColor: palette("--accent-soft"),
+      tertiaryColor: palette("--sunk"),
+      clusterBkg: palette("--sunk"),
+      clusterBorder: palette("--line"),
+      titleColor: palette("--muted"),
+      edgeLabelBackground: palette("--ground")
+    }
+  });
+  await mermaid.run({ querySelector: ".mermaid" });
+</script>
 </body>
 </html>
