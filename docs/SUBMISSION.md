@@ -16,7 +16,7 @@ Status: `done` · `wip` · `todo`
 | Innovation | 20% | **Longitudinal memory.** No previous winner kept state across inspections of the same asset; every prior project analyses one frame or one session. A second inspection retrieves the baseline from memory, aligns to it and locates the new defect | `services/memory/`, `services/memory/tests/test_longitudinal.py`, [`docs/TECHNICAL_REPORT.md` §3](TECHNICAL_REPORT.md#3-what-makes-this-different-longitudinal-memory), video 1:30–3:15 | done |
 | Real-world impact | 20% | Preventive maintenance of solar plants, argued from cited primary sources: ~2,900 modules per MW, PID degrading ~15%/year in affected modules and partially reversible if caught before saturation, soiling at 5–20% annual loss — every figure with organism, year and URL, and the absence of a published early-detection ROI stated rather than invented | [`docs/TECHNICAL_REPORT.md` §2](TECHNICAL_REPORT.md#2-why-change-over-time-is-the-right-thing-to-measure) | done |
 | User experience | 10% | Approval queue and asset history legible without explanation | public endpoint (`/`, `/queue`, `/assets/{id}`) | wip |
-| Documentation and presentation | 10% | README, a self-contained technical report, and both diagrams — the agent loop and the infrastructure, the second also published on GitHub Pages | `README.md`, [`docs/TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md), <https://gmassello.github.io/afterimage/> | done |
+| Documentation and presentation | 10% | A judge-first README — the loop in a GIF captured from the live endpoint, measured results and failure cases above the fold, the weekly log folded away — plus a self-contained technical report and both diagrams, the infrastructure one also published on GitHub Pages | `README.md`, [`docs/TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md), <https://gmassello.github.io/afterimage/> | done |
 | Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, per-run event traces | `infra/template.yaml`, `infra/github-oidc.yaml`, `deploy.sh`, `requirements.txt` | wip |
 
 ## Agentic Vision Award
@@ -60,7 +60,7 @@ each one is compared against, is the policy's business.
 ## Deliverables
 
 - [x] 1. Technical report — [`docs/TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md): problem, users, real-world impact with cited sources, architecture, OpenCV 5 implementation, the agentic loop, AWS deploy, evaluation, limitations, responsible use. Self-contained; the headline evaluation figures in it are asserted against `eval/results/latest/results.json` by `eval/tests/test_published_numbers.py`
-- [ ] 2. Repository accessible to judges (public, or private with access granted)
+- [x] 2. Repository accessible to judges — public, and now licensed: `LICENSE` (MIT), so GitHub reports the licence rather than `null` and a judge knows what they may reuse
 - [x] 3. Exact pins in `requirements.txt` and build/run instructions that work on a clean machine
 - [x] 4. Two diagrams: infrastructure **and** the agent loop, both as Mermaid in [`docs/TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md) §4 and §6. The loop is additionally drawn as inline SVG in the field manual §03, and the infrastructure diagram is published on GitHub Pages §11
 - [x] 5. Public web endpoint, no login — **<https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/>**

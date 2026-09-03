@@ -410,6 +410,23 @@ shortened until it passed.
 action on screen for each block, and a pre-flight list of the state the demo needs. It names the
 failure case to show on camera, because a judge trusts a project that shows where it breaks.
 
+**El README, rediseñado desde Claude Design.** `Readme.dc.html` del proyecto "Mejorar el README"
+portado a markdown de GitHub: hero centrado, badges, un GIF del loop, los resultados medidos y los
+tres casos de falla arriba, y el log semanal plegado en un `<details>`. El kit centra con clases CSS
+que GitHub borra, así que el port usa `align="center"`, y `Alert type="tip"` pasa a la sintaxis
+nativa `> [!TIP]`.
+
+Dos cosas que el diseño destapó y no se dejaron pasar. El badge decía `license MIT` con el repo sin
+`LICENSE` y `licenseInfo: null` en GitHub — se agregó el archivo, así que la etiqueta pasó de
+decorativa a cierta. Y el diagrama omitía el reintento con ORB: ahora `inlier_ratio` bajo 0.90
+reintenta con el detector clásico y recién bajo 0.30 declara el activo desconocido, que es ACTION 2
+de las cuatro.
+
+Las tres imágenes de `docs/img/` se capturaron del endpoint público, no se dibujaron: una corrida
+real sobre `crack-real-closeup` que terminó en `score 0.6798 >= 0.4 -> human_approval`, con su
+aprobación resuelta en la cola para que el historial mostrara la cadena de baselines con el anterior
+`superseded_by`.
+
 Anti-drift extended: `eval/tests/test_published_numbers.py` now also parses the report's headline
 figures and scenario counts, so neither published page can drift from the artefact.
 

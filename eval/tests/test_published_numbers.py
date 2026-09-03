@@ -6,6 +6,7 @@ import pytest
 
 PAGE = Path("docs/EVALUATION.md")
 REPORT = Path("docs/TECHNICAL_REPORT.md")
+README = Path("README.md")
 RESULTS = Path("eval/results/latest/results.json")
 
 pytestmark = pytest.mark.skipif(
@@ -55,6 +56,29 @@ def test_the_report_restates_the_same_figures(measured):
     assert _claim(report, r"\*\* . (\d+) synthetic") == str(measured["synthetic"])
     assert _claim(report, r"synthetic and (\d+) built on") == str(measured["real"])
 
+
+
+def test_the_readme_restates_the_same_figures(measured):
+    readme = README.read_text()
+    rows = dict(re.findall(r"\| ([\w /]+?) \| ([\d./ ]+?) \|", readme))
+    assert rows["Branch accuracy"].strip() == str(measured["branch"]["accuracy"])
+    assert rows["Defect macro F1"].strip() == str(measured["defect"]["macro"]["f1"])
+    assert rows["Mean IoU"].strip() == str(measured["localisation"]["mean_iou"])
+    assert rows["Scenarios passed"].strip() == f"{measured['passed']} / {measured['scenarios']}"
+    assert _claim(readme, r"macro F1 ([\d.]+)") == str(measured["branch"]["macro"]["f1"])
+    assert _claim(readme, r"(\d+) scenarios —") == str(measured["scenarios"])
+    assert _claim(readme, r"— (\d+) synthetic") == str(measured["synthetic"])
+    assert _claim(readme, r"synthetic, (\d+) on licensed") == str(measured["real"])
+    assert _claim(readme, r"\*\*(\d+) pass\*\*") == str(measured["passed"])
+
+
+def test_every_readme_path_resolves():
+    readme = README.read_text()
+    targets = re.findall(r'(?:src|href)="([^"]+)"', readme) + re.findall(r"\]\(([^)]+)\)", readme)
+    local = {t for t in targets if not t.startswith(("http://", "https://", "#", "mailto:"))}
+    assert local, "the README no longer links to anything in the repository"
+    missing = sorted(t for t in local if not Path(t.split("#")[0]).exists())
+    assert not missing, f"README points at paths that do not exist: {missing}"
 
 def test_scenario_counts_match_the_artefact(published, measured):
     assert _claim(published, r"\*\*(\d+) passed\*\*") == str(measured["passed"])
