@@ -5,3 +5,6 @@ __pycache__/
 .pytest_cache/
 models/
 runs/
+video/out/
+video/*.mov
+video/img/

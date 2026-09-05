@@ -70,7 +70,11 @@ each one is compared against, is the policy's business.
       this URL, not against localhost
 - [ ] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted — script written and
       timed in [`docs/VIDEO_SCRIPT.md`](VIDEO_SCRIPT.md), including the state the demo needs before
-      recording and the fallback trace. Only the recording is outstanding
+      recording and the fallback trace. The author narrates in Spanish with burned-in English
+      subtitles, face full screen at the opening and the close and in a corner box over the demo.
+      Demo state rehearsed against the public endpoint, and the assembly pipeline
+      ([`video/PRODUCTION.md`](../video/PRODUCTION.md)) rehearsed end to end on synthetic speech.
+      Only the camera clips are outstanding
 - [x] 7. Evaluation evidence in `eval/results/latest/` and `docs/EVALUATION.md`, **including failure cases** —
       23 scenarios (11 synthetic, 12 on licensed real photographs), branch accuracy 0.8696, defect macro F1 0.9513.
       Three failures analysed to root cause, and `eval/tests/test_published_numbers.py` fails CI if the page and

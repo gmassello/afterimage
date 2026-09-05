@@ -11,6 +11,28 @@ the camera.
 
 ---
 
+## How it is recorded
+
+This document is the **content**. The delivered video changes the delivery, not the substance:
+
+| | |
+|---|---|
+| Voice | The author's own, in Spanish, end to end. No synthetic narration |
+| Subtitles | English, burned in, plus a sidecar `demo.en.srt`. The text below is the subtitle text |
+| Face | Full screen for the opening and the close; a box in the top-right corner over the demo |
+| Assembly | Seven camera clips, one per beat, fitted to the screencast — `video/PRODUCTION.md` |
+
+The competition rules require the author's face, the app, the architecture and the results, and set
+no language requirement (`docs/BRIEF.md` §1). A real voice and a face on screen throughout carry
+more in a competition video than a synthetic reading, and the subtitles carry the content in full.
+
+Subtitle timings come from silence detection over the recorded voice, not from an estimate:
+`video/build-face-audio.py` takes the longest pauses inside each beat as the boundaries between its
+rows. Rehearsed against synthetic Spanish speech with known ground truth, the worst boundary landed
+**39 ms** off.
+
+---
+
 ## Before recording — the state the demo needs
 
 The demo is three uploads against <https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/>.

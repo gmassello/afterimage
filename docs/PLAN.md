@@ -24,7 +24,7 @@ project is running **about six weeks ahead**. That margin is real and worth not 
 | 6 | AWS deploy + front end + public endpoint | **closed** — live at https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ |
 | 7 | Evaluation — dataset, metrics, failure cases | **closed** — 23 scenarios, branch accuracy 0.8696, see `docs/EVALUATION.md` |
 | 8 | Technical report, diagrams and video script | **closed** — see `docs/TECHNICAL_REPORT.md` |
-| 9 | Video, polish, submission | pending |
+| 9 | Video, polish, submission | **wip** — script, demo state and assembly pipeline done and rehearsed end to end; waiting on the camera clips |
 
 ### Closed in stage 1
 

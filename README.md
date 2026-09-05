@@ -65,7 +65,7 @@ Each of the three is traced to a root cause in [the evaluation](docs/EVALUATION.
 ## How the loop works
 
 ```mermaid
-flowchart LR
+flowchart TD
   C[capture] --> Q{assess_quality}
   Q -- blur_variance below 100 --> R[request recapture]
   Q --> A{align_to_baseline}
