@@ -26,9 +26,13 @@ Seven separate recordings, not one long take: a clip that goes wrong is re-recor
 
 ### The one rule that makes the subtitles land
 
-**Pause for a beat between one row and the next**, the way you read a list. Nothing is measured
-against a stopwatch — the pauses themselves are what tells the assembler where each subtitle
-changes. Inside a row, speak normally.
+**Pause between one row and the next**, the way you read a list. Those pauses are what tells the
+assembler where each subtitle changes. Inside a row, speak normally.
+
+Do not worry about how long the pauses are: anything over 0.7 s is cut back to 0.7 s afterwards,
+audio and picture together, and so is dead air at the top and tail of each clip. Two real takes ran
+long at 1.1 s and 1.5 s per pause; trimming brought them under target without a re-record. A pause
+that is too *short* is the one that cannot be fixed later, so err long.
 
 Read the `es` column from a teleprompter placed directly under the lens, large type. On the two
 face clips the eyes-off-lens drift is visible; inside the small box it is not.
@@ -52,11 +56,16 @@ still for a beat before stopping the recording.
 python3 video/build-face-audio.py
 ```
 
-Reads the seven clips, writes `video/out/narration.wav`, `body.wav`, `body-timing.txt` and
-`captions.srt`, and reports per clip whether the pauses it found match the rows expected.
+Reads the seven clips and writes `video/out/narration.wav`, `body.wav`, `body-timing.txt`,
+`captions.srt`, and a trimmed copy of each clip under `video/out/clips/`. Everything downstream uses
+the trimmed copies — `assemble.sh` included — so the originals are never touched.
+
+The report shows raw length, tight length and what trimming saved. Trimming also re-encodes ProRes
+to H.264, which takes each 600 MB clip down to about 25 MB; a clip is only re-rendered when it is
+newer than its trimmed copy.
 
 **Record `body-1.mov` first and run this on it alone.** If your reading does not produce clean
-boundaries, it shows up on one 25-second clip instead of five. Every beat must say `silence`; a beat
+boundaries, it shows up on one 25-second clip instead of five. Every beat must say `fitted`; a beat
 that says `proportional` means the pauses were not found and its subtitles are estimated.
 
 If a room noise floor swallows the pauses, raise the threshold: `NOISE_DB=-25dB python3 …`.
@@ -149,6 +158,15 @@ Speaks `script.tsv` with a Spanish TTS voice into seven synthetic clips, runs th
 `build-face-audio.py` over them, and checks the subtitles it produced against timings it knows to
 be true: 63 cues, every caption in order, **worst boundary error 39 ms**. Needs macOS, takes about
 a minute, and leaves nothing behind.
+
+`REHEARSAL_GAP=1.4 python3 video/rehearse.py` runs the same check against clips with long pauses,
+which is what exercises the trimming: it verifies the cap held and that every subtitle still changes
+inside a real silence rather than over a word.
+
+Synthetic speech pauses evenly, so the default run only proves the precise case. The messy case — a reader who
+hesitates mid-sentence — is what the real takes test, and it is why a boundary is chosen by pause
+length *and* by how well the split matches the length of the text around it. `LONG_BONUS` sets the
+balance; anywhere from 25 to 200 satisfies both cases, and it ships at 60.
 
 The assembly was rehearsed the same way against a stand-in screencast: `demo.mp4` came out
 1920×1080 at exactly the length of the voice track, with the box and the burned-in subtitles in

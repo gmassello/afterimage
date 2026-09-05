@@ -12,6 +12,9 @@ MAX_SECONDS = 300.0
 NOISE_DB = os.environ.get("NOISE_DB", "-30dB")
 MIN_SILENCE = float(os.environ.get("MIN_SILENCE", "0.20"))
 EDGE_GUARD = 0.15
+LONG_BONUS = float(os.environ.get("LONG_BONUS", "60"))
+MAX_PAUSE = float(os.environ.get("MAX_PAUSE", "0.55"))
+HANDLE = float(os.environ.get("HANDLE", "0.15"))
 
 BEATS = [
     ("0:00", "face-open.mov"),
@@ -73,15 +76,106 @@ def proportional(span, texts):
     return cuts
 
 
+def fitted(dur, gaps, texts):
+    mids = [(a + b) / 2 for a, b in gaps]
+    widths = [b - a for a, b in gaps]
+    widest = max(widths)
+    rate = sum(len(t) for t in texts) / dur
+    cuts = len(texts) - 1
+
+    def cost(chars, span, j):
+        if span <= 0.05:
+            return 1e9
+        return (chars / span - rate) ** 2 - LONG_BONUS * widths[j] / widest
+
+    best = [[(1e9, -1)] * len(gaps) for _ in range(cuts)]
+    for j in range(len(gaps)):
+        best[0][j] = (cost(len(texts[0]), mids[j], j), -1)
+    for i in range(1, cuts):
+        for j in range(i, len(gaps)):
+            for k in range(i - 1, j):
+                prior = best[i - 1][k][0]
+                if prior >= 1e9:
+                    continue
+                total = prior + cost(len(texts[i]), mids[j] - mids[k], j)
+                if total < best[i][j][0]:
+                    best[i][j] = (total, k)
+
+    end = min(
+        ((best[cuts - 1][j][0] + (len(texts[-1]) / max(dur - mids[j], 0.05) - rate) ** 2, j)
+         for j in range(cuts - 1, len(gaps)) if best[cuts - 1][j][0] < 1e9),
+        default=None,
+    )
+    if end is None:
+        return None
+    picked, j = [], end[1]
+    for i in range(cuts - 1, -1, -1):
+        picked.append(j)
+        j = best[i][j][1]
+    return [mids[j] for j in reversed(picked)]
+
+
 def boundaries(dur, gaps, texts):
     if len(texts) < 2:
         return [], "single", 0
     inner = [g for g in gaps if g[0] > EDGE_GUARD and g[1] < dur - EDGE_GUARD]
     needed = len(texts) - 1
-    if len(inner) < needed:
-        return proportional(dur, texts), "proportional", len(inner)
-    longest = sorted(inner, key=lambda g: g[1] - g[0], reverse=True)[:needed]
-    return [(a + b) / 2 for a, b in sorted(longest)], "silence", len(inner)
+    if len(inner) >= needed:
+        cuts = fitted(dur, inner, texts)
+        if cuts:
+            return cuts, "fitted", len(inner)
+    return proportional(dur, texts), "proportional", len(inner)
+
+
+def compress(dur, gaps, cuts):
+    drop = []
+    lead = next(((a, b) for a, b in gaps if a < 0.05), None)
+    if lead and lead[1] > HANDLE:
+        drop.append((0.0, lead[1] - HANDLE))
+    tail = next(((a, b) for a, b in gaps if b > dur - 0.05), None)
+    if tail and dur - tail[0] > HANDLE:
+        drop.append((tail[0] + HANDLE, dur))
+    for cut in cuts:
+        gap = next((g for g in gaps if abs((g[0] + g[1]) / 2 - cut) < 0.01), None)
+        if gap and gap[1] - gap[0] > MAX_PAUSE:
+            drop.append((gap[0] + MAX_PAUSE / 2, gap[1] - MAX_PAUSE / 2))
+    drop.sort()
+
+    keep, at = [], 0.0
+    for a, b in drop:
+        if a > at:
+            keep.append((at, a))
+        at = max(at, b)
+    if at < dur - 0.01:
+        keep.append((at, dur))
+
+    def shift(t):
+        return t - sum(min(b, t) - a for a, b in drop if a < t)
+
+    return keep, [shift(c) for c in cuts], sum(b - a for a, b in keep)
+
+
+def render(src, keep, dest):
+    plan = dest.with_suffix(".plan")
+    want = "\n".join(f"{a:.3f} {b:.3f}" for a, b in keep)
+    if dest.exists() and plan.exists() and plan.read_text() == want \
+            and dest.stat().st_mtime > src.stat().st_mtime:
+        return
+    parts, labels = [], ""
+    for i, (a, b) in enumerate(keep):
+        parts.append(f"[0:v]trim={a:.3f}:{b:.3f},setpts=PTS-STARTPTS[v{i}]")
+        parts.append(f"[0:a]atrim={a:.3f}:{b:.3f},asetpts=PTS-STARTPTS[a{i}]")
+        labels += f"[v{i}][a{i}]"
+    graph = ";".join(parts) + f";{labels}concat=n={len(keep)}:v=1:a=1[v][a]"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-i", str(src), "-filter_complex", graph,
+         "-map", "[v]", "-map", "[a]", "-c:v", "libx264", "-preset", "veryfast",
+         "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "pcm_s16le",
+         "-ar", "48000", "-ac", "1", str(dest)],
+        check=True,
+    )
+    plan.write_text(want)
 
 
 def dead_air(dur, gaps):
@@ -122,7 +216,8 @@ def main():
 
     measured, offset, cues, formats = [], 0.0, [], {}
     print()
-    print(f"  {'clip':<16}{'beat':<7}{'length':>8}{'lines':>7}{'pauses':>8}  {'method':<13}{'dead air':>10}")
+    print(f"  {'clip':<16}{'beat':<7}{'raw':>8}{'lines':>7}{'pauses':>8}  {'method':<13}"
+          f"{'tight':>8}{'saved':>8}")
     for beat, name in BEATS:
         path = VIDEO / name
         if not path.exists():
@@ -134,17 +229,19 @@ def main():
         gaps = silences(path)
         texts = [es for _, es in lines[beat]]
         cuts, method, found = boundaries(dur, gaps, texts)
-        lead, tail = dead_air(dur, gaps)
-        measured.append((beat, name, dur))
+        keep, cuts, tight = compress(dur, gaps, cuts)
+        trimmed = OUT / "clips" / name
+        render(path, keep, trimmed)
+        measured.append((beat, name, tight, trimmed))
 
-        edges = [0.0] + cuts + [dur]
+        edges = [0.0] + cuts + [tight]
         for i, (en, _) in enumerate(lines[beat]):
             cues.append((offset + edges[i], offset + edges[i + 1], en))
-        offset += dur
+        offset += tight
 
-        flag = "" if method == "silence" or len(texts) < 2 else "  <-- CHECK"
+        flag = "" if method != "proportional" else "  <-- CHECK"
         print(f"  {name:<16}{beat:<7}{dur:>7.1f}s{len(texts):>7}{found:>8}  {method:<13}"
-              f"{lead + tail:>9.1f}s{flag}")
+              f"{tight:>8.1f}s{dur - tight:>8.1f}s{flag}")
     print()
 
     if len(formats) > 1:
@@ -158,15 +255,15 @@ def main():
         print("  nothing written until all seven clips exist.\n")
         return 1
 
-    total = sum(d for _, _, d in measured)
-    body = [(b, n, d) for b, n, d in measured if (b, n) in BODY]
+    total = sum(d for _, _, d, _ in measured)
+    body = [(b, n, d, t) for b, n, d, t in measured if (b, n) in BODY]
 
     OUT.mkdir(parents=True, exist_ok=True)
-    concat_audio([VIDEO / n for _, n in BODY], OUT / "body.wav")
-    concat_audio([VIDEO / n for _, n in BEATS], OUT / "narration.wav")
+    concat_audio([t for _, _, _, t in body], OUT / "body.wav")
+    concat_audio([t for _, _, _, t in measured], OUT / "narration.wav")
 
     rows, start = ["  beat    starts      ends   length"], 0.0
-    for beat, _, dur in body:
+    for beat, _, dur, _ in body:
         rows.append(f"  {beat:<8}{start:>6.1f}{start + dur:>10.1f}{dur:>9.1f}")
         start += dur
     (OUT / "body-timing.txt").write_text("\n".join(rows) + "\n")
@@ -176,7 +273,7 @@ def main():
         srt.append(f"{i}\n{srt_time(a)} --> {srt_time(b)}\n{text}\n")
     (OUT / "captions.srt").write_text("\n".join(srt))
 
-    print(f"  body   {sum(d for _, _, d in body):6.1f} s   -> out/body.wav, out/body-timing.txt")
+    print(f"  body   {sum(d for _, _, d, _ in body):6.1f} s   -> out/body.wav, out/body-timing.txt")
     print(f"  total  {total:6.1f} s   =  {int(total // 60)}:{total % 60:04.1f}   "
           f"-> out/narration.wav, out/captions.srt ({len(cues)} cues)")
     over = total - MAX_SECONDS

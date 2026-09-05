@@ -14,8 +14,9 @@ BODY_CLIPS=(body-1.mov body-2.mov body-3.mov body-4.mov body-5.mov)
 
 probe() { ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 "$1"; }
 
+CUT="$OUT/clips"
 for f in face-open.mov face-close.mov "${BODY_CLIPS[@]}"; do
-  [ -f "$VIDEO_DIR/$f" ] || { echo "ERROR: $VIDEO_DIR/$f not found."; exit 1; }
+  [ -f "$CUT/$f" ] || { echo "ERROR: $CUT/$f not found. Run build-face-audio.py first."; exit 1; }
 done
 for f in narration.wav captions.srt body.wav body-timing.txt; do
   [ -f "$OUT/$f" ] || { echo "ERROR: $OUT/$f not found. Run build-face-audio.py first."; exit 1; }
@@ -33,12 +34,12 @@ printf 'body audio %.1f s   screencast %.1f s\n' "$BODY_DUR" "$(probe "$OUT/raw-
 FIT="scale=1920:1080:force_original_aspect_ratio=decrease,\
 pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30"
 
-INPUTS=(-i "$OUT/raw-fitted.mov" -i "$VIDEO_DIR/face-open.mov" -i "$VIDEO_DIR/face-close.mov")
+INPUTS=(-i "$OUT/raw-fitted.mov" -i "$CUT/face-open.mov" -i "$CUT/face-close.mov")
 GRAPH="[0:v]${FIT}[screen];"
 i=3
 PIPCHAIN=""
 for clip in "${BODY_CLIPS[@]}"; do
-  INPUTS+=(-i "$VIDEO_DIR/$clip")
+  INPUTS+=(-i "$CUT/$clip")
   GRAPH+="[${i}:v]scale=${PIP_W}:-2,setsar=1,fps=30[p$i];"
   PIPCHAIN+="[p$i]"
   i=$((i + 1))

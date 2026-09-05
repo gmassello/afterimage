@@ -26,10 +26,13 @@ The competition rules require the author's face, the app, the architecture and t
 no language requirement (`docs/BRIEF.md` §1). A real voice and a face on screen throughout carry
 more in a competition video than a synthetic reading, and the subtitles carry the content in full.
 
-Subtitle timings come from silence detection over the recorded voice, not from an estimate:
-`video/build-face-audio.py` takes the longest pauses inside each beat as the boundaries between its
-rows. Rehearsed against synthetic Spanish speech with known ground truth, the worst boundary landed
-**39 ms** off.
+Subtitle timings come from silence detection over the recorded voice, not from an estimate.
+`video/build-face-audio.py` weighs two things against each other for every candidate boundary: how
+long the pause is, and how well the resulting split matches the length of the text on either side.
+Pause length alone is not enough — a reader who hesitates mid-sentence for longer than they pause
+between rows will fool it, which is exactly what the first real take did. Rehearsed against
+synthetic speech with known ground truth, the worst boundary lands **39 ms** off
+(`python3 video/rehearse.py`).
 
 ---
 

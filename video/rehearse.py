@@ -1,3 +1,5 @@
+import os
+import re
 import shutil
 import subprocess
 import sys
@@ -17,7 +19,7 @@ BEATS = [
     ("4:00", "body-5.mov"),
     ("4:35", "face-close.mov"),
 ]
-GAP = 0.45
+GAP = float(os.environ.get("REHEARSAL_GAP", "0.45"))
 VOICE = "Mónica"
 WPM = "180"
 TOLERANCE = 0.25
@@ -74,6 +76,16 @@ def speak(stage, lines):
     return truth
 
 
+def silences(path):
+    proc = subprocess.run(
+        ["ffmpeg", "-v", "info", "-i", str(path),
+         "-af", "silencedetect=noise=-30dB:d=0.20", "-f", "null", "-"],
+        capture_output=True, text=True, check=True,
+    )
+    return list(zip([float(x) for x in re.findall(r"silence_start: ([\d.]+)", proc.stderr)],
+                    [float(x) for x in re.findall(r"silence_end: ([\d.]+)", proc.stderr)]))
+
+
 def parse_srt(path):
     def secs(stamp):
         h, m, rest = stamp.split(":")
@@ -106,26 +118,57 @@ def main():
     expected = sum(len(v) for v in lines.values())
     assert len(cues) == expected, f"{len(cues)} cues, expected {expected}"
 
-    worst, over, index, offset = 0.0, 0, 0, 0.0
-    for beat, name in BEATS:
-        spoken = truth[name]
-        for i, (en, _) in enumerate(lines[beat]):
-            assert cues[index + i][2] == en, f"caption out of order in {name} row {i}"
-        elapsed = 0.0
-        for i in range(len(spoken) - 1):
-            elapsed += spoken[i]
-            boundary = elapsed + i * GAP + GAP / 2
-            error = abs((cues[index + i + 1][0] - offset) - boundary)
-            worst = max(worst, error)
-            over += error > TOLERANCE
-        index += len(spoken)
-        offset += duration(stage / name)
+    shrunk = sum(duration(stage / n) - duration(stage / "out" / "clips" / n)
+                 for _, n in BEATS)
+    trimmed = shrunk > 0.5
 
-    print(f"  {len(cues)} cues, every caption in order")
-    print(f"  worst boundary error {worst * 1000:.0f} ms, "
-          f"{over} over the {TOLERANCE * 1000:.0f} ms tolerance\n")
+    failures, worst, index, offset = 0, 0.0, 0, 0.0
+    longest_pause = 0.0
+    for beat, name in BEATS:
+        cut = stage / "out" / "clips" / name
+        span = duration(cut)
+        gaps = silences(cut)
+        n = len(lines[beat])
+
+        for i, (en, _) in enumerate(lines[beat]):
+            if cues[index + i][2] != en:
+                print(f"  FAIL: caption out of order in {name} row {i}")
+                failures += 1
+
+        for i in range(1, n):
+            t = cues[index + i][0] - offset
+            if not any(a - 0.06 <= t <= b + 0.06 for a, b in gaps):
+                print(f"  FAIL: {name} boundary {i} at {t:.2f}s lands in speech")
+                failures += 1
+
+        inner = [b - a for a, b in gaps if a > 0.15 and b < span - 0.15]
+        longest_pause = max([longest_pause] + inner)
+
+        if not trimmed:
+            spoken, elapsed = truth[name], 0.0
+            for i in range(len(spoken) - 1):
+                elapsed += spoken[i]
+                want = elapsed + i * GAP + GAP / 2
+                error = abs((cues[index + i + 1][0] - offset) - want)
+                worst = max(worst, error)
+                if error > TOLERANCE:
+                    failures += 1
+
+        index += n
+        offset += span
+
+    print(f"  {len(cues)} cues, every caption inside a real silence")
+    if trimmed:
+        print(f"  trimming removed {shrunk:.1f} s, longest surviving pause {longest_pause:.2f} s")
+        if longest_pause > 1.0:
+            print(f"  FAIL: a {longest_pause:.2f} s pause survived the cap")
+            failures += 1
+    else:
+        print(f"  worst boundary error {worst * 1000:.0f} ms "
+              f"(tolerance {TOLERANCE * 1000:.0f} ms)")
+    print(f"  {failures} failures\n")
     shutil.rmtree(stage, ignore_errors=True)
-    return 1 if over else 0
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":
