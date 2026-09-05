@@ -140,6 +140,15 @@ Two things the rehearsal changed:
 
 ## Pipeline rehearsed end to end
 
-Before any camera existed, the whole chain ran on seven synthetic clips generated with Spanish TTS:
-63 cues, every beat resolved by silence detection, **worst boundary error 39 ms** against known
-ground truth, and `demo.mp4` came out 1920×1080 at exactly the length of the voice track.
+```bash
+python3 video/rehearse.py
+```
+
+Speaks `script.tsv` with a Spanish TTS voice into seven synthetic clips, runs the real
+`build-face-audio.py` over them, and checks the subtitles it produced against timings it knows to
+be true: 63 cues, every caption in order, **worst boundary error 39 ms**. Needs macOS, takes about
+a minute, and leaves nothing behind.
+
+The assembly was rehearsed the same way against a stand-in screencast: `demo.mp4` came out
+1920×1080 at exactly the length of the voice track, with the box and the burned-in subtitles in
+place.

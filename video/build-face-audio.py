@@ -34,6 +34,15 @@ def load_lines():
     return lines
 
 
+def stream_format(path):
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries",
+         "stream=width,height,sample_rate,channels", "-of", "csv=p=0:nk=1", str(path)],
+        capture_output=True, text=True, check=True,
+    )
+    return " ".join(out.stdout.split())
+
+
 def duration(path):
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration",
@@ -47,7 +56,7 @@ def silences(path):
     proc = subprocess.run(
         ["ffmpeg", "-v", "info", "-i", str(path),
          "-af", f"silencedetect=noise={NOISE_DB}:d={MIN_SILENCE}", "-f", "null", "-"],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=True,
     )
     starts = [float(m) for m in re.findall(r"silence_start: ([\d.]+)", proc.stderr)]
     ends = [float(m) for m in re.findall(r"silence_end: ([\d.]+)", proc.stderr)]
@@ -93,8 +102,13 @@ def concat_audio(clips, dest):
     inputs = []
     for clip in clips:
         inputs += ["-i", str(clip)]
-    streams = "".join(f"[{i}:a]" for i in range(len(clips)))
-    graph = f"{streams}concat=n={len(clips)}:v=0:a=1[c];[c]loudnorm=I=-16:TP=-1.5:LRA=11[a]"
+    fixed = "".join(
+        f"[{i}:a]aformat=sample_rates=48000:channel_layouts=mono[a{i}];"
+        for i in range(len(clips))
+    )
+    streams = "".join(f"[a{i}]" for i in range(len(clips)))
+    graph = (f"{fixed}{streams}concat=n={len(clips)}:v=0:a=1[c];"
+             "[c]loudnorm=I=-16:TP=-1.5:LRA=11[a]")
     subprocess.run(
         ["ffmpeg", "-y", "-v", "error", *inputs, "-filter_complex", graph,
          "-map", "[a]", "-ar", "48000", "-ac", "1", str(dest)],
@@ -106,7 +120,7 @@ def main():
     lines = load_lines()
     missing = [name for _, name in BEATS if not (VIDEO / name).exists()]
 
-    measured, offset, cues = [], 0.0, []
+    measured, offset, cues, formats = [], 0.0, [], {}
     print()
     print(f"  {'clip':<16}{'beat':<7}{'length':>8}{'lines':>7}{'pauses':>8}  {'method':<13}{'dead air':>10}")
     for beat, name in BEATS:
@@ -115,6 +129,8 @@ def main():
             print(f"  {name:<16}{beat:<7}{'--':>8}{len(lines[beat]):>7}{'--':>8}  {'not recorded':<13}")
             continue
         dur = duration(path)
+        fmt = stream_format(path)
+        formats.setdefault(fmt, []).append(name)
         gaps = silences(path)
         texts = [es for _, es in lines[beat]]
         cuts, method, found = boundaries(dur, gaps, texts)
@@ -130,6 +146,12 @@ def main():
         print(f"  {name:<16}{beat:<7}{dur:>7.1f}s{len(texts):>7}{found:>8}  {method:<13}"
               f"{lead + tail:>9.1f}s{flag}")
     print()
+
+    if len(formats) > 1:
+        print("  the clips are not all the same format — fix this before recording the screencast:")
+        for fmt, names in formats.items():
+            print(f"    {fmt:<28}{', '.join(names)}")
+        print()
 
     if missing:
         print(f"  pending: {', '.join(missing)}")
