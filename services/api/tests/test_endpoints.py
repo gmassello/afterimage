@@ -4,6 +4,7 @@ import cv2
 import pytest
 from fastapi.testclient import TestClient
 
+from services.api import pages
 from services.api.app import app
 from services.conftest import localstack
 from services.memory import images, store
@@ -116,3 +117,11 @@ def test_images_endpoint(client):
     assert response.headers["content-type"] == "image/png"
     assert client.get("/images/not/a/valid/key.png").status_code == 404
     assert client.get(f"/images/assets/{asset_id}/missing/capture.png").status_code == 404
+
+
+def test_queue_refresh_yields_to_an_in_flight_navigation():
+    page = pages.queue_page([])
+    assert "setInterval" in page
+    assert 'addEventListener("submit", halt, true)' in page
+    assert "if (live &&" in page
+    assert "setInterval" not in pages.index_page([])

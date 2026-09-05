@@ -22,8 +22,12 @@ details pre { overflow-x: auto; font-size: .78rem; color: #8b949e; padding: .4re
 """
 
 _REFRESH = """
+let live = true;
+const halt = () => { live = false; };
+addEventListener("submit", halt, true);
+addEventListener("click", (e) => e.target.closest?.("a") && halt(), true);
 setInterval(() => {
-  if (![...document.querySelectorAll("details")].some(d => d.open)) location.reload();
+  if (live && ![...document.querySelectorAll("details")].some(d => d.open)) location.reload();
 }, 5000);
 """
 
