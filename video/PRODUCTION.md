@@ -88,12 +88,13 @@ Each upload takes **20–30 s** before the trace appears (`align_to_baseline` al
 dead screen time the fit removes afterwards — do not fill it, just wait.
 
 **Shot 6.** `/queue` refreshes itself every five seconds, and that reload used to cancel an
-approval already in flight. Fixed on 5 September: the timer stands down the moment the page starts
-navigating. Opening `metrics` before approving is still worth doing on camera — the numbers behind
-the decision belong on screen before the human acts on them — but it is no longer a workaround.
+approval already in flight — five clicks in a row were swallowed during the first rehearsal. Fixed
+and deployed on 5 September: the timer stands down the moment the page starts navigating, and the
+same click then landed first try. Opening `metrics` before approving is still worth doing on camera
+— the numbers behind the decision belong on screen before the human acts on them.
 
-**The fix has to be deployed before the take.** `deploy.yml` is `workflow_dispatch`, so pushing to
-main does not ship it.
+**A defect upload takes ~33 s** end to end; the clean baseline takes ~6 s. Do not navigate away
+before the trace appears, or the inspection is cancelled and nothing is written.
 
 Every page in the app is a 760 px centred column, so the top-right corner is empty background: the
 box covers nothing, not even on the trace.
