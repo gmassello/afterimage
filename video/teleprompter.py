@@ -1,9 +1,20 @@
 import json
+import subprocess
 from pathlib import Path
 
 VIDEO = Path(__file__).parent
 SCRIPT = VIDEO / "script.tsv"
 OUT = VIDEO / "out" / "teleprompter.html"
+HOOK = VIDEO / "out" / "hook.mov"
+
+
+def duration(path):
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=nw=1:nk=1", str(path)],
+        capture_output=True, text=True, check=True,
+    )
+    return float(out.stdout.strip())
 
 CHARS_PER_SECOND = 13.5
 PAUSE = 0.45
@@ -413,8 +424,14 @@ def main():
     print(f"{OUT}  {len(data)} clips, {sum(len(c['lines']) for c in data)} lines")
     for c in data:
         print(f"  {c['file']:<16}{c['target']:>4} s")
-    print(f"  {'TOTAL':<16}{budget:>4} s = {budget // 60}:{budget % 60:02d}"
-          f"   ({300 - budget} s under the cap)")
+    hook = round(duration(HOOK)) if HOOK.exists() else 0
+    if hook:
+        print(f"  {'hook':<16}{hook:>4} s   out/hook.mov, no voice")
+    else:
+        print(f"  {'hook':<16}{'--':>4}     out/hook.mov not built — run video/hook.py")
+    total = budget + hook
+    print(f"  {'TOTAL':<16}{total:>4} s = {total // 60}:{total % 60:02d}"
+          f"   ({300 - total} s under the cap)")
 
 
 if __name__ == "__main__":

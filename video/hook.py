@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -41,9 +42,30 @@ SECONDS = sum(shot["seconds"] for shot in SHOTS)
 DRONE_OUT = 8.9
 SWELL_AT = 11.0
 
+# The voice track lands at -16.6 LUFS. The cold open sits above it on purpose;
+# concat_audio normalises the whole narration afterwards with one gain, so this
+# difference is what survives into the cut.
+LOUDNESS = -14.0
+PEAK = -1.0
+# A hit is a pitch drop from 100 Hz to 40 Hz, not a static tone: the phase is the
+# integral of f(t) = 40 + 60*exp(-3t). The click on top carries the transient on a
+# laptop speaker, where nothing below 100 Hz exists at all.
+BOOM = "sin(2*PI*(40*t - 20*exp(-3*t) + 20))*exp(-1.8*t)"
+BOOM_SECONDS = 2.6
+CLICK_SECONDS = 0.4
+
 
 def ffmpeg(*args):
     subprocess.run(["ffmpeg", "-y", "-v", "error", *args], check=True)
+
+
+def loudness(path):
+    proc = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-nostats", "-i", str(path),
+         "-af", "ebur128", "-f", "null", "-"],
+        capture_output=True, text=True, check=True,
+    )
+    return float(re.findall(r"I:\s+(-?[\d.]+) LUFS", proc.stderr)[-1])
 
 
 def probe_size(path):
@@ -133,36 +155,58 @@ def render_video(dest):
 
 def render_audio(dest):
     inputs, graph, mixed = [], [], []
+
     inputs += ["-f", "lavfi", "-i", f"sine=frequency=55:sample_rate=48000:duration={SECONDS}"]
-    graph.append(f"[0:a]lowpass=f=180,volume=0.30,afade=t=in:st=0:d=0.6,"
-                 f"afade=t=out:st={DRONE_OUT}:d=0.6[drone]")
+    inputs += ["-f", "lavfi", "-i", f"sine=frequency=82.5:sample_rate=48000:duration={SECONDS}"]
+    graph.append("[0:a]volume=0.42[low];[1:a]volume=0.15[fifth]")
+    graph.append(f"[low][fifth]amix=inputs=2:normalize=0,lowpass=f=160,"
+                 f"afade=t=in:st=0:d=0.6,afade=t=out:st={DRONE_OUT}:d=0.6[drone]")
     mixed.append("[drone]")
 
-    inputs += ["-f", "lavfi", "-i", "sine=frequency=120:sample_rate=48000:duration=1.6"]
-    taps = "".join(f"[h{i}]" for i in range(len(HITS)))
-    graph.append(f"[1:a]volume='exp(-5*t)':eval=frame,asplit={len(HITS)}{taps}")
+    inputs += ["-f", "lavfi", "-i",
+               f"aevalsrc='{BOOM}':sample_rate=48000:duration={BOOM_SECONDS}"]
+    inputs += ["-f", "lavfi", "-i",
+               f"anoisesrc=color=white:sample_rate=48000:duration={CLICK_SECONDS}"]
+    booms = "".join(f"[b{i}]" for i in range(len(HITS)))
+    clicks = "".join(f"[c{i}]" for i in range(len(HITS)))
+    graph.append(f"[2:a]volume=0.50,asplit={len(HITS)}{booms}")
+    graph.append(f"[3:a]highpass=f=900,volume='exp(-38*t)':eval=frame,"
+                 f"volume=0.20,asplit={len(HITS)}{clicks}")
     for i, at in enumerate(HITS):
-        graph.append(f"[h{i}]adelay={round(at * 1000)}:all=1[d{i}]")
-        mixed.append(f"[d{i}]")
+        delay = round(at * 1000)
+        graph.append(f"[b{i}]adelay={delay}:all=1[boom{i}]")
+        graph.append(f"[c{i}]adelay={delay}:all=1[click{i}]")
+        mixed += [f"[boom{i}]", f"[click{i}]"]
 
     swell = SECONDS - SWELL_AT
     inputs += ["-f", "lavfi", "-i", f"sine=frequency=55:sample_rate=48000:duration={swell}"]
-    graph.append(f"[2:a]lowpass=f=180,volume=0.22,afade=t=in:st=0:d=1.2,"
+    graph.append(f"[4:a]lowpass=f=180,volume=0.28,afade=t=in:st=0:d=1.2,"
                  f"adelay={round(SWELL_AT * 1000)}:all=1[swell]")
     mixed.append("[swell]")
 
     graph.append(f"{''.join(mixed)}amix=inputs={len(mixed)}:normalize=0:duration=longest,"
-                 f"apad,atrim=0:{SECONDS},alimiter=limit=0.9,"
+                 f"apad,atrim=0:{SECONDS},"
                  f"aformat=sample_rates=48000:channel_layouts=mono[a]")
+    mix = STAGE / "mix.wav"
     ffmpeg(*inputs, "-filter_complex", ";".join(graph), "-map", "[a]",
+           "-c:a", "pcm_f32le", "-ar", "48000", "-ac", "1", str(mix))
+
+    # One linear gain, measured. loudnorm would reach the same number by
+    # compressing, and the compression is what would flatten the hits.
+    gain = LOUDNESS - loudness(mix)
+    ffmpeg("-i", str(mix), "-af",
+           f"volume={gain:.2f}dB,"
+           f"alimiter=limit={10 ** ((PEAK - 0.6) / 20):.4f}:level=false:attack=4:release=60",
            "-c:a", "pcm_s16le", "-ar", "48000", "-ac", "1", str(dest))
+    print(f"  audio  {gain:+.1f} dB to reach {LOUDNESS:.0f} LUFS")
 
 
 def spec():
     return json.dumps(
         {"shots": [{k: str(v) for k, v in s.items()} for s in SHOTS],
          "hits": HITS, "size": [W, H, FPS], "pad": PAD,
-         "drone_out": DRONE_OUT, "swell_at": SWELL_AT},
+         "drone_out": DRONE_OUT, "swell_at": SWELL_AT,
+         "audio": [LOUDNESS, PEAK, BOOM, BOOM_SECONDS, CLICK_SECONDS]},
         sort_keys=True,
     )
 
