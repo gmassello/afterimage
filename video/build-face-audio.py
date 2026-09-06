@@ -26,6 +26,8 @@ BEATS = [
     ("4:35", "face-close.mov"),
 ]
 HOOK = "hook.wav"
+LOUDNESS = -16.0
+PEAK = -1.0
 
 
 def load_lines():
@@ -192,6 +194,15 @@ def srt_time(t):
     return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
 
 
+def loudness(path):
+    proc = subprocess.run(
+        ["ffmpeg", "-hide_banner", "-nostats", "-i", str(path),
+         "-af", "ebur128", "-f", "null", "-"],
+        capture_output=True, text=True, check=True,
+    )
+    return float(re.findall(r"I:\s+(-?[\d.]+) LUFS", proc.stderr)[-1])
+
+
 def concat_audio(clips, dest):
     inputs = []
     for clip in clips:
@@ -201,13 +212,26 @@ def concat_audio(clips, dest):
         for i in range(len(clips))
     )
     streams = "".join(f"[a{i}]" for i in range(len(clips)))
-    graph = (f"{fixed}{streams}concat=n={len(clips)}:v=0:a=1[c];"
-             "[c]loudnorm=I=-16:TP=-1.5:LRA=11[a]")
+    graph = f"{fixed}{streams}concat=n={len(clips)}:v=0:a=1[a]"
+    raw = dest.with_suffix(".raw.wav")
     subprocess.run(
         ["ffmpeg", "-y", "-v", "error", *inputs, "-filter_complex", graph,
-         "-map", "[a]", "-ar", "48000", "-ac", "1", str(dest)],
+         "-map", "[a]", "-c:a", "pcm_f32le", "-ar", "48000", "-ac", "1", str(raw)],
         check=True,
     )
+    # One measured gain, not loudnorm: single-pass loudnorm undershot its own -16
+    # target by 3.7 dB on this material, and it reaches the number by compressing,
+    # which flattens the cold open's hits.
+    gain = LOUDNESS - loudness(raw)
+    subprocess.run(
+        ["ffmpeg", "-y", "-v", "error", "-i", str(raw), "-af",
+         f"volume={gain:.2f}dB,alimiter=limit={10 ** ((PEAK - 1.0) / 20):.4f}:"
+         "level=false:attack=4:release=60",
+         "-ar", "48000", "-ac", "1", str(dest)],
+        check=True,
+    )
+    raw.unlink()
+    print(f"  audio  {gain:+.1f} dB to reach {LOUDNESS:.0f} LUFS")
 
 
 def main():
