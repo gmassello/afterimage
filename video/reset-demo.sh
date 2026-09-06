@@ -15,6 +15,10 @@
 # the two linked from the technical report. Orphaned S3 images are invisible to
 # the app and the bucket expires them on its own.
 #
+# Credentials: the CLI's own, from the environment or a profile. The least
+# privilege this needs is in infra/ops-policy.json — three DynamoDB actions on one
+# table, and nothing else. Attach it to an IAM user rather than using root keys.
+#
 # Env:  TABLE   DynamoDB table   (default: afterimage)
 #       KEEP    assets to spare  (default: the three the demo is about)
 # ---------------------------------------------------------------------------

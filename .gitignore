@@ -6,5 +6,5 @@ __pycache__/
 models/
 runs/
 video/out/
-video/*.mov
+*.mov
 video/img/
