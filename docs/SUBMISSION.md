@@ -10,19 +10,14 @@ Status: `done` · `wip` · `todo`
 
 ## Overall rubric
 
-The timestamps in the four `wip` rows below belong to the 5 September cut, which is being replaced
-by a version with a cold open and the face in the corner box throughout
-([`video/PRODUCTION.md`](../video/PRODUCTION.md)). They close again with the real marks of the new
-cut; nothing else about the evidence changes.
-
 | Criterion | Weight | How we demonstrate it | Where the judge sees it | Status |
 |---|---|---|---|---|
-| Technical execution | 30% | OpenCV 5 `Features` used substantively — ALIKED + LightGlue align each capture to the stored baseline of the same asset; green suite on arm64 | `services/perception/alignment.py`, `services/perception/tests/`, video 1:22–2:44 (`inlier_ratio 0.9988` on screen) | wip |
-| Innovation | 20% | **Longitudinal memory.** No previous winner kept state across inspections of the same asset; every prior project analyses one frame or one session. A second inspection retrieves the baseline from memory, aligns to it and locates the new defect | `services/memory/`, `services/memory/tests/test_longitudinal.py`, [`docs/TECHNICAL_REPORT.md` §3](TECHNICAL_REPORT.md#3-what-makes-this-different-longitudinal-memory), video 1:22–2:44 | wip |
+| Technical execution | 30% | OpenCV 5 `Features` used substantively — ALIKED + LightGlue align each capture to the stored baseline of the same asset; green suite on arm64 | `services/perception/alignment.py`, `services/perception/tests/`, video 1:29–3:00 (`inlier_ratio 0.9988` on screen) | done |
+| Innovation | 20% | **Longitudinal memory.** No previous winner kept state across inspections of the same asset; every prior project analyses one frame or one session. A second inspection retrieves the baseline from memory, aligns to it and locates the new defect | `services/memory/`, `services/memory/tests/test_longitudinal.py`, [`docs/TECHNICAL_REPORT.md` §3](TECHNICAL_REPORT.md#3-what-makes-this-different-longitudinal-memory), video 1:29–3:00 | done |
 | Real-world impact | 20% | Preventive maintenance of solar plants, argued from cited primary sources: ~2,900 modules per MW, PID degrading ~15%/year in affected modules and partially reversible if caught before saturation, soiling at 5–20% annual loss — every figure with organism, year and URL, and the absence of a published early-detection ROI stated rather than invented | [`docs/TECHNICAL_REPORT.md` §2](TECHNICAL_REPORT.md#2-why-change-over-time-is-the-right-thing-to-measure) | done |
-| User experience | 10% | Approval queue and asset history legible without explanation | public endpoint (`/`, `/queue`, `/assets/{id}`), video 1:22–2:44 — three uploads, a live approval and the baseline chain, no narration of the UI needed | wip |
+| User experience | 10% | Approval queue and asset history legible without explanation | public endpoint (`/`, `/queue`, `/assets/{id}`), video 1:22–2:44 — three uploads, a live approval and the baseline chain, no narration of the UI needed | done |
 | Documentation and presentation | 10% | A judge-first README — the loop in a GIF captured from the live endpoint, measured results and failure cases above the fold, the weekly log folded away — plus a self-contained technical report and both diagrams, the infrastructure one also published on GitHub Pages | `README.md`, [`docs/TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md), <https://gmassello.github.io/afterimage/> | done |
-| Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, per-run event traces | `infra/template.yaml`, `infra/github-oidc.yaml`, `deploy.sh`, `requirements.txt`, video 0:59–1:22 (the infrastructure diagram) and 2:44–3:17 (a run trace) | wip |
+| Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, per-run event traces | `infra/template.yaml`, `infra/github-oidc.yaml`, `deploy.sh`, `requirements.txt`, video 0:55–1:29 (the infrastructure diagram) and 3:00–3:35 (a run trace) | done |
 
 ## Agentic Vision Award
 
@@ -73,29 +68,27 @@ each one is compared against, is the policy's business.
       the live trace → `/queue` to approve → `/assets/{id}` for the longitudinal history.
       Deployed 2 September from GitHub Actions over OIDC; every branch below was walked against
       this URL, not against localhost
-- [ ] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted — **being re-cut**. The
-      5 September version (4:44.9) is shot and works, but it opens with the author introducing
-      himself, which is the weakest possible first ten seconds for a judge working through dozens of
-      entries. The replacement adds a 14-second cold open with no voice — a real array, two measured
-      decisions on screen with the numbers that caused them, then the name — and keeps the face in
-      the corner box from the first frame to the last, so the big frame is always the product or the
-      documentation. The author narrates in Spanish; English subtitles are burned in. Every frame of
-      the demo is the public endpoint, driven live. Pipeline and shot list in
-      [`video/PRODUCTION.md`](../video/PRODUCTION.md), script in
-      [`video/script.tsv`](../video/script.tsv)
+- [ ] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted — **recorded and cut, 4:53.6**
+      (`video/out/demo.mp4`, 1920×1080, with `demo.en.srt` alongside). It opens on fourteen seconds
+      with no voice: a real array and its scale, then two decisions the system actually made with the
+      numbers that caused them, then the name — so the thesis lands before anyone introduces
+      themselves. The author's face is in the corner box from the first frame to the last, which
+      means the big frame is always the product or the documentation. Narration in Spanish, English
+      subtitles burned in. Every frame of the demo is the public endpoint, driven live on asset
+      `panel-d4-south`. Assembled by the pipeline in
+      [`video/PRODUCTION.md`](../video/PRODUCTION.md) from
+      [`video/script.tsv`](../video/script.tsv). **Only the upload is outstanding**
 
       | | Beat |
       |---|---|
       | 0:00–0:14 | **Cold open**, no voice — two decisions and the numbers behind them |
-      | 0:14 → | Opening |
-      | | The problem |
-      | | Architecture, the infrastructure diagram |
-      | | **The demo** — three uploads, a live approval, the baseline chain |
-      | | **The trace**, on the span that decided |
-      | | Evaluation, including a failure |
-      | | The close — GitHub Pages and the public URL |
-
-      Outstanding: record the seven camera clips and the screencast, assemble, then upload
+      | 0:14–0:31 | Opening |
+      | 0:31–0:55 | The problem |
+      | 0:55–1:29 | Architecture, the infrastructure diagram |
+      | 1:29–3:00 | **The demo** — three uploads, a live approval, the baseline chain |
+      | 3:00–3:35 | **The trace**, on the span that decided |
+      | 3:35–4:25 | Evaluation, including a failure |
+      | 4:25–4:54 | The close — the evaluation tables and the public URL |
 - [x] 7. Evaluation evidence in `eval/results/latest/` and `docs/EVALUATION.md`, **including failure cases** —
       23 scenarios (11 synthetic, 12 on licensed real photographs), branch accuracy 0.8696, defect macro F1 0.9513.
       Three failures analysed to root cause, and `eval/tests/test_published_numbers.py` fails CI if the page and
@@ -108,9 +101,9 @@ each one is compared against, is the policy's business.
       afterimage adds ~$1/month, almost all of it ECR storage for the 2 GB arm64 image
 - [x] No credentials anywhere in git history — swept the full history for key patterns and credential filenames; the only match is `AWS_SECRET_ACCESS_KEY=test`, the LocalStack dummy
 - [x] The trace linked from the report — [`docs/TECHNICAL_REPORT.md` §6](TECHNICAL_REPORT.md#observability) links two live traces: the zoom branch, and the run the video shows stopping for a human
-- [ ] Video recorded against the public URL, not localhost — held on the 5 September cut (address bar legible in every
-      browser shot, runs `c6be06e8fa5e`, `6fd7d011bc32`, `8bb9b7d00eb1` on asset `panel-c2-west`, still live on the
-      endpoint) and has to hold again on the re-cut
+- [x] Video recorded against the public URL, not localhost — the address bar is legible in every browser shot, and the
+      runs it shows (`45ceaea34b8e`, `0ac678eec19f`, `b022e78251f3` on asset `panel-d4-south`, recorded 6 September)
+      are still live on the endpoint
 
 ## Known limitations
 

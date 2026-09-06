@@ -23,20 +23,18 @@ This document is the **content**. The delivered video changes the delivery, not 
 | Face | A box in the corner from the first frame to the last; the big frame is always the product or the documentation |
 | Assembly | Seven camera clips, one per beat, fitted to the screencast — `video/PRODUCTION.md` |
 
-**The 5 September cut (4:44.9) is superseded.** It opened with the author introducing himself and
-put the face full screen at both ends. The beat→timestamp mapping below is filled in once the new
-cut exists.
+**Recorded 6 September, 4:53.6.** What the beats below became in the cut:
 
 | Script | Video | |
 |---|---|---|
 | — | 0:00–0:14 | Cold open, no voice |
-| 0:00 | | Opening |
-| 0:25 | | The problem |
-| 1:00 | | Architecture |
-| 1:30 | | The demo |
-| 3:15 | | The trace |
-| 4:00 | | Evaluation |
-| 4:35 | | The close |
+| 0:00 | 0:14–0:31 | Opening |
+| 0:25 | 0:31–0:55 | The problem |
+| 1:00 | 0:55–1:29 | Architecture |
+| 1:30 | 1:29–3:00 | The demo |
+| 3:15 | 3:00–3:35 | The trace |
+| 4:00 | 3:35–4:25 | Evaluation |
+| 4:35 | 4:25–4:54 | The close |
 
 The cut runs shorter than the script's marks because the recorded reading is faster than the
 budget assumed, and because pauses over 0.55 s are trimmed out of the clips.

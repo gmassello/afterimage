@@ -116,8 +116,28 @@ The verdict line has to read `HARD CAP 5:00 — OK`, and it counts the hook.
 
 ## 4. The screencast
 
-`Cmd+Shift+5` in **window mode**, microphone **off**. Window mode captures only the browser, so the
-terminal never appears. Claude drives the clicks; you press record and stop. Save as `video/raw.mov`.
+`Cmd+Shift+5`, microphone **off**, and **pick the Chrome window explicitly** — not the screen, and
+not a selected region. Claude drives the clicks; you press record and stop. Save as `video/raw.mov`.
+
+**This is the rule that cost the most.** On the 6 September take the capture was not scoped to the
+window, and six seconds of WhatsApp — contact names, message previews, a shared map location — came
+to the front and were recorded. It was caught by sweeping the file afterwards and cut out, but a
+region capture cannot promise what a window capture promises: nothing that is not the browser can
+ever enter the frame.
+
+**Kill the debugger banner first.** Claude drives the tab through `chrome.debugger`, so Chrome raises
+*"Claude started debugging this browser"* between the address bar and the page — where no crop can
+remove it without also removing the URL. Quit Chrome completely (`Cmd+Q`; closing the windows leaves
+the process alive) and relaunch it with the flag:
+
+```bash
+open -a "Google Chrome" --args --silent-debugger-extension-api
+ps -o args= -p $(pgrep -x "Google Chrome" | head -1) | tr ' ' '\n' | grep silent-debugger
+```
+
+`open --args` is ignored in silence if Chrome is already running, so verify from the shell. Claude's
+screenshots capture page content only, never browser chrome, so Claude cannot see the banner — you
+confirm it is gone.
 
 The box is permanent now, so every beat needs something on the screen behind it — including the
 opening and the close, which used to be your face full frame.
@@ -171,10 +191,34 @@ before the trace appears, or the inspection is cancelled and nothing is written.
 Every page in the app is a 760 px centred column, so the corner is empty background: the box covers
 nothing, not even on the trace.
 
+### Sweep the recording before assembling
+
+```bash
+ffmpeg -hide_banner -nostats -i video/raw.mov \
+  -vf "fps=2,scale=480:-1,select='gt(scene,0.02)',showinfo" -f null - 2>&1 |
+  grep -oE "pts_time:[0-9.]+"
+```
+
+Every scene change in the take, in seconds. Pull a frame at each one and look at it. A notification,
+another window, a tab you forgot — anything that is not the browser on the expected page — has to be
+found here, because after the assemble it is buried inside a 7x speed-up.
+
+Cutting a span out is cheap and invisible when both sides show the same page:
+
+```bash
+ffmpeg -i video/raw-uncut.mov -filter_complex \
+  "[0:v]trim=0:A,setpts=PTS-STARTPTS[a];[0:v]trim=B,setpts=PTS-STARTPTS[b];\
+   [a][b]concat=n=2:v=1:a=0,scale=1920:-2,fps=30[v]" -map "[v]" -an \
+  -c:v libx264 -preset veryfast -crf 18 -pix_fmt yuv420p video/raw.mov
+```
+
+Cut from the **original** every time, never from an already-cut file: one generation of encoding
+instead of two. And subtract what you removed from every beat mark after it.
+
 ## 5. Assemble
 
 ```bash
-bash video/assemble.sh "0,42,100,158,216,274,332"
+bash video/assemble.sh "0,14,34,76.5,385.5,428.5,476.5"    # the 6 September take
 ```
 
 The argument is the recording timestamp where each of the **seven** beats starts — shots 0, 1, 2,
@@ -185,20 +229,38 @@ the hook to the front and writes `video/out/demo.mp4` plus `demo.en.srt`.
 
 Knobs: `PIP_W` (default 300), `PIP_MARGIN` (default 24), `PIP_POS` (`tl` or `tr`, default `tl`).
 
-## Verified through the browser, 5 September
+## The take, 6 September — asset `panel-d4-south`
 
-The full shot list driven through the real UI against the public endpoint, asset `panel-a7-north`.
-Every number below was read off the screen, not the API:
+The shot list driven through the real UI against the public endpoint. Every number below is off the
+screen, and every one of them is **identical** to the 5 September rehearsal: same images, same
+deterministic pipeline, so the cold open's readouts and the demo cannot contradict each other.
 
 ```
-1-blurred   run 466670cb2e85   blur_variance    3.6589 <  100.0 -> recapture
-2-baseline  run 7537a2cfd8c2   blur_variance 2483.1292 >= 100.0 -> quality_ok   (first_baseline)
-3-defect    run 02fb84c00e01   blur_variance 1064.0321 >= 100.0 -> quality_ok
+1-blurred   run 45ceaea34b8e   blur_variance    3.6589 <  100.0 -> recapture
+2-baseline  run 0ac678eec19f   blur_variance 2483.1292 >= 100.0 -> quality_ok   (first_baseline)
+3-defect    run b022e78251f3   blur_variance 1064.0321 >= 100.0 -> quality_ok
                                inlier_ratio     0.9988 >=   0.9 -> aligned
                                mean_delta      67.7646 >=  35.0 -> change_confirmed
                                score            0.6798 >=   0.4 -> human_approval
-approved                       baseline 7537a2cfd8c2 -> superseded by 02fb84c00e01
+approved                       baseline 0ac678eec19f -> superseded by b022e78251f3
 ```
+
+The asset history shows **two** inspections for three uploads: the blurred one branched to
+`recapture` and wrote nothing. That is the argument of the demo, proved on screen rather than
+asserted.
+
+### What the take cost, and what to do differently
+
+| | |
+|---|---|
+| Camera, 7 clips | 21.3 + 26.5 + 37.7 + 111.6 + 44.2 + 56.3 + 35.9 s raw, all `fitted` first take |
+| Screencast | 555.7 s raw for 279.6 s of picture |
+| Removed in post | 9.0 s (an app window came to the front) + 20.5 s (a wrong turn looking for a page) |
+| Compression on the demo beat | 309 s into 91.2 s — **7.6x**, against a cap of 8 |
+
+That 7.6x is the number to watch. It is compressing the upload waits, which are static, so it does
+not show — but there is no headroom left. Next time either dwell less between uploads or split the
+demo across two beats.
 
 Both money shots fit on screen without scrolling. `eval/tests/test_published_numbers.py` holds the
 `en` column of `script.tsv` to this set and to `eval/results/latest/results.json`: a four-decimal
