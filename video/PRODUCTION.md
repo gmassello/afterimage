@@ -122,10 +122,27 @@ terminal never appears. Claude drives the clicks; you press record and stop. Sav
 The box is permanent now, so every beat needs something on the screen behind it — including the
 opening and the close, which used to be your face full frame.
 
+**Reset the endpoint first, and again between takes.**
+
+```bash
+bash video/reset-demo.sh            # report only
+bash video/reset-demo.sh --apply    # delete
+```
+
+Evaluation runs, README captures and rehearsals leave assets behind, and on camera they read as test
+scaffolding. In the 5 September state the list held eleven assets and eight of them were scaffolding
+— and the list is now the very first screen of the video, not a glance at 0:30. The script keeps
+`panel-a7-north`, `panel-b3-east` and `panel-c2-west` and removes the rest. It touches DynamoDB
+only: every `/traces/{run_id}` URL already published stays reachable, including the two linked from
+the technical report.
+
+Then walk the whole story through the real UI once, the day before, and write the run IDs down. A
+take is a performance of a known path, not an experiment.
+
 | # | Beat | On screen | Money shot |
 |---|---|---|---|
 | 0 | 0:00 | The endpoint loading, the URL legible, the upload form | |
-| 1 | 0:25 | The asset list, scrolled | |
+| 1 | 0:25 | The asset list — the real assets, and the one this take is about | |
 | 2 | 1:00 | Infrastructure diagram, GitHub Pages §11 | |
 | 3 | 1:30 | Upload `1-blurred.png` → trace opens | **`blur_variance 3.6589 vs 100.0 -> recapture`** |
 | 4 | 1:30 | Upload `2-baseline.png` → first baseline | |
