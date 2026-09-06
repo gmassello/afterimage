@@ -1,15 +1,12 @@
 beat	en	es
-0:00	I'm Germán Massello, and I built afterimage	Soy Germán Massello, y construí afterimage.
-0:00	An inspection agent that compares a solar panel	Un agente de inspección que compara un panel solar
-0:00	against what that exact panel looked like last time	contra cómo se veía ese mismo panel la última vez.
-0:00	It decides on its own: another photo, look closer, or call a human	Y decide solo qué hacer después: sacar otra foto, mirar más de cerca, o llamar a una persona.
-0:00	What matters isn't that it sees a defect	Lo importante no es que vea un defecto.
-0:00	It's that an OpenCV number changes what it does	Es que un número de OpenCV cambia lo que hace.
-0:00	Let me show you	Te muestro.
+0:00	Those numbers decided what happened next	Esos números decidieron qué pasaba después.
+0:00	I'm Germán Massello. This is afterimage	Soy Germán Massello. Esto es afterimage.
+0:00	It compares a panel against that same panel, last time	Compara un panel contra ese mismo panel, la última vez.
+0:00	Not "is it broken". What changed	No pregunta si está roto. Pregunta qué cambió.
 0:25	Solar Star, California: 1.7 million solar panels	Solar Star, en California, son un millón setecientos mil paneles solares.
 0:25	Automated inspection asks: is this panel broken?	La inspección automática pregunta: ¿este panel está roto?
 0:25	But a defect is a curve, not an event	Pero un defecto es una curva, no un evento.
-0:25	PID runs ~15% a year, partly reversible if caught early	La degradación inducida por potencial avanza cerca de quince por ciento al año, y es parcialmente reversible si la agarrás temprano.
+0:25	Potential-induced degradation runs ~15% a year, partly reversible if caught early	La degradación inducida por potencial avanza cerca de quince por ciento al año, y es parcialmente reversible si la agarrás temprano.
 0:25	The useful question is what changed since last time	La pregunta útil es qué cambió desde la última vez.
 0:25	Which means remembering what this panel looked like before	Y eso implica recordar cómo se veía este panel antes.
 1:00	One Lambda container, ARM Graviton, CPU only	Un solo contenedor Lambda. ARM Graviton, solo CPU.
@@ -48,17 +45,15 @@ beat	en	es
 3:15	A number, in a field, next to the action it caused	Un número, en un campo, al lado de la acción que provocó.
 4:00	23 scenarios, 12 on real licensed photographs	Veintitrés escenarios. Doce sobre fotografías reales y licenciadas de módulos solares.
 4:00	Branch accuracy 0.8696 · defect macro F1 0.9513	Precisión de rama, cero coma ochenta y siete. Clasificación de defecto, macro F uno, cero coma noventa y cinco.
-4:00	Mean IoU 0.8258 · precision 1.0 on calling a human	I o U promedio, cero coma ochenta y tres, para localizar la región. Y precisión uno punto cero al llamar a una persona.
+4:00	Mean IoU 0.8258 locating the region · precision 1.0 on calling a human	I o U promedio, cero coma ochenta y tres, para localizar la región. Y precisión uno punto cero al llamar a una persona.
 4:00	It never interrupted someone for nothing	Nunca interrumpió a nadie sin motivo.
 4:00	Three of the 23 fail, and they're in the report	Tres de los veintitrés fallan, y están en el reporte.
-4:00	A delamination scored 0.3412 against a threshold of 0.4	Una delaminación sobre un área chica sacó cero coma treinta y cuatro, contra un umbral de cero coma cuarenta, así que se archivó automáticamente en vez de escalarse.
+4:00	A delamination scored 0.3412 against a 0.4 threshold — auto-filed instead of escalated	Una delaminación sobre un área chica sacó cero coma treinta y cuatro, contra un umbral de cero coma cuarenta, así que se archivó automáticamente en vez de escalarse.
 4:00	The score ignores the label its own classifier produced	El score ignora la etiqueta que produjo su propio clasificador.
-4:00	I didn't fix it here	Sé cómo arreglarlo. No lo arreglé acá.
+4:00	I know how to fix it. I didn't fix it here	Sé cómo arreglarlo. No lo arreglé acá.
 4:00	Rewriting a score to pass one case is overfitting	Reescribir un score para que pase un caso es overfitting.
 4:35	What's next: severity that knows the defect class	Lo que sigue: que la severidad tenga en cuenta la clase de defecto.
 4:35	And frame coverage calibrated per site	Y calibrar la cobertura de encuadre por sitio.
 4:35	I measured that one. There is no global default that works	Eso lo medí. No hay un valor por defecto global que funcione.
-4:35	Everything is open: the repo, the evaluation, the traces	Está todo abierto: el repositorio, la evaluación, las trazas.
-4:35	And a public endpoint, with no login	Y un endpoint público, sin login.
-4:35	Upload your own photograph and watch it decide	Subí tu propia fotografía y mirá cómo decide.
-4:35	Thanks for watching	Gracias por mirar.
+4:35	Everything is open: the repo, the evaluation, the traces, a public endpoint with no login	Está todo abierto: el repositorio, la evaluación, las trazas, y un endpoint público sin login.
+4:35	Upload your own photograph and watch a number decide what it does	Subí tu propia fotografía y mirá cómo un número decide qué hace.

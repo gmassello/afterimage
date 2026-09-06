@@ -302,6 +302,13 @@ Every tool call emits one span into `runs/{run_id}/events.json` carrying its arg
 it returned, its duration and the policy verdict the value triggered. `GET /traces/{run_id}` serves
 it as JSON or as a readable page. Traces persist in S3, so they survive redeploys and cold sandboxes.
 
+Two live traces, both on the deployed endpoint. The first is the zoom branch; the second is the run
+shown in the video, where an OpenCV number stopped the loop and a person restarted it:
+
+- <https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/traces/90472757e472>
+- <https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/traces/8bb9b7d00eb1>
+  — `score 0.6798 >= 0.4 -> human_approval`, then `human_approved 1.0 >= 1.0 -> approved`
+
 ## 7. Deployment and responsible operation
 
 | Concern | How it is handled |

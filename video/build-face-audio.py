@@ -25,7 +25,7 @@ BEATS = [
     ("4:00", "body-5.mov"),
     ("4:35", "face-close.mov"),
 ]
-BODY = BEATS[1:6]
+HOOK = "hook.wav"
 
 
 def load_lines():
@@ -213,8 +213,10 @@ def concat_audio(clips, dest):
 def main():
     lines = load_lines()
     missing = [name for _, name in BEATS if not (VIDEO / name).exists()]
+    hook = OUT / HOOK
+    lead = duration(hook) if hook.exists() else 0.0
 
-    measured, offset, cues, formats = [], 0.0, [], {}
+    measured, offset, cues, formats = [], lead, [], {}
     print()
     print(f"  {'clip':<16}{'beat':<7}{'raw':>8}{'lines':>7}{'pauses':>8}  {'method':<13}"
           f"{'tight':>8}{'saved':>8}")
@@ -232,6 +234,9 @@ def main():
         keep, cuts, tight = compress(dur, gaps, cuts)
         trimmed = OUT / "clips" / name
         render(path, keep, trimmed)
+        real = duration(trimmed)
+        cuts = [c * real / tight for c in cuts]
+        tight = real
         measured.append((beat, name, tight, trimmed))
 
         edges = [0.0] + cuts + [tight]
@@ -255,25 +260,29 @@ def main():
         print("  nothing written until all seven clips exist.\n")
         return 1
 
-    total = sum(d for _, _, d, _ in measured)
-    body = [(b, n, d, t) for b, n, d, t in measured if (b, n) in BODY]
+    picture = sum(d for _, _, d, _ in measured)
+    total = lead + picture
 
     OUT.mkdir(parents=True, exist_ok=True)
-    concat_audio([t for _, _, _, t in body], OUT / "body.wav")
-    concat_audio([t for _, _, _, t in measured], OUT / "narration.wav")
+    tracks = [t for _, _, _, t in measured]
+    concat_audio(([hook] if lead else []) + tracks, OUT / "narration.wav")
 
     rows, start = ["  beat    starts      ends   length"], 0.0
-    for beat, _, dur, _ in body:
+    for beat, _, dur, _ in measured:
         rows.append(f"  {beat:<8}{start:>6.1f}{start + dur:>10.1f}{dur:>9.1f}")
         start += dur
-    (OUT / "body-timing.txt").write_text("\n".join(rows) + "\n")
+    (OUT / "timing.txt").write_text("\n".join(rows) + "\n")
 
     srt = []
     for i, (a, b, text) in enumerate(cues, 1):
         srt.append(f"{i}\n{srt_time(a)} --> {srt_time(b)}\n{text}\n")
     (OUT / "captions.srt").write_text("\n".join(srt))
 
-    print(f"  body   {sum(d for _, _, d, _ in body):6.1f} s   -> out/body.wav, out/body-timing.txt")
+    if lead:
+        print(f"  hook   {lead:6.1f} s   in front of the narration")
+    else:
+        print("  hook       --       out/hook.wav not built — run video/hook.py")
+    print(f"  screen {picture:6.1f} s   -> out/timing.txt")
     print(f"  total  {total:6.1f} s   =  {int(total // 60)}:{total % 60:04.1f}   "
           f"-> out/narration.wav, out/captions.srt ({len(cues)} cues)")
     over = total - MAX_SECONDS

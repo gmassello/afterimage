@@ -1,26 +1,58 @@
 # Video production — afterimage
 
-Your voice, in Spanish, end to end. English burned-in subtitles. Your face full screen at the
-opening and the close, and in a box in the top-right corner for everything in between.
+A 14-second cold open with no voice, then your voice in Spanish end to end, English burned-in
+subtitles, and your face in a box in the corner **for the whole video** — the big frame is always
+showing the product or the documentation.
 
 The script is `video/script.tsv`: one row per subtitle, `en` is what the viewer reads, `es` is what
-you say. 63 rows.
+you say. 58 rows.
 
-## 1. Record seven clips
+## 1. Build the cold open
+
+```bash
+python3 video/hook.py
+```
+
+Writes `video/out/hook.mov` (1920×1080, 30 fps, no voice) and `video/out/hook.wav`. Both are
+rebuilt only when the spec in `hook.py` changes — the plan is cached in `out/hook.plan`.
+
+```
+0.0  a real solar array from eval/dataset/base/, slow push-in     deep impact
+     1,700,000 panels
+3.0  cut · video/img/1-blurred.png                                impact
+     blur_variance    3.6589  <   100.0   ->  recapture
+6.0  cut · video/img/3-defect.png, a box on the crack             impact
+     score            0.6798  >=    0.4    ->  human_approval
+9.5  cut to black                                                 silence
+11.0 afterimage
+     it does not guess. it measures.
+14.0 your voice comes in
+```
+
+The two metric lines are the ones read off the screen during the browser rehearsal below, not
+invented. The sound is synthesised by ffmpeg — a low drone with a hit on each cut — so there is no
+licence to clear and the whole thing rebuilds from the repository.
+
+`drawtext` is not compiled into the Homebrew `ffmpeg` 8 default, so `hook.py` puts
+`/opt/homebrew/opt/ffmpeg@7/bin` in front of `PATH`, the same as `assemble.sh`.
+
+## 2. Record seven clips
 
 QuickTime Player → *File* → *New Movie Recording*, webcam and microphone on. All seven in the same
-session: same chair, same framing, same light. If the light changes between clips the box flickers
-every time the beat changes.
+session: same chair, same framing, same light. The box is on screen from the first frame to the
+last, so a change of light between clips flickers at every beat change.
 
 | File | Beat | Content | Rows |
 |---|---|---|---|
-| `face-open.mov` | 0:00 | Opening, to camera | 7 |
+| `face-open.mov` | 0:00 | Opening | 4 |
 | `body-1.mov` | 0:25 | The problem | 6 |
 | `body-2.mov` | 1:00 | Architecture | 4 |
 | `body-3.mov` | 1:30 | **The demo** | 22 |
 | `body-4.mov` | 3:15 | **The trace** | 8 |
 | `body-5.mov` | 4:00 | Evaluation and the failure | 9 |
-| `face-close.mov` | 4:35 | Close, to camera | 7 |
+| `face-close.mov` | 4:35 | Close | 5 |
+
+"face" only means that beat has no demo to show; all seven go into the box.
 
 Seven separate recordings, not one long take: a clip that goes wrong is re-recorded on its own.
 
@@ -29,17 +61,16 @@ Seven separate recordings, not one long take: a clip that goes wrong is re-recor
 **Pause between one row and the next**, the way you read a list. Those pauses are what tells the
 assembler where each subtitle changes. Inside a row, speak normally.
 
-Do not worry about how long the pauses are: anything over 0.7 s is cut back to 0.7 s afterwards,
-audio and picture together, and so is dead air at the top and tail of each clip. Two real takes ran
-long at 1.1 s and 1.5 s per pause; trimming brought them under target without a re-record. A pause
-that is too *short* is the one that cannot be fixed later, so err long.
+Do not worry about how long the pauses are: anything over 0.55 s is cut back afterwards, audio and
+picture together, and so is dead air at the top and tail of each clip. Two real takes ran long at
+1.1 s and 1.5 s per pause; trimming brought them under target without a re-record. A pause that is
+too *short* is the one that cannot be fixed later, so err long.
 
-Read the `es` column from a teleprompter placed directly under the lens, large type. On the two
-face clips the eyes-off-lens drift is visible; inside the small box it is not.
+Read the `es` column from a teleprompter placed directly under the lens, large type
+(`python3 video/teleprompter.py` regenerates `out/teleprompter.html` from the `.tsv`, with the
+per-clip targets recalculated).
 
 ### Your lines
-
-Print them with:
 
 ```bash
 awk -F'\t' 'NR>1 && $1=="0:00" {print NR-1". "$3}' video/script.tsv    # opening
@@ -47,22 +78,33 @@ awk -F'\t' 'NR>1 && $1=="4:35" {print NR-1". "$3}' video/script.tsv    # close
 awk -F'\t' 'NR>1 {print $1"  "$3}' video/script.tsv                    # everything
 ```
 
-The last line of the opening — *"Te muestro."* — is the handoff into the demo. Land it and hold
-still for a beat before stopping the recording.
+The opening no longer starts with your name — it starts by cashing in what the hook just showed,
+so land *"Esos números decidieron qué pasaba después."* as an answer, not as an introduction.
 
-## 2. Build the audio and the subtitles
+## 3. Build the audio and the subtitles
 
 ```bash
 python3 video/build-face-audio.py
 ```
 
-Reads the seven clips and writes `video/out/narration.wav`, `body.wav`, `body-timing.txt`,
-`captions.srt`, and a trimmed copy of each clip under `video/out/clips/`. Everything downstream uses
-the trimmed copies — `assemble.sh` included — so the originals are never touched.
+Reads the seven clips and writes `video/out/narration.wav`, `timing.txt`, `captions.srt`, and a
+trimmed copy of each clip under `video/out/clips/`. Everything downstream uses the trimmed copies —
+`assemble.sh` included — so the originals are never touched.
+
+`narration.wav` starts with `out/hook.wav`, so the audio and the assembled picture come out exactly
+the same length and nothing has to be mixed downstream. If the hook has not been built the report
+says so and the offset is zero.
+
+`timing.txt` holds the seven beat lengths of the picture only (no hook); it is what
+`fit-to-audio.py` locks the screencast to.
+
+Subtitle times are anchored to the **rendered** clips, not to the arithmetic of the trim plan: each
+trim snaps to a frame, and over seven beats that rounding used to push the last subtitles a few
+hundred milliseconds off the voice.
 
 The report shows raw length, tight length and what trimming saved. Trimming also re-encodes ProRes
-to H.264, which takes each 600 MB clip down to about 25 MB; a clip is only re-rendered when it is
-newer than its trimmed copy.
+to H.264, which takes each 600 MB clip down to about 25 MB; a clip is only re-rendered when its
+trim plan changes.
 
 **Record `body-1.mov` first and run this on it alone.** If your reading does not produce clean
 boundaries, it shows up on one 25-second clip instead of five. Every beat must say `fitted`; a beat
@@ -70,17 +112,20 @@ that says `proportional` means the pauses were not found and its subtitles are e
 
 If a room noise floor swallows the pauses, raise the threshold: `NOISE_DB=-25dB python3 …`.
 
-The verdict line has to read `HARD CAP 5:00 — OK`. Over the cap, a beat gets cut and that one clip
-gets re-recorded — before the screencast exists, not after.
+The verdict line has to read `HARD CAP 5:00 — OK`, and it counts the hook.
 
-## 3. The screencast
+## 4. The screencast
 
 `Cmd+Shift+5` in **window mode**, microphone **off**. Window mode captures only the browser, so the
 terminal never appears. Claude drives the clicks; you press record and stop. Save as `video/raw.mov`.
 
+The box is permanent now, so every beat needs something on the screen behind it — including the
+opening and the close, which used to be your face full frame.
+
 | # | Beat | On screen | Money shot |
 |---|---|---|---|
-| 1 | 0:25 | The public endpoint, asset list | |
+| 0 | 0:00 | The endpoint loading, the URL legible, the upload form | |
+| 1 | 0:25 | The asset list, scrolled | |
 | 2 | 1:00 | Infrastructure diagram, GitHub Pages §11 | |
 | 3 | 1:30 | Upload `1-blurred.png` → trace opens | **`blur_variance 3.6589 vs 100.0 -> recapture`** |
 | 4 | 1:30 | Upload `2-baseline.png` → first baseline | |
@@ -89,6 +134,7 @@ terminal never appears. Claude drives the clicks; you press record and stop. Sav
 | 7 | 1:30 | `/assets/{id}` history | **the older baseline marked `superseded by`** |
 | 8 | 3:15 | The trace, scrolled to `classify_severity` | **`score 0.6798 >= 0.4 -> human_approval`** |
 | 9 | 4:00 | `docs/EVALUATION.md` results and failure tables | |
+| 10 | 4:35 | GitHub Pages: the diagram, the tables, the public URL in shot | |
 
 Dwell ~4 s on each money shot. Natural pace elsewhere — the fit compresses the dead waiting
 afterwards, so only the ORDER has to be right.
@@ -105,20 +151,22 @@ same click then landed first try. Opening `metrics` before approving is still wo
 **A defect upload takes ~33 s** end to end; the clean baseline takes ~6 s. Do not navigate away
 before the trace appears, or the inspection is cancelled and nothing is written.
 
-Every page in the app is a 760 px centred column, so the top-right corner is empty background: the
-box covers nothing, not even on the trace.
+Every page in the app is a 760 px centred column, so the corner is empty background: the box covers
+nothing, not even on the trace.
 
-## 4. Assemble
+## 5. Assemble
 
 ```bash
-bash video/assemble.sh "0,58,116,174,232"
+bash video/assemble.sh "0,42,100,158,216,274,332"
 ```
 
-The argument is the recording timestamp where each of the five body beats starts, read off a
-timestamped contact sheet of `raw.mov` — not guessed. The script fits the screencast to your voice,
-overlays the box, joins the three segments and writes `video/out/demo.mp4` plus `demo.en.srt`.
+The argument is the recording timestamp where each of the **seven** beats starts — shots 0, 1, 2,
+3, 8, 9 and 10 above — read off a timestamped contact sheet of `raw.mov`, not guessed.
 
-Knobs: `PIP_W` (default 320), `PIP_MARGIN` (default 32).
+The script fits the screencast to your voice beat by beat, lays one continuous box over it, joins
+the hook to the front and writes `video/out/demo.mp4` plus `demo.en.srt`.
+
+Knobs: `PIP_W` (default 300), `PIP_MARGIN` (default 24), `PIP_POS` (`tl` or `tr`, default `tl`).
 
 ## Verified through the browser, 5 September
 
@@ -135,8 +183,9 @@ Every number below was read off the screen, not the API:
 approved                       baseline 7537a2cfd8c2 -> superseded by 02fb84c00e01
 ```
 
-Both money shots fit on screen without scrolling. Every page is a 760 px centred column, so the
-corner box covers only background — confirmed on the trace, which is the densest shot.
+Both money shots fit on screen without scrolling. `eval/tests/test_published_numbers.py` holds the
+`en` column of `script.tsv` to this set and to `eval/results/latest/results.json`: a four-decimal
+figure spoken on camera that nothing measured fails the suite.
 
 Two things the rehearsal changed:
 
@@ -156,18 +205,17 @@ python3 video/rehearse.py
 
 Speaks `script.tsv` with a Spanish TTS voice into seven synthetic clips, runs the real
 `build-face-audio.py` over them, and checks the subtitles it produced against timings it knows to
-be true: 63 cues, every caption in order, **worst boundary error 39 ms**. Needs macOS, takes about
-a minute, and leaves nothing behind.
+be true: 58 cues, every caption inside a real silence, **worst boundary error 39 ms**. If
+`out/hook.wav` exists it is put in front, exactly as in the real build, so the run also proves the
+cold open did not push the subtitles off the voice. Needs macOS, takes about a minute, and leaves
+nothing behind.
 
 `REHEARSAL_GAP=1.4 python3 video/rehearse.py` runs the same check against clips with long pauses,
 which is what exercises the trimming: it verifies the cap held and that every subtitle still changes
-inside a real silence rather than over a word.
+inside a real silence rather than over a word. **This is the mode that caught the frame-snapping
+drift** — the cues are anchored to the rendered clips because of it.
 
-Synthetic speech pauses evenly, so the default run only proves the precise case. The messy case — a reader who
-hesitates mid-sentence — is what the real takes test, and it is why a boundary is chosen by pause
-length *and* by how well the split matches the length of the text around it. `LONG_BONUS` sets the
-balance; anywhere from 25 to 200 satisfies both cases, and it ships at 60.
-
-The assembly was rehearsed the same way against a stand-in screencast: `demo.mp4` came out
-1920×1080 at exactly the length of the voice track, with the box and the burned-in subtitles in
-place.
+Synthetic speech pauses evenly, so the default run only proves the precise case. The messy case — a
+reader who hesitates mid-sentence — is what the real takes test, and it is why a boundary is chosen
+by pause length *and* by how well the split matches the length of the text around it. `LONG_BONUS`
+sets the balance; anywhere from 25 to 200 satisfies both cases, and it ships at 60.

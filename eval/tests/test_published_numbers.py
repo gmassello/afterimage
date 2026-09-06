@@ -8,6 +8,10 @@ PAGE = Path("docs/EVALUATION.md")
 REPORT = Path("docs/TECHNICAL_REPORT.md")
 README = Path("README.md")
 RESULTS = Path("eval/results/latest/results.json")
+SCRIPT = Path("video/script.tsv")
+
+# Read off the screen during the 5 September browser rehearsal — see video/PRODUCTION.md.
+ON_CAMERA = {"3.6589", "2483.1292", "1064.0321", "0.9988", "67.7646", "0.6798"}
 
 pytestmark = pytest.mark.skipif(
     not (PAGE.exists() and RESULTS.exists()), reason="run `make eval` first"
@@ -97,3 +101,13 @@ def test_every_published_table_row_matches_the_artefact(published, measured, hea
         assert [support, precision, recall, f1] == [
             str(report[label][name]) for name in ("support", "precision", "recall", "f1")
         ], f"{heading}: row `{label}` does not match the artefact"
+
+
+def test_the_video_script_only_speaks_measured_figures():
+    artefact = RESULTS.read_text()
+    spoken = set()
+    for row in SCRIPT.read_text().splitlines()[1:]:
+        spoken |= set(re.findall(r"\d+\.\d{4}", row.split("\t")[1]))
+    assert spoken, "the video script no longer states any measured figure"
+    unknown = sorted(n for n in spoken if n not in artefact and n not in ON_CAMERA)
+    assert not unknown, f"the video states figures nothing measured: {unknown}"

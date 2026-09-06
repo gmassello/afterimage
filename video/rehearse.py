@@ -111,6 +111,12 @@ def main():
 
     shutil.copy(BUILDER, stage)
     shutil.copy(SCRIPT, stage)
+    hook, lead = VIDEO / "out" / "hook.wav", 0.0
+    if hook.exists():
+        (stage / "out").mkdir(parents=True, exist_ok=True)
+        shutil.copy(hook, stage / "out" / hook.name)
+        lead = duration(hook)
+        print(f"  hook {lead:.1f} s in front — the cues have to come back shifted")
     print()
     subprocess.run([sys.executable, str(stage / BUILDER.name)], check=True)
 
@@ -122,7 +128,7 @@ def main():
                  for _, n in BEATS)
     trimmed = shrunk > 0.5
 
-    failures, worst, index, offset = 0, 0.0, 0, 0.0
+    failures, worst, index, offset = 0, 0.0, 0, lead
     longest_pause = 0.0
     for beat, name in BEATS:
         cut = stage / "out" / "clips" / name

@@ -19,8 +19,27 @@ This document is the **content**. The delivered video changes the delivery, not 
 |---|---|
 | Voice | The author's own, in Spanish, end to end. No synthetic narration |
 | Subtitles | English, burned in, plus a sidecar `demo.en.srt`. The text below is the subtitle text |
-| Face | Full screen for the opening and the close; a box in the top-right corner over the demo |
+| Cold open | 14 s before the first word: a real array, two measured decisions, the name. No voice, so it lands muted — `video/hook.py` |
+| Face | A box in the corner from the first frame to the last; the big frame is always the product or the documentation |
 | Assembly | Seven camera clips, one per beat, fitted to the screencast — `video/PRODUCTION.md` |
+
+**The 5 September cut (4:44.9) is superseded.** It opened with the author introducing himself and
+put the face full screen at both ends. The beat→timestamp mapping below is filled in once the new
+cut exists.
+
+| Script | Video | |
+|---|---|---|
+| — | 0:00–0:14 | Cold open, no voice |
+| 0:00 | | Opening |
+| 0:25 | | The problem |
+| 1:00 | | Architecture |
+| 1:30 | | The demo |
+| 3:15 | | The trace |
+| 4:00 | | Evaluation |
+| 4:35 | | The close |
+
+The cut runs shorter than the script's marks because the recorded reading is faster than the
+budget assumed, and because pauses over 0.55 s are trimmed out of the clips.
 
 The competition rules require the author's face, the app, the architecture and the results, and set
 no language requirement (`docs/BRIEF.md` §1). A real voice and a face on screen throughout carry
@@ -59,16 +78,22 @@ rather than changing the threshold for the video.
 
 ---
 
-## 0:00 – 0:25 · Face to camera
+## 0:00 – 0:14 · Cold open, no voice
 
-> I'm Germán Massello. I built afterimage: an inspection agent that looks at a solar panel, compares
-> it against what that exact panel looked like the last time it was inspected, and decides on its own
-> what to do next — take another photo, look closer, or stop and call a human.
->
-> The part I want to show you is that last bit. Not that it sees a defect. That an OpenCV number
-> changes what it does.
+A real solar array and the number of panels in it. Cut, on a low hit: a blurred capture, and beside
+it the number the system measured and the branch that number chose — `blur_variance 3.6589 < 100.0
+-> recapture`. Cut: the same panel with a crack, boxed, and `score 0.6798 >= 0.4 ->
+human_approval`. Black. Then the name, and *it does not guess. it measures.*
 
-*On screen: face, no slides.*
+Both figures were read off the public endpoint during the browser rehearsal, not invented.
+
+## 0:14 – 0:27 · Opening
+
+> Those numbers decided what happened next. I'm Germán Massello, this is afterimage, and it compares
+> a panel against that same panel, last time. It doesn't ask whether the panel is broken. It asks
+> what changed.
+
+*On screen: the public endpoint loading, the URL legible. Face in the corner box, as everywhere.*
 
 ## 0:25 – 1:00 · The problem, with a number
 
@@ -181,11 +206,11 @@ before deciding. That is the agent choosing to gather more evidence.*
 > and there is no global default that works: healthy real captures span a two-hundred-fold range.
 >
 > Everything is open: the repository, the evaluation, the traces, and a public endpoint with no
-> login. You can upload your own photograph and watch it decide.
->
-> Thanks for watching.
+> login. Upload your own photograph and watch a number decide what it does.
 
-*On screen: face again, then the URL and the repository, held long enough to read.*
+*On screen: GitHub Pages — the infrastructure diagram, the evaluation tables, and the public URL
+held long enough to read. The close pays the cold open back: it ends on the same idea it opened on,
+a number deciding.*
 
 ---
 
