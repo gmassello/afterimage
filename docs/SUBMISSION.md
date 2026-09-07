@@ -95,7 +95,8 @@ each one is compared against, is the policy's business.
 
 ## Final checklist
 
-- [ ] Endpoint tested from another network, and budgeted to stay alive until 10 November (judging runs 27 Oct – 9 Nov).
+- [x] Endpoint tested from another network — reached from mobile data on 7 September, off the WiFi the deploy was made
+      from — and budgeted to stay alive until 10 November (judging runs 27 Oct – 9 Nov).
       Cost measured, not estimated: the account billed $0.0138 in August with the sibling `recall` stack running all month;
       afterimage adds ~$1/month, almost all of it ECR storage for the 2 GB arm64 image
 - [x] No credentials anywhere in git history — swept the full history for key patterns and credential filenames; the only match is `AWS_SECRET_ACCESS_KEY=test`, the LocalStack dummy
