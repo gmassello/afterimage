@@ -68,16 +68,15 @@ each one is compared against, is the policy's business.
       the live trace → `/queue` to approve → `/assets/{id}` for the longitudinal history.
       Deployed 2 September from GitHub Actions over OIDC; every branch below was walked against
       this URL, not against localhost
-- [ ] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted — **recorded and cut, 4:53.6**
-      (`video/out/demo.mp4`, 1920×1080, with `demo.en.srt` alongside). It opens on fourteen seconds
-      with no voice: a real array and its scale, then two decisions the system actually made with the
-      numbers that caused them, then the name — so the thesis lands before anyone introduces
-      themselves. The author's face is in the corner box from the first frame to the last, which
-      means the big frame is always the product or the documentation. Narration in Spanish, English
-      subtitles burned in. Every frame of the demo is the public endpoint, driven live on asset
-      `panel-d4-south`. Assembled by the pipeline in
-      [`video/PRODUCTION.md`](../video/PRODUCTION.md) from
-      [`video/script.tsv`](../video/script.tsv). **Only the upload is outstanding**
+- [x] 6. Video ≤ 5 min, **showing the author's face**, public or unlisted — **published 7 September at
+      https://youtu.be/zUFR96a33IM**, public, 4:53.6, 1920×1080, with `demo.en.srt` as the English
+      caption track. It opens on fourteen seconds with no voice: a real array and its scale, then
+      two decisions the system actually made with the numbers that caused them, then the name — so
+      the thesis lands before anyone introduces themselves. The author's face is in the corner box
+      from the first frame to the last, which means the big frame is always the product or the
+      documentation. Narration in Spanish, English subtitles burned in. Every frame of the demo is
+      the public endpoint, driven live on asset `panel-d4-south`. Assembled by the pipeline in
+      [`video/PRODUCTION.md`](../video/PRODUCTION.md) from [`video/script.tsv`](../video/script.tsv).
 
       | | Beat |
       |---|---|

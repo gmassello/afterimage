@@ -15,6 +15,7 @@
 
 <p align="center">
   <b><a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/">Try the live agent</a></b> ·
+  <b><a href="https://youtu.be/zUFR96a33IM">Watch the demo (4:54)</a></b> ·
   <b><a href="https://gmassello.github.io/afterimage/">Field manual</a></b> ·
   <b><a href="docs/TECHNICAL_REPORT.md">Technical report</a></b> ·
   <b><a href="docs/EVALUATION.md">Evaluation</a></b>
