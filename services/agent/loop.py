@@ -5,7 +5,6 @@ import sys
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 
 from mcp import ClientSession, StdioServerParameters
@@ -86,6 +85,48 @@ class RunResult:
     run_dir: Path
 
 
+class AlreadyStarted(Exception):
+    pass
+
+
+def start(asset_id: str, capture_key: str, runs_dir: str | Path = "runs") -> dict:
+    run_id = uuid.uuid4().hex[:12]
+    return trace.emit(
+        Path(runs_dir) / run_id,
+        "run_started",
+        run_id=run_id,
+        asset_id=asset_id,
+        capture_key=capture_key,
+    )
+
+
+async def resume(run_id: str, runs_dir: str | Path = "runs", **kwargs) -> RunResult:
+    events = trace.read_events(Path(runs_dir) / run_id)
+    started = trace.started_event(events)
+    if started is None:
+        raise FileNotFoundError(run_id)
+    # ponytail: non-atomic claim, so two racing clients could both pass it; enough for a
+    # single-operator demo endpoint, swap for a conditional DynamoDB write if that changes
+    if trace.run_state(events) != trace.UNSTARTED:
+        raise AlreadyStarted(run_id)
+    try:
+        return await run(
+            started["asset_id"], started["capture_key"],
+            runs_dir=runs_dir, started=started, **kwargs,
+        )
+    except Exception as error:
+        _close_as_failed(Path(runs_dir) / run_id, error)
+        raise
+
+
+def _close_as_failed(run_dir: Path, error: BaseException) -> None:
+    message = f"{type(error).__name__}: {error}"
+    trace.emit(run_dir, "run_finished", status=trace.FAILED, branch=None, message=message)
+    state = runs.read(run_dir, "state.json") or {}
+    state.update(status=trace.FAILED, branch=None, message=message)
+    runs.write(run_dir, "state.json", state)
+
+
 async def run(
     asset_id: str,
     capture_key: str,
@@ -93,12 +134,13 @@ async def run(
     policy: Policy | None = None,
     max_turns: int = 12,
     runs_dir: str | Path = "runs",
+    started: dict | None = None,
 ) -> RunResult:
     pol = policy or Policy.from_env()
-    run_id = uuid.uuid4().hex[:12]
-    captured_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    if started is None:
+        started = start(asset_id, capture_key, runs_dir)
+    run_id, captured_at = started["run_id"], started["ts"]
     run_dir = Path(runs_dir) / run_id
-    trace.emit(run_dir, "run_started", run_id=run_id, asset_id=asset_id, capture_key=capture_key)
 
     decisions: list[dict] = []
     stage_metrics: dict[str, dict] = {}
@@ -140,7 +182,7 @@ async def run(
                 "image_keys": image_keys,
                 "message": message,
             })
-            return finish("awaiting_approval", branch, message)
+            return finish(trace.AWAITING_APPROVAL, branch, message)
         return finish("completed", branch, message)
 
     baseline = store.current_baseline(asset_id)
@@ -156,9 +198,9 @@ async def run(
         await session.initialize()
 
         async def call(name: str, args: dict) -> tuple[dict, dict | None]:
-            start = time.perf_counter()
+            began = time.perf_counter()
             result = await session.call_tool(name, args)
-            duration_ms = round((time.perf_counter() - start) * 1000, 1)
+            duration_ms = round((time.perf_counter() - began) * 1000, 1)
             text = result.content[0].text if result.content else ""
             payload = {"error": text} if result.is_error else json.loads(text)
             span = {"tool": name, "args": args, "duration_ms": duration_ms}
@@ -182,7 +224,7 @@ async def run(
             hitl.commit(asset_id, run_id, captured_at, stage_metrics, image_keys)
             return finish("completed", policy_module.FIRST_BASELINE)
 
-        baseline_key = baseline["image_key"]
+        baseline_key = image_keys["baseline"] = baseline["image_key"]
         detector = alignment.default_detector()
         if llm is None:
             llm = (

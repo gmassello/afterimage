@@ -32,6 +32,11 @@ def test_html_when_the_browser_asks_for_it(client):
         assert fragment in response.text
 
 
+def test_format_json_overrides_the_html_accept_header(client):
+    response = client.get(f"/traces/{RUN_ID}?format=json", headers={"accept": "text/html"})
+    assert response.json() == {"state": STATE, "events": EVENTS}
+
+
 def test_unknown_run_is_404(client):
     assert client.get("/traces/000000000000").status_code == 404
 

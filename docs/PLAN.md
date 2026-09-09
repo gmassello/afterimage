@@ -191,6 +191,16 @@ functions over the same events — `render_text` (CLI: `python -m services.obser
 RUN_ID`) and `render_html` (the endpoint). **SSE deferred to stage 6** with the front end that will
 consume it: re-read `events.json`, emit the delta, ~20 lines.
 
+Stage 6 resolved it without SSE. The container runs uvicorn behind the AWS Lambda Web Adapter, and
+Lambda freezes the execution environment the moment a response is returned, so neither a background
+task nor a long-lived event stream survives the upload request. Instead the upload was split in two:
+`POST /inspections` only opens the run (`loop.start` emits `run_started`) and redirects, and the
+trace page itself fires `POST /runs/{run_id}/execute` and then polls its own URL, swapping the
+`.live` block of the freshly rendered page. Two concurrent invocations, and because
+`AFTERIMAGE_RUNS_S3=1` persists every event as `trace.emit` writes it, the poller sees the spans
+appear while the executor is still working. The HTML stays server-rendered — no renderer duplicated
+in JavaScript.
+
 Deps added, pinned: `fastapi==0.141.1`, `uvicorn==0.52.4`, `httpx==0.28.1` (the TestClient
 transport).
 

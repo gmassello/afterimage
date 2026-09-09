@@ -1,3 +1,4 @@
+import json
 import uuid
 
 import cv2
@@ -46,7 +47,7 @@ def test_index_lists_assets(client):
 
 
 @localstack
-def test_upload_runs_the_loop_and_redirects_to_the_trace(client):
+def test_upload_opens_the_trace_before_the_loop_runs(client):
     asset_id = unique("api-upload")
     response = client.post(
         "/inspections",
@@ -55,11 +56,18 @@ def test_upload_runs_the_loop_and_redirects_to_the_trace(client):
     )
     assert response.status_code == 303
     trace_path = response.headers["location"]
-    trace = client.get(trace_path)
-    assert trace.status_code == 200
-    events = trace.json()["events"]
-    assert events[0]["type"] == "run_started"
+    run_id = trace_path.rsplit("/", 1)[-1]
+
+    opened = client.get(trace_path)
+    assert opened.status_code == 200
+    assert [event["type"] for event in opened.json()["events"]] == ["run_started"]
+    assert "data-run-state='unstarted'" in client.get(trace_path, headers={"accept": "text/html"}).text
+
+    assert client.post(f"/runs/{run_id}/execute").status_code == 200
+    events = client.get(trace_path).json()["events"]
     assert events[-1]["type"] == "run_finished"
+    assert client.post(f"/runs/{run_id}/execute").status_code == 409
+
     history_page = client.get(f"/assets/{asset_id}")
     assert history_page.status_code == 200
     assert "baseline" in history_page.text
@@ -125,3 +133,53 @@ def test_queue_refresh_yields_to_an_in_flight_navigation():
     assert 'addEventListener("submit", halt, true)' in page
     assert "if (live &&" in page
     assert "setInterval" not in pages.index_page([])
+
+
+def test_execute_guards_unknown_and_already_started_runs(client, tmp_path):
+    assert client.post("/runs/not-a-run-id/execute").status_code == 404
+    assert client.post("/runs/000000000000/execute").status_code == 404
+    run_id = "abcdef123456"
+    (tmp_path / run_id).mkdir()
+    (tmp_path / run_id / "events.json").write_text(json.dumps([
+        {"type": "run_started", "ts": "2026-08-26T12:00:00.000+00:00", "run_id": run_id,
+         "asset_id": "seeded", "capture_key": f"seeded/{run_id}/capture.png"},
+        {"type": "run_finished", "ts": "2026-08-26T12:00:01.000+00:00",
+         "status": "completed", "branch": "no_change", "message": ""},
+    ]))
+    assert client.post(f"/runs/{run_id}/execute").status_code == 409
+
+
+def test_asset_timeline_scores_every_inspection_against_the_threshold():
+    page = pages.asset_page("array-rooftop", [
+        {"sk": store.META, "asset_id": "array-rooftop"},
+        {"sk": f"{store.INSPECTION}7f2ac91b04de", "inspection_id": "7f2ac91b04de",
+         "captured_at": "2026-08-26T12:04:11+00:00",
+         "image_keys": {"capture": "array-rooftop/7f2ac91b04de/capture.png"},
+         "metrics": {"severity": {"label": "crack", "score": 0.6543}}},
+        {"sk": f"{store.BASELINE}c904ab21fe58", "inspection_id": "c904ab21fe58",
+         "captured_at": "2026-08-12T08:02:44+00:00",
+         "image_key": "array-rooftop/c904ab21fe58/capture.png"},
+    ])
+    assert "score 0.6543" in page
+    assert "approve 0.4" in page
+    assert "crack" in page
+    assert "current baseline" in page
+
+
+def test_queue_entry_shows_the_compared_pair_and_the_changed_region():
+    page = pages.queue_page(
+        [{
+            "run_id": "7f2ac91b04de", "asset_id": "array-rooftop", "message": "severe crack",
+            "image_keys": {"capture": "array-rooftop/7f2ac91b04de/capture.png",
+                           "aligned": "array-rooftop/7f2ac91b04de/aligned.png",
+                           "baseline": "array-rooftop/c904ab21fe58/capture.png"},
+            "metrics": {
+                "diff": {"regions": [{"bbox": [412, 208, 96, 64], "mean_delta": 41.88}]},
+                "severity": {"label": "crack", "score": 0.6543},
+            },
+        }],
+    )
+    assert "/images/array-rooftop/c904ab21fe58/capture.png" in page
+    assert "/images/array-rooftop/7f2ac91b04de/aligned.png" in page
+    assert "[412, 208, 96, 64]" in page
+    assert "score 0.6543" in page

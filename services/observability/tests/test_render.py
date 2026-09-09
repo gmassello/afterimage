@@ -26,4 +26,5 @@ def test_render_html_escapes_untrusted_strings():
         "message": "<script>alert(1)</script>",
     }]
     page = render_html({}, events)
-    assert "<script>" not in page
+    assert "<script>alert(1)</script>" not in page
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in page

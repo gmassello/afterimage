@@ -53,8 +53,21 @@ async def create_inspection(asset_id: str = Form(...), image: UploadFile = File(
         raise HTTPException(status_code=400, detail="not a decodable image")
     store.put_asset(asset_id)
     capture_key = images.put_image(asset_id, uuid.uuid4().hex[:12], "capture", capture)
-    result = await loop.run(asset_id, capture_key, runs_dir=_runs_dir())
-    return RedirectResponse(f"/traces/{result.run_id}", status_code=303)
+    started = loop.start(asset_id, capture_key, runs_dir=_runs_dir())
+    return RedirectResponse(f"/traces/{started['run_id']}", status_code=303)
+
+
+@app.post("/runs/{run_id}/execute")
+async def execute_run(run_id: str):
+    if not RUN_ID_PATTERN.fullmatch(run_id):
+        raise HTTPException(status_code=404, detail="run not found")
+    try:
+        result = await loop.resume(run_id, runs_dir=_runs_dir())
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="run not found")
+    except loop.AlreadyStarted:
+        raise HTTPException(status_code=409, detail="run already started")
+    return {"run_id": result.run_id, "status": result.status, "branch": result.branch}
 
 
 @app.get("/queue")
@@ -91,6 +104,7 @@ def get_trace(run_id: str, request: Request):
     state, events = load_run(run_dir)
     if not events:
         raise HTTPException(status_code=404, detail="trace not found")
-    if "text/html" in request.headers.get("accept", ""):
+    wants_html = "text/html" in request.headers.get("accept", "")
+    if wants_html and request.query_params.get("format") != "json":
         return HTMLResponse(render_html(state, events))
     return {"state": state, "events": events}

@@ -141,9 +141,10 @@ GOOGLE_API_KEY=... make deploy   # ECR + docker buildx arm64 + CloudFormation, i
 | Endpoint | What it serves |
 |---|---|
 | `/` | Asset list and capture upload |
-| `/assets/{id}` | Inspection history and current baseline |
-| `/queue` | Human approval queue |
-| `/traces/{run_id}` | Per-run trace, JSON or HTML |
+| `/assets/{id}` | Inspection timeline and current baseline |
+| `/queue` | Human approval queue, with the compared pair |
+| `/traces/{run_id}` | Per-run trace, JSON or HTML; fills in live while the run works |
+| `/runs/{run_id}/execute` | Runs the agent loop for a trace the upload already opened |
 | `/health` | Health check |
 
 <details>

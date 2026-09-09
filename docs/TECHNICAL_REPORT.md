@@ -156,7 +156,8 @@ is one deployable artefact.
 | Route | Purpose |
 |---|---|
 | `GET /` | assets and the upload form |
-| `POST /inspections` | upload a capture, run the loop, redirect to its trace |
+| `POST /inspections` | upload a capture, open its trace, redirect to it |
+| `POST /runs/{run_id}/execute` | run the agent loop for an opened trace |
 | `GET /assets/{asset_id}` | the longitudinal history of one asset |
 | `GET /queue` · `POST /queue/{run_id}/{approve\|reject}` | the human gate |
 | `GET /traces/{run_id}` | the per-run trace, JSON or a readable page |
