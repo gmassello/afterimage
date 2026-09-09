@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block body %}
+<section class='col'><div class='kicker'>assets in memory</div><table class='table'><thead><tr><th>asset</th></tr></thead><tbody>
+{%- if assets -%}
+{%- for asset in assets %}<tr><td><a href='/assets/{{ asset }}'>{{ asset }}</a></td></tr>{% endfor -%}
+{%- else -%}
+<tr><td class='dim'>no assets yet</td></tr>
+{%- endif -%}
+</tbody></table></section>
+<section class='panel'><div class='kicker'>new inspection</div><form class='field' method='post' action='/inspections' enctype='multipart/form-data'><input class='input' name='asset_id' placeholder='asset-id' required pattern='[a-z0-9-]{1,64}'><input class='input' type='file' name='image' accept='image/*' required><button class='btn ok sm'>inspect</button></form><p class='hint'>The trace opens immediately and fills in as the agent works.</p></section>
+{% endblock %}

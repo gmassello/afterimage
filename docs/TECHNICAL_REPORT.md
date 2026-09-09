@@ -161,6 +161,7 @@ is one deployable artefact.
 | `GET /assets/{asset_id}` | the longitudinal history of one asset |
 | `GET /queue` · `POST /queue/{run_id}/{approve\|reject}` | the human gate |
 | `GET /traces/{run_id}` | the per-run trace, JSON or a readable page |
+| `GET /static/{name}` | the stylesheet and the script, content-hashed and cached for a year |
 | `GET /images/{key}` | stored captures, aligned images and masks |
 | `GET /health` | liveness, and the target of the warmer |
 

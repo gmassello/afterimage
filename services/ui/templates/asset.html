@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% import 'partials/components.html' as c %}
+{% block body %}
+<section class='col'><div class='kicker'>{{ asset_id }} &middot; everything memory holds about this asset</div><div class='timeline'>
+{%- if entries -%}
+{%- for e in entries %}<div class='{{ 'tl promoted' if e.promoted else 'tl' }}'><div class='rail'><span class='node'></span></div><div class='entry'><div class='facts'><div class='top'>{{ e.captured_at }}{{ c.pills(e.pills) }}{{ c.trace_link(e.trace_id) }}</div>
+{%- if e.note %}<span class='hint'>{% if e.note.link %}superseded by {{ c.trace_link(e.note.link) }}{% else %}{{ e.note.text }}{% endif %}</span>{% endif -%}
+{{- c.bar(e.bar) }}{{ c.metrics_details(e.metrics) }}</div>
+{%- if e.image_key %}<img class='thumb' src='/images/{{ e.image_key }}' alt=''>{% endif -%}
+</div></div>{% endfor -%}
+{%- else -%}
+<p class='hint'>no history yet</p>
+{%- endif -%}
+</div></section>
+{% endblock %}

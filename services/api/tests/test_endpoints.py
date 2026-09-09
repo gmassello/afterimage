@@ -1,15 +1,16 @@
 import json
+import re
 import uuid
 
 import cv2
 import pytest
 from fastapi.testclient import TestClient
 
-from services.api import pages
 from services.api.app import app
 from services.conftest import localstack
 from services.memory import images, store
 from services.perception.tests.panels import solar_panel
+from services.ui import views
 
 PANEL = solar_panel(seed=0)
 
@@ -127,12 +128,14 @@ def test_images_endpoint(client):
     assert client.get(f"/images/assets/{asset_id}/missing/capture.png").status_code == 404
 
 
-def test_queue_refresh_yields_to_an_in_flight_navigation():
-    page = pages.queue_page([])
-    assert "setInterval" in page
-    assert 'addEventListener("submit", halt, true)' in page
-    assert "if (live &&" in page
-    assert "setInterval" not in pages.index_page([])
+def test_queue_refresh_yields_to_an_in_flight_navigation(client):
+    page = views.queue_page([])
+    assert "data-poll='5000'" in page
+    script = client.get(re.search(r"/static/app\.[0-9a-f]{8}\.js", page).group())
+    assert script.headers["cache-control"] == "public, max-age=31536000, immutable"
+    assert "addEventListener('submit', halt, true)" in script.text
+    assert "if (live &&" in script.text
+    assert "!busy()" in script.text
 
 
 def test_execute_guards_unknown_and_already_started_runs(client, tmp_path):
@@ -150,7 +153,7 @@ def test_execute_guards_unknown_and_already_started_runs(client, tmp_path):
 
 
 def test_asset_timeline_scores_every_inspection_against_the_threshold():
-    page = pages.asset_page("array-rooftop", [
+    page = views.asset_page("array-rooftop", [
         {"sk": store.META, "asset_id": "array-rooftop"},
         {"sk": f"{store.INSPECTION}7f2ac91b04de", "inspection_id": "7f2ac91b04de",
          "captured_at": "2026-08-26T12:04:11+00:00",
@@ -167,7 +170,7 @@ def test_asset_timeline_scores_every_inspection_against_the_threshold():
 
 
 def test_queue_entry_shows_the_compared_pair_and_the_changed_region():
-    page = pages.queue_page(
+    page = views.queue_page(
         [{
             "run_id": "7f2ac91b04de", "asset_id": "array-rooftop", "message": "severe crack",
             "image_keys": {"capture": "array-rooftop/7f2ac91b04de/capture.png",

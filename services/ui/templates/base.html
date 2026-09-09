@@ -1,0 +1,23 @@
+<!doctype html><html lang='en'><head><meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>afterimage &mdash; {{ title }}</title>
+<link rel='preconnect' href='https://fonts.googleapis.com'>
+<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'>
+<link rel='stylesheet' href='{{ css_url }}'>
+<script>
+try {
+  var stored = localStorage.getItem('afterimage-theme');
+  document.documentElement.dataset.theme = stored === 'light' ? 'light' : 'dark';
+} catch (e) { document.documentElement.dataset.theme = 'dark'; }
+</script>
+</head><body>
+<div class='page'
+  {%- if run_state %} data-run-state='{{ run_state }}'{% endif %}
+  {%- if execute_url %} data-execute-url='{{ execute_url }}'{% endif %}>
+<div class='{{ "wrap narrow" if narrow else "wrap" }}'>
+{% include 'partials/header.html' %}
+{% block body %}{% endblock %}
+</div></div>
+<script src='{{ js_url }}'></script>
+</body></html>

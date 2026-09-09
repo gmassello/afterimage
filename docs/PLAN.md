@@ -191,6 +191,14 @@ functions over the same events — `render_text` (CLI: `python -m services.obser
 RUN_ID`) and `render_html` (the endpoint). **SSE deferred to stage 6** with the front end that will
 consume it: re-read `events.json`, emit the delta, ~20 lines.
 
+The two renderers no longer share a module. `render_text` and its CLI stay in
+`services/observability/`, which is where reading a run belongs; `render_html` moved to
+`services/ui/`, because it had grown to own the chrome of all four views — including the approval
+queue's buttons — and the API layer was importing presentation from the observability layer. The
+HTML now comes from Jinja2 templates with `autoescape=True`, so escaping is a property of the
+renderer rather than 44 hand-written `html.escape` calls, and the CSS and JS are served from
+`GET /static/{name}` under a content hash instead of riding inline on every poll.
+
 Stage 6 resolved it without SSE. The container runs uvicorn behind the AWS Lambda Web Adapter, and
 Lambda freezes the execution environment the moment a response is returned, so neither a background
 task nor a long-lived event stream survives the upload request. Instead the upload was split in two:

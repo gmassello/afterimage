@@ -1,6 +1,15 @@
 # Plan — paying down the front-end architecture debt
 
-Status: **not started.** Written after a review of the front-end architecture; scheduled for a later session.
+Status: **done.** Implemented in one pass; this file is kept as the record of why the change was made.
+Two things landed differently from the plan below:
+
+- The unified poller inherits the trace's attempt cap, so an idle `/queue` tab now stops polling after
+  roughly 30 minutes instead of polling forever. Each poll is a Lambda invocation, so this is a fix, but
+  it is a behavioural change and not the pure refactor the plan promised.
+- `data-poll` marks the swapped container on **every** render, done or not, and the decision to keep
+  polling reads `data-run-state` instead. Keying the selector on `data-poll` alone meant the attribute
+  vanished on exactly the poll that carried the run's final state, so the page froze one swap short of
+  the end. Caught in the browser, not by the tests.
 
 ## Context
 

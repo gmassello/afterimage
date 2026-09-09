@@ -7,10 +7,10 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
 from services.agent import hitl, loop
-from services.api import pages
 from services.memory import images, runs, store
-from services.observability.render import load_run, render_html
+from services.observability.render import load_run
 from services.observability.trace import RUN_ID_PATTERN
+from services.ui.views import asset_page, index_page, queue_page, render_html, static_asset
 
 ASSET_ID_PATTERN = re.compile(r"^[a-z0-9-]{1,64}$")
 # ponytail: the Function URL rejects bodies over 6 MB anyway; this guard is for local uvicorn
@@ -30,14 +30,14 @@ def health():
 
 @app.get("/")
 def index():
-    return HTMLResponse(pages.index_page(store.list_assets()))
+    return HTMLResponse(index_page(store.list_assets()))
 
 
 @app.get("/assets/{asset_id}")
 def asset_history(asset_id: str):
     if not ASSET_ID_PATTERN.fullmatch(asset_id):
         raise HTTPException(status_code=404, detail="asset not found")
-    return HTMLResponse(pages.asset_page(asset_id, store.history(asset_id)))
+    return HTMLResponse(asset_page(asset_id, store.history(asset_id)))
 
 
 @app.post("/inspections")
@@ -72,7 +72,7 @@ async def execute_run(run_id: str):
 
 @app.get("/queue")
 def queue():
-    return HTMLResponse(pages.queue_page(runs.pending(_runs_dir())))
+    return HTMLResponse(queue_page(runs.pending(_runs_dir())))
 
 
 @app.post("/queue/{run_id}/{verdict}")
@@ -84,6 +84,19 @@ def resolve_pending(run_id: str, verdict: str):
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="nothing pending for this run")
     return RedirectResponse("/queue", status_code=303)
+
+
+@app.get("/static/{name}")
+def static(name: str):
+    found = static_asset(name)
+    if found is None:
+        raise HTTPException(status_code=404, detail="asset not found")
+    body, media_type = found
+    return Response(
+        body,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
 
 
 @app.get("/images/{key:path}")

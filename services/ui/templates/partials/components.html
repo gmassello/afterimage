@@ -1,0 +1,13 @@
+{% macro bar(b) %}{% if b %}<div class='bar{{ ' lg' if b.large else '' }}'><div class='rail'><div class='fill' style='width:{{ b.at }}%'></div><div class='now' style='left:{{ b.at }}%'></div><div class='mark' style='left:{{ b.mark }}%'></div></div><div class='ends'>{% for end in b.ends %}{% if end.lit %}<span class='lit'>{{ end.text }}</span>{% else %}<span>{{ end.text }}</span>{% endif %}{% endfor %}</div></div>{% endif %}{% endmacro %}
+
+{% macro region_tag(tag) %}{% if tag.label %}{{ tag.label }}{% endif %}{% if tag.label and tag.delta %} &middot; {% endif %}{% if tag.delta %}&Delta;{{ tag.delta }}{% endif %}{% endmacro %}
+
+{% macro figures(f) %}{% if f %}<div class='shots'><figure><img src='/images/{{ f.baseline_key }}' alt='baseline in memory'><figcaption>baseline &middot; {{ f.baseline_key }}</figcaption></figure><figure><div class='frame'><img src='/images/{{ f.capture_key }}' alt='capture under inspection'>{% if f.bbox %}<div class='box' hidden data-bbox='{{ f.bbox|tojson }}'>{% if f.tag.label or f.tag.delta %}<span class='tag'>{{ region_tag(f.tag) }}</span>{% endif %}</div>{% endif %}</div><figcaption>capture &middot; {{ f.capture_key }}</figcaption></figure></div>{% endif %}{% endmacro %}
+
+{% macro approve(run_id) %}<div class='acts'><form method='post' action='/queue/{{ run_id }}/approve'><button class='btn ok'>Approve write</button></form><form method='post' action='/queue/{{ run_id }}/reject'><button class='btn'>Reject</button></form></div>{% endmacro %}
+
+{% macro pills(items) %}{% for pill in items %}<span class='pill{{ ' on' if pill.on else '' }}'>{{ pill.label }}</span>{% endfor %}{% endmacro %}
+
+{% macro trace_link(run_id) %}{% if run_id %}<a href='/traces/{{ run_id }}'>{{ run_id }}</a>{% endif %}{% endmacro %}
+
+{% macro metrics_details(payload) %}{% if payload %}<details><summary>metrics</summary><pre>{{ payload }}</pre></details>{% endif %}{% endmacro %}
