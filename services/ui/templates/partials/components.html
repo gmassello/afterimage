@@ -1,4 +1,4 @@
-{% macro bar(b) %}{% if b %}<div class='bar{{ ' lg' if b.large else '' }}'><div class='rail'><div class='fill' style='width:{{ b.at }}%'></div><div class='now' style='left:{{ b.at }}%'></div><div class='mark' style='left:{{ b.mark }}%'></div></div><div class='ends'>{% for end in b.ends %}{% if end.lit %}<span class='lit'>{{ end.text }}</span>{% else %}<span>{{ end.text }}</span>{% endif %}{% endfor %}</div></div>{% endif %}{% endmacro %}
+{% macro bar(b) %}{% if b %}<div class='bar{{ ' lg' if b.large else '' }}'><div class='rail'><div class='fill' style='width:{{ b.at }}%'></div><div class='now' style='left:{{ b.at }}%'></div>{% if b.mark %}<div class='mark' style='left:{{ b.mark }}%'></div>{% endif %}</div><div class='ends'>{% for end in b.ends %}{% if end.lit %}<span class='lit'>{{ end.text }}</span>{% else %}<span>{{ end.text }}</span>{% endif %}{% endfor %}</div></div>{% endif %}{% endmacro %}
 
 {% macro region_tag(tag) %}{% if tag.label %}{{ tag.label }}{% endif %}{% if tag.label and tag.delta %} &middot; {% endif %}{% if tag.delta %}&Delta;{{ tag.delta }}{% endif %}{% endmacro %}
 

@@ -154,7 +154,6 @@ async def run(
 
     def record(decision: dict, span: dict | None = None) -> dict:
         decisions.append(decision)
-        runs.write(run_dir, "decisions.json", decisions)
         if span is None:
             trace.emit(run_dir, "decision", **decision)
         else:
@@ -167,11 +166,21 @@ async def run(
         runs.write(run_dir, "state.json", state)
         return RunResult(run_id, status, branch, decisions, run_dir)
 
+    def severity_verdict() -> dict | None:
+        return next(
+            (d for d in reversed(decisions)
+             if d["input_metric"] == policy_module.SEVERITY_METRIC),
+            None,
+        )
+
     def conclude(branch: str, message: str) -> RunResult:
+        verdict = severity_verdict()
         if branch == policy_module.AUTO_WRITE:
-            hitl.commit(asset_id, run_id, captured_at, stage_metrics, image_keys)
+            hitl.commit(asset_id, run_id, captured_at, stage_metrics, image_keys, verdict)
         elif branch == policy_module.NO_CHANGE:
-            store.put_inspection(asset_id, run_id, captured_at, stage_metrics, image_keys)
+            store.put_inspection(
+                asset_id, run_id, captured_at, stage_metrics, image_keys, verdict
+            )
         elif branch == policy_module.HUMAN_APPROVAL:
             trace.emit(run_dir, "approval_requested", message=message)
             hitl.request_approval(run_dir, {
@@ -181,6 +190,7 @@ async def run(
                 "metrics": stage_metrics,
                 "image_keys": image_keys,
                 "message": message,
+                "verdict": verdict,
             })
             return finish(trace.AWAITING_APPROVAL, branch, message)
         return finish("completed", branch, message)

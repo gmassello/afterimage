@@ -1,7 +1,5 @@
-import os
 import re
 import uuid
-from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -17,10 +15,6 @@ ASSET_ID_PATTERN = re.compile(r"^[a-z0-9-]{1,64}$")
 MAX_UPLOAD_BYTES = 6 * 1024 * 1024
 
 app = FastAPI(title="afterimage")
-
-
-def _runs_dir() -> Path:
-    return Path(os.environ.get("AFTERIMAGE_RUNS_DIR", "runs"))
 
 
 @app.get("/health")
@@ -53,7 +47,7 @@ async def create_inspection(asset_id: str = Form(...), image: UploadFile = File(
         raise HTTPException(status_code=400, detail="not a decodable image")
     store.put_asset(asset_id)
     capture_key = images.put_image(asset_id, uuid.uuid4().hex[:12], "capture", capture)
-    started = loop.start(asset_id, capture_key, runs_dir=_runs_dir())
+    started = loop.start(asset_id, capture_key, runs_dir=runs.runs_dir())
     return RedirectResponse(f"/traces/{started['run_id']}", status_code=303)
 
 
@@ -62,7 +56,7 @@ async def execute_run(run_id: str):
     if not RUN_ID_PATTERN.fullmatch(run_id):
         raise HTTPException(status_code=404, detail="run not found")
     try:
-        result = await loop.resume(run_id, runs_dir=_runs_dir())
+        result = await loop.resume(run_id, runs_dir=runs.runs_dir())
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="run not found")
     except loop.AlreadyStarted:
@@ -72,7 +66,7 @@ async def execute_run(run_id: str):
 
 @app.get("/queue")
 def queue():
-    return HTMLResponse(queue_page(runs.pending(_runs_dir())))
+    return HTMLResponse(queue_page(runs.pending(runs.runs_dir())))
 
 
 @app.post("/queue/{run_id}/{verdict}")
@@ -80,7 +74,7 @@ def resolve_pending(run_id: str, verdict: str):
     if verdict not in ("approve", "reject") or not RUN_ID_PATTERN.fullmatch(run_id):
         raise HTTPException(status_code=404, detail="not found")
     try:
-        hitl.resolve(_runs_dir() / run_id, approved=verdict == "approve")
+        hitl.resolve(runs.runs_dir() / run_id, approved=verdict == "approve")
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="nothing pending for this run")
     return RedirectResponse("/queue", status_code=303)
@@ -113,7 +107,7 @@ def image(key: str):
 def get_trace(run_id: str, request: Request):
     if not RUN_ID_PATTERN.fullmatch(run_id):
         raise HTTPException(status_code=404, detail="trace not found")
-    run_dir = _runs_dir() / run_id
+    run_dir = runs.runs_dir() / run_id
     state, events = load_run(run_dir)
     if not events:
         raise HTTPException(status_code=404, detail="trace not found")

@@ -90,7 +90,10 @@ The front end works and is verified, but it builds HTML by concatenating strings
 
 ## Out of scope
 
-- **Persisting the severity verdict.** Still the most important follow-up from the previous review: the timeline and the queue paint `Policy.from_env()` as of now next to a historical score, so moving the threshold relabels the past. Deliberately excluded — it changes the signatures of `store.put_inspection`, `hitl.commit` and `loop.conclude`, and combining a data-model change with a template migration in one pass doubles the risk right before a deploy.
+- ~~**Persisting the severity verdict.**~~ **Done in a later pass**, as its own change rather than
+  bundled with the template migration. Each inspection now stores the `verdict` it was judged by;
+  inspections written before that recover their threshold from their own trace, and the bar drops
+  its threshold mark when neither source has it rather than inventing one.
 - **The deploy and the `docs/img/` recapture.** Still pending, still blocked on credentials.
 - **The narrated video.** Still recorded against the old look; re-recording is a separate production.
 - **Lint and type-check.** They do not exist in this repo and are not introduced here.

@@ -62,6 +62,7 @@ def put_inspection(
     captured_at: str,
     metrics: dict,
     image_keys: dict,
+    verdict: dict | None = None,
 ) -> None:
     _table().put_item(
         Item=_stored(
@@ -72,6 +73,7 @@ def put_inspection(
                 "captured_at": captured_at,
                 "metrics": metrics,
                 "image_keys": image_keys,
+                "verdict": verdict or {},
             }
         )
     )

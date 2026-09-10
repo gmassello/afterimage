@@ -94,7 +94,7 @@ Concretely, in `services/memory/store.py`, one DynamoDB partition holds an asset
 | Sort key | What it is |
 |---|---|
 | `META` | the asset |
-| `INSPECTION#{captured_at}#{inspection_id}` | one capture and the metrics measured on it |
+| `INSPECTION#{captured_at}#{inspection_id}` | one capture, the metrics measured on it, and the `verdict` it was judged by — the metric, the value and the **threshold in force when it ran**, so moving a threshold never relabels the past |
 | `BASELINE#{captured_at}` | the current reference, gaining a `superseded_by` field when a newer one replaces it |
 
 The baseline is a first-class item rather than a flag on an inspection, so fetching it is one small

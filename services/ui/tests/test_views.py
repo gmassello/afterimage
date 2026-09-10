@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from services.memory import store
@@ -73,3 +75,54 @@ def test_the_swapped_container_keeps_its_selector_once_the_run_is_done():
     done = views.render_html(STATE, EVENTS)
     assert "data-poll='1500'" in done
     assert "data-run-state='done'" in done
+
+
+APPROVAL = {
+    "type": "decision", "ts": "2026-08-26T12:05:00.000+00:00",
+    "input_metric": "human_approved", "value": 1.0, "threshold": 1.0, "branch": "approved",
+}
+
+
+def test_the_human_gate_does_not_steal_the_deciding_number():
+    page = views.render_html(STATE, EVENTS + [APPROVAL])
+    assert "human_approved" not in page
+    assert "inlier_ratio 0.259 &lt; 0.5 -&gt; unrecognized_asset" in page
+
+
+def _timeline(item: dict) -> str:
+    return views.asset_page("array-rooftop", [{
+        "sk": f"{store.INSPECTION}7f2ac91b04de",
+        "captured_at": "2026-08-26T12:04:11+00:00",
+        "metrics": {"severity": {"label": "crack", "score": 0.6543}},
+        **item,
+    }])
+
+
+def test_a_persisted_verdict_is_what_the_timeline_scores_against():
+    page = _timeline({"inspection_id": "7f2ac91b04de", "verdict": {
+        "input_metric": "score", "value": 0.6543, "threshold": 0.25,
+        "branch": "human_approval"}})
+    assert "approve 0.25" in page
+    assert "class='mark'" in page
+
+
+def test_an_inspection_without_a_verdict_recovers_it_from_its_own_trace(tmp_path, monkeypatch):
+    monkeypatch.setenv("AFTERIMAGE_RUNS_DIR", str(tmp_path))
+    run_id = "7f2ac91b04de"
+    (tmp_path / run_id).mkdir()
+    (tmp_path / run_id / "events.json").write_text(json.dumps([
+        {"type": "tool_call", "ts": "2026-08-26T12:04:13+00:00", "tool": "classify_severity",
+         "duration_ms": 4.0, "metrics": {"label": "crack", "score": 0.6543},
+         "policy": {"input_metric": "score", "value": 0.6543, "threshold": 0.31,
+                    "branch": "human_approval"}},
+    ]))
+    page = _timeline({"inspection_id": run_id})
+    assert "approve 0.31" in page
+
+
+def test_an_inspection_with_neither_shows_the_score_without_a_threshold(tmp_path, monkeypatch):
+    monkeypatch.setenv("AFTERIMAGE_RUNS_DIR", str(tmp_path))
+    page = _timeline({"inspection_id": "ffffffffffff"})
+    assert "score 0.6543" in page
+    assert "approve" not in page
+    assert "class='mark'" not in page

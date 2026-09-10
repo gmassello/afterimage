@@ -8,8 +8,15 @@ APPROVED = "approved"
 REJECTED = "rejected"
 
 
-def commit(asset_id: str, inspection_id: str, captured_at: str, metrics: dict, image_keys: dict) -> None:
-    store.put_inspection(asset_id, inspection_id, captured_at, metrics, image_keys)
+def commit(
+    asset_id: str,
+    inspection_id: str,
+    captured_at: str,
+    metrics: dict,
+    image_keys: dict,
+    verdict: dict | None = None,
+) -> None:
+    store.put_inspection(asset_id, inspection_id, captured_at, metrics, image_keys, verdict)
     store.promote_baseline(
         asset_id,
         inspection_id,
@@ -35,12 +42,15 @@ def resolve(run_dir: Path, approved: bool) -> dict:
             payload["captured_at"],
             payload["metrics"],
             payload["image_keys"],
+            payload.get("verdict"),
         )
     record = policy.decision(
-        "human_approved", 1.0 if approved else 0.0, 1.0, APPROVED if approved else REJECTED
+        policy.HUMAN_GATE_METRIC,
+        1.0 if approved else 0.0,
+        1.0,
+        APPROVED if approved else REJECTED,
     )
     trace.emit(run_dir, "decision", **record)
-    runs.append(run_dir, "decisions.json", record)
     state = runs.read(run_dir, "state.json") or {}
     state["status"] = record["branch"]
     runs.write(run_dir, "state.json", state)

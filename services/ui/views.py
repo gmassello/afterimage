@@ -5,8 +5,8 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from services.agent.policy import Policy
-from services.memory import store
+from services.agent.policy import HUMAN_GATE_METRIC, SEVERITY_METRIC, Policy
+from services.memory import runs, store
 from services.observability import trace
 from services.observability.render import causal_line
 
@@ -89,12 +89,12 @@ def _pct(value: float, scale: float) -> float:
     return max(0.0, min(100.0, value / scale * 100.0))
 
 
-def _bar(value: float, threshold: float, ends: list[dict], large: bool = False) -> dict:
-    value, threshold = float(value), float(threshold)
-    scale = _scale(value, threshold)
+def _bar(value: float, threshold: float | None, ends: list[dict], large: bool = False) -> dict:
+    value = float(value)
+    scale = _scale(value, float(threshold) if threshold is not None else value)
     return {
         "at": f"{_pct(value, scale):.2f}",
-        "mark": f"{_pct(threshold, scale):.2f}",
+        "mark": None if threshold is None else f"{_pct(float(threshold), scale):.2f}",
         "ends": ends,
         "large": large,
     }
@@ -118,14 +118,32 @@ def _figures(baseline_key: str, capture_key: str, bbox=None, tag: dict | None = 
     }
 
 
-def _severity_bar(metrics: dict, threshold: float) -> dict | None:
+# ponytail: per-process cache keyed by run directory, so a run is read once per container;
+# a finished trace never changes, and the key carries the runs root so tests do not collide
+@lru_cache(maxsize=128)
+def _threshold_from_trace(run_dir: str) -> float | None:
+    for event in trace.read_events(Path(run_dir)):
+        verdict = event.get("policy") if event["type"] == "tool_call" else event
+        if isinstance(verdict, dict) and verdict.get("input_metric") == SEVERITY_METRIC:
+            return float(verdict["threshold"])
+    return None
+
+
+def _threshold_of(item: dict) -> float | None:
+    persisted = (item.get("verdict") or {}).get("threshold")
+    if persisted is not None:
+        return float(persisted)
+    run_id = item.get("inspection_id") or item.get("run_id") or ""
+    return _threshold_from_trace(str(runs.runs_dir() / run_id)) if run_id else None
+
+
+def _severity_bar(metrics: dict, threshold: float | None) -> dict | None:
     score = (metrics.get("severity") or {}).get("score")
     if score is None:
         return None
-    ends = [
-        {"text": f"score {float(score):g}", "lit": True},
-        {"text": f"approve {threshold:g}"},
-    ]
+    ends = [{"text": f"score {float(score):g}", "lit": True}]
+    if threshold is not None:
+        ends.append({"text": f"approve {threshold:g}"})
     return _bar(score, threshold, ends)
 
 
@@ -149,19 +167,19 @@ def _baseline_entry(item: dict, entry: dict) -> dict:
     return entry
 
 
-def _inspection_entry(item: dict, entry: dict, threshold: float) -> dict:
+def _inspection_entry(item: dict, entry: dict) -> dict:
     metrics = item.get("metrics") or {}
     label = (metrics.get("severity") or {}).get("label")
     entry["pills"] = [{"label": "inspection"}]
     if label:
         entry["pills"].append({"label": str(label)})
-    entry["bar"] = _severity_bar(metrics, threshold)
+    entry["bar"] = _severity_bar(metrics, _threshold_of(item))
     entry["metrics"] = _metrics_payload(metrics)
     entry["image_key"] = (item.get("image_keys") or {}).get("capture", "")
     return entry
 
 
-def _timeline_entry(item: dict, threshold: float) -> dict:
+def _timeline_entry(item: dict) -> dict:
     promoted = item["sk"].startswith(store.BASELINE)
     entry = {
         "promoted": promoted,
@@ -173,11 +191,10 @@ def _timeline_entry(item: dict, threshold: float) -> dict:
     }
     if promoted:
         return _baseline_entry(item, entry)
-    return _inspection_entry(item, entry, threshold)
+    return _inspection_entry(item, entry)
 
 
 def asset_page(asset_id: str, items: list[dict]) -> str:
-    threshold = Policy.from_env().severity_score_approve
     ordered = sorted(
         (item for item in items if item["sk"] != store.META),
         key=lambda item: item.get("captured_at", ""),
@@ -186,11 +203,11 @@ def asset_page(asset_id: str, items: list[dict]) -> str:
     return _render(
         "asset.html", asset_id, "assets",
         asset_id=asset_id,
-        entries=[_timeline_entry(item, threshold) for item in ordered],
+        entries=[_timeline_entry(item) for item in ordered],
     )
 
 
-def _queue_entry(item: dict, threshold: float) -> dict:
+def _queue_entry(item: dict) -> dict:
     metrics = item.get("metrics") or {}
     diff, severity = metrics.get("diff") or {}, metrics.get("severity") or {}
     region = (diff.get("regions") or [{}])[0]
@@ -205,7 +222,7 @@ def _queue_entry(item: dict, threshold: float) -> dict:
             region.get("bbox"),
             _tag(severity.get("label"), region.get("mean_delta")),
         ),
-        "bar": _severity_bar(metrics, threshold),
+        "bar": _severity_bar(metrics, _threshold_of(item)),
         "metrics": _metrics_payload(metrics),
     }
 
@@ -215,14 +232,16 @@ def queue_page(items: list[dict]) -> str:
     return _render(
         "queue.html", "approval queue", "queue",
         threshold=f"{threshold:g}",
-        entries=[_queue_entry(item, threshold) for item in items],
+        entries=[_queue_entry(item) for item in items],
     )
 
 
 def _policy_of(event: dict) -> dict | None:
     if event["type"] == "tool_call":
         return event.get("policy")
-    return event if event["type"] == "decision" else None
+    if event["type"] != "decision" or event["input_metric"] == HUMAN_GATE_METRIC:
+        return None
+    return event
 
 
 def _decisions(events: list[dict]) -> list[dict]:

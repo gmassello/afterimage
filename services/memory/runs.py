@@ -14,6 +14,10 @@ def _on_s3() -> bool:
     return os.environ.get("AFTERIMAGE_RUNS_S3") == "1"
 
 
+def runs_dir() -> Path:
+    return Path(os.environ.get("AFTERIMAGE_RUNS_DIR", "runs"))
+
+
 def _key(run_dir: Path, name: str) -> str:
     return f"runs/{Path(run_dir).name}/{name}"
 

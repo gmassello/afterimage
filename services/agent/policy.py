@@ -16,6 +16,9 @@ HUMAN_APPROVAL = "human_approval"
 AUTO_WRITE = "auto_write"
 FIRST_BASELINE = "first_baseline"
 
+SEVERITY_METRIC = "score"
+HUMAN_GATE_METRIC = "human_approved"
+
 
 @dataclass(frozen=True)
 class Policy:

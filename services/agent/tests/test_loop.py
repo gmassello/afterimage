@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 import uuid
 
@@ -50,7 +49,16 @@ def run_loop(asset_id, capture_key, llm, tmp_path, **kwargs):
 
 
 def decisions_on_disk(result):
-    return json.loads((result.run_dir / "decisions.json").read_text())
+    events = trace.read_events(result.run_dir)
+    return [
+        event.get("policy") if event["type"] == "tool_call" else _plain(event)
+        for event in events
+        if event["type"] == "decision" or (event["type"] == "tool_call" and "policy" in event)
+    ]
+
+
+def _plain(event):
+    return {key: value for key, value in event.items() if key not in ("type", "ts")}
 
 
 @localstack

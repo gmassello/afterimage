@@ -178,8 +178,10 @@ the span→verdict link travels through data flow, not file position. `run_start
 `hindsight`'s three debts, closed: the span stores the tool's arguments **and** what it returned;
 `trace.emit` stamps every timestamp server-side; and disk is the source of truth
 (`runs/{run_id}/events.json`), so the trace survives a restart and is shared by link.
-`decisions.json` and `state.json` are written unchanged — `events.json` subsumes `decisions.json`
-conceptually, but the dual write stays until a stage-6+ consumer justifies removing it.
+`state.json` is written unchanged. `decisions.json` is gone: `events.json` already subsumed it,
+and the only reader left in the repo was a test, so the dual write went with it. The decisions of
+a run still travel in memory on `RunResult.decisions`, which is what `run.py` and the evaluation
+harness consume.
 
 `GET /traces/{run_id}` (`services/api/app.py`, FastAPI): JSON by default, HTML when the request
 sends `Accept: text/html`, 404 both for a run with no events on disk and for anything not matching
