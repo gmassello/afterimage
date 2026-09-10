@@ -304,3 +304,55 @@ Synthetic speech pauses evenly, so the default run only proves the precise case.
 reader who hesitates mid-sentence — is what the real takes test, and it is why a boundary is chosen
 by pause length *and* by how well the split matches the length of the text around it. `LONG_BONUS`
 sets the balance; anywhere from 25 to 200 satisfies both cases, and it ships at 60.
+
+## 6. The README GIF
+
+`docs/img/demo.gif` is the first thing a judge sees, in the README and on Devpost. It had no
+recipe: the original was made by hand and the method was lost, which is why it was still showing
+the pre-Nocturne look months after the front end was redesigned, while the two PNGs beside it had
+already been retaken. This section exists so that does not happen again.
+
+**The arc**, five beats, ten seconds:
+
+1. the asset list and the upload form
+2. the form filled — asset id and the capture chosen
+3. the trace, open and empty, the moment the run starts
+4. the trace filled in: the deciding number, the four-tool path, the branches not taken
+5. the comparison with the changed region boxed, and `Waiting on a human`
+6. the queue: baseline against capture, the score under the threshold, `Approve write`
+7. the queue empty
+8. the asset history: the new baseline current, the old one `superseded by`
+
+**The state it needs.** The upload has to land on an asset whose **current baseline is a clean
+panel**, or the capture matches what memory already holds and the run ends in `no_change` with
+nothing to approve — the demo assets are all sitting on defect baselines from previous takes, so
+seed a fresh one first, off camera:
+
+    python3 video/make_demo_images.py        # writes video/img/{1-blurred,2-baseline,3-defect}.png
+    # upload 2-baseline.png to a new asset id -> first_baseline
+    # then record, uploading 3-defect.png to that same asset -> crack, human_approval
+
+**One gotcha when recording through automation.** The trace page stops polling while
+`document.hidden` is true, and a driven tab reports itself hidden, so the page never fills in and
+the central beat is lost. Make the tab report itself visible before the run starts; the swap that
+follows is the page's own, unmodified:
+
+    Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+
+**Encoding.** Whatever produces the frames, the export is oversized and over-coloured. Reduce it
+with a dedicated palette rather than the default web one — 1.6 MB becomes ~735 KB with no visible
+loss on the dark UI:
+
+    ffmpeg -y -i raw.gif -vf "fps=0.8,scale=1100:-1:flags=lanczos,\
+    palettegen=max_colors=192:stats_mode=diff" palette.png
+    ffmpeg -y -i raw.gif -i palette.png -lavfi "fps=0.8,scale=1100:-1:flags=lanczos[x];\
+    [x][1:v]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle" docs/img/demo.gif
+
+1100 px wide against the README's `width="880"` leaves a little headroom for a dense display
+without paying for a full 2×. Keep it under a megabyte.
+
+**No branding in the output.** Whatever records the frames, strip every overlay — watermarks,
+click indicators, action labels, progress bars. This is submission material.
+
+**When the front end changes, this file and `docs/img/` change with it.** Retaking the two PNGs
+and forgetting the GIF is the exact mistake this section documents.
