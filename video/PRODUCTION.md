@@ -176,20 +176,26 @@ take is a performance of a known path, not an experiment.
 Dwell ~4 s on each money shot. Natural pace elsewhere — the fit compresses the dead waiting
 afterwards, so only the ORDER has to be right.
 
-Each upload takes **20–30 s** before the trace appears (`align_to_baseline` alone is 13 s). That is
-dead screen time the fit removes afterwards — do not fill it, just wait.
+Each upload still takes **20–30 s** to finish (`align_to_baseline` alone is 13 s), but that is no
+longer dead screen time. `POST /inspections` now only opens the run and redirects, and the trace
+page fires the execution itself and polls, so the trace appears immediately and fills in span by
+span while the agent works. Let it run — the filling-in **is** the money shot, and the old advice
+to compress this stretch in the fit no longer applies.
 
-**Shot 6.** `/queue` refreshes itself every five seconds, and that reload used to cancel an
+**Shot 6.** `/queue` used to reload itself whole every five seconds, and that reload cancelled an
 approval already in flight — five clicks in a row were swallowed during the first rehearsal. Fixed
-and deployed on 5 September: the timer stands down the moment the page starts navigating, and the
-same click then landed first try. Opening `metrics` before approving is still worth doing on camera
+on 5 September by standing the timer down as soon as the page starts navigating, and since the
+front end moved to one unified poller it no longer reloads at all: it swaps the queue in place, so
+the scroll position and the theme hold. Opening `metrics` before approving is still worth doing on camera
 — the numbers behind the decision belong on screen before the human acts on them.
 
 **A defect upload takes ~33 s** end to end; the clean baseline takes ~6 s. Do not navigate away
 before the trace appears, or the inspection is cancelled and nothing is written.
 
-Every page in the app is a 760 px centred column, so the corner is empty background: the box covers
-nothing, not even on the trace.
+The centred column is **1120 px** on the trace, the asset history and the queue; only the home page
+is the narrow 760. So the corner is no longer guaranteed empty background — check the PiP against
+the trace and the queue before committing to `PIP_POS=tl`, because the hero panel and the
+comparison figures now reach further out than they did.
 
 ### Sweep the recording before assembling
 

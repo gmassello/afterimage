@@ -23,7 +23,8 @@
 
 <p align="center">
   <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/"><img src="docs/img/demo.gif" alt="A capture is uploaded, the agent loop runs, and the trace shows the number that decided each branch" width="880"></a><br>
-  <sub>Upload a capture → the loop decides → the trace shows the value behind every decision</sub>
+  <sub>Upload a capture → the loop decides → the trace shows the value behind every decision</sub><br>
+  <sub><a href="https://youtu.be/zUFR96a33IM">Watch the 5-minute walkthrough</a> · <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/">try the live endpoint</a></sub>
 </p>
 
 ---

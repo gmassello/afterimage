@@ -396,19 +396,20 @@ If the vertical ends up being solar panels and you want something more literal, 
 
 ## 11. Submission checklist
 
-Before hitting submit, on Saturday 24 or Sunday 25 October:
+Submitted. Each line is evidenced in `docs/SUBMISSION.md`, which is the document to read for
+the detail; this list is the competition's own wording, kept for the record.
 
-- [ ] Repo accessible to the judges (public, or private with access granted)
-- [ ] `requirements.txt` with exact versions
-- [ ] `README.md` with build, deploy and test instructions that work on a clean machine
-- [ ] `docs/TECHNICAL_REPORT.md` complete, with limitations and responsible use
-- [ ] Architecture diagram **and** agentic loop diagram
-- [ ] Public endpoint working, tested from another network
-- [ ] Video of at most 5 minutes, with your face, uploaded public or unlisted
-- [ ] `docs/EVALUATION.md` with metrics and **failure cases**
-- [ ] The trace proving OpenCV changed a decision — linked from the report
-- [ ] AWS budget with margin through 10 November (judging runs that long)
-- [ ] No credentials in the git history
+- [x] Repo accessible to the judges (public, or private with access granted)
+- [x] `requirements.txt` with exact versions
+- [x] `README.md` with build, deploy and test instructions that work on a clean machine
+- [x] `docs/TECHNICAL_REPORT.md` complete, with limitations and responsible use
+- [x] Architecture diagram **and** agentic loop diagram
+- [x] Public endpoint working, tested from another network
+- [x] Video of at most 5 minutes, with your face, uploaded public or unlisted
+- [x] `docs/EVALUATION.md` with metrics and **failure cases**
+- [x] The trace proving OpenCV changed a decision — linked from the report
+- [x] AWS budget with margin through 10 November (judging runs that long)
+- [x] No credentials in the git history
 
 ---
 

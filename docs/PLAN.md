@@ -24,7 +24,7 @@ project is running **about six weeks ahead**. That margin is real and worth not 
 | 6 | AWS deploy + front end + public endpoint | **closed** — live at https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ |
 | 7 | Evaluation — dataset, metrics, failure cases | **closed** — 23 scenarios, branch accuracy 0.8696, see `docs/EVALUATION.md` |
 | 8 | Technical report, diagrams and video script | **closed** — see `docs/TECHNICAL_REPORT.md` |
-| 9 | Video, polish, submission | **wip** — recorded and cut, 4:53.6 (`video/out/demo.mp4`): 14 s cold open, face in the corner box throughout, every figure on screen matching the script. Outstanding: upload it, and open the endpoint from another network |
+| 9 | Video, polish, submission | **closed** — recorded and cut, 4:53.6 (`video/out/demo.mp4`): 14 s cold open, face in the corner box throughout, every figure on screen matching the script. Published 7 September and submitted; the endpoint was opened from another network. See `docs/SUBMISSION.md` |
 
 ### Closed in stage 1
 
@@ -328,7 +328,7 @@ $1/month, nearly all of it ECR storage for the ~2 GB arm64 image under the 5-ima
 Lambda itself stays inside the perpetual free tier: the 5-minute warmer burns ~1,700 GB-s a month
 against 400,000 free.
 
-**Still pending**: open the URL from another network (mobile data, not WiFi).
+Checked from another network (mobile data, not WiFi): the endpoint answers from outside.
 
 ### Closed in stage 7
 
