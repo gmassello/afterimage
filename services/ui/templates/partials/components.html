@@ -1,4 +1,4 @@
-{% macro tip(text, note) %}{% if note %}<span class='tip' tabindex='0' data-tip='{{ note }}' aria-label='{{ text }}: {{ note }}'>{{ text }}</span>{% else %}{{ text }}{% endif %}{% endmacro %}
+{% macro tip(text, note) %}{% if note %}<span class='tip' data-tip='{{ note }}'>{{ text }}</span>{% else %}{{ text }}{% endif %}{% endmacro %}
 
 {% macro bar(b) %}{% if b %}<div class='bar{{ ' lg' if b.large else '' }}{{ ' ' ~ b.tone if b.tone else '' }}'><div class='rail'><div class='fill' style='width:{{ b.at }}%'></div><div class='now' style='left:{{ b.at }}%'></div>{% if b.mark %}<div class='mark' style='left:{{ b.mark }}%'></div>{% endif %}</div><div class='ends'>{% for end in b.ends %}{% if end.lit %}<span class='lit'>{{ end.text }}</span>{% else %}<span>{{ end.text }}</span>{% endif %}{% endfor %}</div>{% if b.causal %}<p class='hint causal'>{{ tip(b.causal, b.causal_tip) }}</p>{% endif %}</div>{% endif %}{% endmacro %}
 

@@ -2,9 +2,11 @@
 {% import 'partials/components.html' as c %}
 {% block body %}
 <div class='live' data-poll='1500'>
-{%- if hero %}<section class='hero'><div class='col'><div class='kicker'>{{ hero.asset_id }} &middot; inspected {{ hero.captured_at }}</div><h2>{{ hero.headline }}</h2><p class='lede'>{{ hero.calls }} tool calls, {{ hero.thresholds }} thresholds, {{ hero.seconds }} s. Every branch below was decided in <span class='mono'>services/agent/policy.py</span> from the number beside it.</p><div class='pills'>{{ c.pills(hero.pills) }}</div></div>
-{%- if hero.decider %}<div class='panel'><div class='kicker'>the number that decided it</div><div class='big'><span class='n'>{{ hero.decider.value }}</span><span class='u'>{{ c.tip(hero.decider.metric, hero.decider.metric_tip) }}</span></div>{{ c.bar(hero.decider.bar) }}</div>{% endif -%}
-</section>{% endif -%}
+{%- if hero %}<section class='hero'><div class='col'><div class='kicker'>{{ hero.asset_id }} &middot; inspected {{ hero.captured_at|when }}</div><h1>{{ hero.headline }}</h1><p class='lede'>{{ hero.calls }} tool calls, {{ hero.thresholds }} thresholds, {{ hero.seconds }} s. Every branch below was decided in <span class='mono'>services/agent/policy.py</span> from the number beside it.</p><div class='pills'>{{ c.pills(hero.pills) }}</div></div>
+{%- if hero.decider %}<div class='panel'><div class='kicker'>the number that decided it</div><div class='big'><span class='n'>{{ hero.decider.value }}</span><span class='u'>{{ hero.decider.metric }}</span></div>{{ c.bar(hero.decider.bar) }}
+{%- if hero.decider.metric_tip %}<p class='hint says-what'>{{ hero.decider.metric_tip }}</p>{% endif -%}
+</div>{% endif -%}
+</section>{% else %}<h1 class='kicker'>inspection in progress</h1>{% endif -%}
 
 {%- if path %}<section class='col'><div class='kicker'>{{ path.kicker }}</div><div class='flow'>
 {%- for step in path.steps %}{% if not loop.first %}<div class='arrow'>&rarr;</div>{% endif %}<div class='step{{ ' err' if step.failed else '' }}'><span class='name'>{{ step.name }}</span><span class='br'>{{ step.outcome }}</span><span class='ms'>{{ step.ms }} ms</span></div>{% endfor -%}
@@ -20,7 +22,8 @@
 {%- if card.question %}<p class='hint'>{{ card.question }}</p>{% endif -%}
 {{- c.bar(card.bar) -}}
 {%- if card.facts %}<div class='kv'>{% for fact in card.facts %}<span>{{ fact.key }}</span><span class='v'>{{ fact.value }}</span>{% endfor %}</div>{% endif -%}
-{%- if card.error %}<div class='err'>{{ card.error }}</div>{% elif card.verdict %}<div class='verdict'>&rarr; {{ c.tip(card.verdict, card.verdict_tip) }}</div>{% endif -%}
+{%- if card.error %}<div class='err'>{{ card.error }}</div>{% elif card.verdict %}<div class='verdict'>&rarr; {{ card.verdict }}</div>
+{%- if card.verdict_tip %}<p class='hint says-what'>{{ card.verdict_tip }}</p>{% endif %}{% endif -%}
 </div>{% endfor -%}
 </section>{% endif -%}
 
@@ -28,6 +31,8 @@
 
 {%- if cta %}<section class='cta'><div class='col tight'><span class='t'>Waiting on a human</span><span class='s'>{{ cta.message }} Nothing has been written to memory.</span></div>{{ c.approve(cta.run_id) }}</section>{% endif -%}
 </div>
+{% endblock %}
+{% block tail %}
 <footer class='bot'><span>GET /traces/{{ footer.run_id }}</span>
 {%- if footer.run_id %}<a href='/traces/{{ footer.run_id }}?format=json'>raw json</a>{% endif -%}
 {%- if footer.asset_id %}<a href='/assets/{{ footer.asset_id }}'>asset history</a>{% endif -%}

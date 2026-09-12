@@ -10,7 +10,8 @@ from services.agent import hitl, loop
 from services.memory import images, runs, store
 from services.observability.render import load_run
 from services.observability.trace import RUN_ID_PATTERN
-from services.ui.views import asset_page, index_page, queue_page, render_html, static_asset
+from services.ui.views import (THUMB_WIDTH, asset_page, index_page, queue_page, render_html,
+                               static_asset)
 
 ASSET_ID_PATTERN = re.compile(r"^[a-z0-9-]{1,64}$")
 # ponytail: the Function URL rejects bodies over 6 MB anyway; this guard is for local uvicorn
@@ -62,8 +63,10 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
     except HTTPException as rejected:
         if not wants_html(request):
             raise
-        return HTMLResponse(index_page(store.list_assets(), error=str(rejected.detail)),
-                            status_code=rejected.status_code)
+        return HTMLResponse(
+            index_page(store.list_assets(), error=str(rejected.detail), asset_id=asset_id),
+            status_code=rejected.status_code,
+        )
     store.put_asset(asset_id)
     capture_key = images.put_image(asset_id, uuid.uuid4().hex[:12], "capture", capture)
     started = loop.start(asset_id, capture_key, runs_dir=runs.runs_dir())
@@ -122,10 +125,12 @@ def static(name: str):
 
 
 @app.get("/images/{key:path}")
-def image(key: str):
+def image(key: str, w: int | None = None):
+    if w is not None and w != THUMB_WIDTH:
+        raise HTTPException(status_code=400, detail=f"w must be {THUMB_WIDTH}")
     try:
         images.ids_from_key(key)
-        body = images.get_png(key)
+        body = images.thumbnail_png(key, w) if w else images.get_png(key)
     except ValueError:
         raise HTTPException(status_code=404, detail="image not found")
     return Response(body, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})

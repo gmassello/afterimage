@@ -17,6 +17,7 @@ services:
       - ./eval:/app/eval
       - ./docs:/app/docs:ro
       - ./README.md:/app/README.md:ro
+      - ./NOTICE:/app/NOTICE:ro
       - ./video/script.tsv:/app/video/script.tsv:ro
     command: uvicorn services.api.app:app --host 0.0.0.0 --port 8000
     ports:

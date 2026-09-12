@@ -1,13 +1,25 @@
 <!doctype html><html lang='en' data-theme='light'><head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
 <title>afterimage &mdash; {{ title }}</title>
-<link rel='preconnect' href='https://fonts.googleapis.com'>
-<link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
-<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'>
+<meta name='description' content='A visual inspection agent that remembers: every branch it takes is decided in code, and the trace carries the number that decided it.'>
+<meta property='og:title' content='afterimage &mdash; a visual inspection agent that remembers'>
+<meta property='og:description' content='Upload a capture, watch the agent gate it, anchor it to memory and escalate what a human has to see. Every decision carries the number that triggered it.'>
+<meta property='og:image' content='https://raw.githubusercontent.com/gmassello/afterimage/main/docs/img/trace.png'>
+<meta property='og:type' content='website'>
+<meta name='twitter:card' content='summary_large_image'>
+<meta name='theme-color' content='#e4e7f5' media='(prefers-color-scheme: light)'>
+<meta name='theme-color' content='#161826' media='(prefers-color-scheme: dark)'>
+<link rel='icon' href='{{ icon_url }}' type='image/svg+xml'>
+<link rel='preload' href='{{ font_url }}' as='font' type='font/woff2' crossorigin>
+<style>
+@font-face { font-family: 'Inter'; src: url('{{ font_url }}') format('woff2');
+             font-weight: 100 900; font-style: normal; font-display: swap; }
+</style>
 <link rel='stylesheet' href='{{ css_url }}'>
 <script>
 try {
-  if (localStorage.getItem('afterimage-theme') === 'dark') {
+  const saved = localStorage.getItem('afterimage-theme');
+  if (saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.dataset.theme = 'dark';
   }
 } catch (e) {}
@@ -18,7 +30,9 @@ try {
   {%- if execute_url %} data-execute-url='{{ execute_url }}'{% endif %}>
 <div class='{{ "wrap narrow" if narrow else "wrap" }}'>
 {% include 'partials/header.html' %}
-{% block body %}{% endblock %}
+{% if says %}<p class='runstate'><span class='says' role='status' aria-live='polite'>{{ says }}</span>{% if run_state %}<span class='clock' aria-hidden='true'></span>{% endif %}</p>{% endif %}
+<main>{% block body %}{% endblock %}</main>
+{% block tail %}{% endblock %}
 </div></div>
 <script src='{{ js_url }}'></script>
 </body></html>

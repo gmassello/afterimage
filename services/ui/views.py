@@ -1,5 +1,6 @@
 import hashlib
 import json
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
@@ -14,7 +15,14 @@ from services.observability.render import causal_line
 
 HERE = Path(__file__).parent
 STATIC = HERE / "static"
-MEDIA = {"css": "text/css", "js": "text/javascript"}
+THUMB_WIDTH = 180
+
+MEDIA = {
+    "css": "text/css",
+    "js": "text/javascript",
+    "svg": "image/svg+xml",
+    "woff2": "font/woff2",
+}
 
 _env = Environment(
     loader=FileSystemLoader(HERE / "templates"),
@@ -24,6 +32,19 @@ _env = Environment(
 )
 
 _NAV = (("/", "assets", "assets"), ("/queue", "approval queue", "queue"))
+
+
+def when(value) -> str:
+    try:
+        moment = datetime.fromisoformat(str(value))
+    except ValueError:
+        return str(value)
+    if moment.tzinfo is not None:
+        moment = moment.astimezone(timezone.utc)
+    return moment.strftime("%-d %b %Y \u00b7 %H:%M UTC")
+
+
+_env.filters["when"] = when
 
 _QUESTION = {
     "assess_quality": "Is this capture worth scoring at all?",
@@ -92,9 +113,12 @@ _TONE = {
 def _assets() -> dict[str, tuple[bytes, str]]:
     built = {}
     for path in sorted(STATIC.iterdir()):
+        media = MEDIA.get(path.suffix.lstrip(".")) if path.is_file() else None
+        if media is None:
+            continue
         body = path.read_bytes()
         digest = hashlib.sha256(body).hexdigest()[:8]
-        built[f"{path.stem}.{digest}{path.suffix}"] = (body, MEDIA[path.suffix.lstrip(".")])
+        built[f"{path.stem}.{digest}{path.suffix}"] = (body, media)
     return built
 
 
@@ -122,6 +146,8 @@ def _render(template: str, title: str, current: str, **context) -> str:
         nav=_nav(current),
         css_url=_static_url(".css"),
         js_url=_static_url(".js"),
+        font_url=_static_url(".woff2"),
+        icon_url=_static_url(".svg"),
         **context,
     )
 
@@ -233,12 +259,13 @@ def _stage_rows(metrics: dict) -> list[dict]:
     return rows
 
 
-def index_page(assets: list[dict], error: str = "") -> str:
+def index_page(assets: list[dict], error: str = "", asset_id: str = "") -> str:
     return _render(
         "index.html", "assets", "assets",
         narrow=True,
         assets=[asset["asset_id"] for asset in assets],
         error=error,
+        asset_id=asset_id,
     )
 
 
@@ -272,9 +299,10 @@ def _timeline_entry(item: dict) -> dict:
         "bar": None,
         "stages": [],
     }
-    if promoted:
-        return _baseline_entry(item, entry)
-    return _inspection_entry(item, entry)
+    entry = _baseline_entry(item, entry) if promoted else _inspection_entry(item, entry)
+    key = entry["image_key"]
+    entry["thumb"] = f"/images/{key}?w={THUMB_WIDTH}" if key else ""
+    return entry
 
 
 def asset_page(asset_id: str, items: list[dict]) -> str:
@@ -317,6 +345,7 @@ def queue_page(items: list[dict], assets_in_memory: int = 0) -> str:
     threshold = Policy.from_env().severity_score_approve
     return _render(
         "queue.html", "approval queue", "queue",
+        says=f"{len(items)} awaiting approval" if items else "nothing awaiting approval",
         threshold=f"{threshold:g}",
         entries=[_queue_entry(item) for item in items],
         assets_in_memory=assets_in_memory,
@@ -495,6 +524,13 @@ def _region(events: list[dict]) -> tuple[list | None, dict]:
     return bbox, _tag(label, delta)
 
 
+def _says(events: list[dict], run_state: str, summary: dict) -> str:
+    if run_state == trace.DONE:
+        return f"done \u00b7 {summary.get('branch') or summary.get('status') or 'finished'}"
+    calls = sum(1 for event in events if event["type"] == "tool_call")
+    return f"working \u00b7 {calls} tool call{'' if calls == 1 else 's'}"
+
+
 def _cta(summary: dict) -> dict | None:
     if summary.get("status") != trace.AWAITING_APPROVAL:
         return None
@@ -513,6 +549,7 @@ def render_html(state: dict, events: list[dict]) -> str:
     return _render(
         "trace.html", "inspection trace", "trace",
         meta=f"run {run_id}" if run_id else "",
+        says=_says(events, run_state, summary),
         run_state=run_state,
         execute_url=f"/runs/{run_id}/execute" if run_id else "",
         hero=_hero(summary, events, _decisions(events)),

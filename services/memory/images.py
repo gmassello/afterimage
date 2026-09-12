@@ -26,14 +26,30 @@ def ensure_bucket() -> None:
         pass
 
 
-def put_image(asset_id: str, inspection_id: str, name: str, image: np.ndarray) -> str:
+def _png(image: np.ndarray, what: str) -> bytes:
     encoded, buffer = cv2.imencode(".png", image)
     if not encoded:
-        raise ValueError(f"{name} could not be encoded as PNG")
+        raise ValueError(f"{what} could not be encoded as PNG")
+    return buffer.tobytes()
+
+
+def put_image(asset_id: str, inspection_id: str, name: str, image: np.ndarray) -> str:
     key = f"assets/{asset_id}/{inspection_id}/{name}.png"
-    _s3().put_object(Bucket=BUCKET, Key=key, Body=buffer.tobytes())
+    _s3().put_object(Bucket=BUCKET, Key=key, Body=_png(image, name))
     _cache[key] = image
     return key
+
+
+# ponytail: decoded straight from S3 instead of through get_image, so a thumbnail request does
+# not pin a full-resolution array in the process cache the agent needs for its own captures
+def thumbnail_png(key: str, width: int) -> bytes:
+    image = decode(get_png(key))
+    height, full_width = image.shape[:2]
+    width = min(width, full_width)
+    scaled = cv2.resize(
+        image, (width, max(1, round(height * width / full_width))), interpolation=cv2.INTER_AREA
+    )
+    return _png(scaled, key)
 
 
 def ids_from_key(key: str) -> tuple[str, str]:

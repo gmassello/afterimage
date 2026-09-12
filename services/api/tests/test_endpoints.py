@@ -161,14 +161,26 @@ def test_images_endpoint(client):
     assert client.get(f"/images/assets/{asset_id}/missing/capture.png").status_code == 404
 
 
+@localstack
+def test_a_thumbnail_costs_a_fraction_of_the_capture(client):
+    key = images.put_image(unique("api-thumb"), "insp", "capture", PANEL)
+    full = client.get(f"/images/{key}")
+    thumb = client.get(f"/images/{key}?w=180")
+    assert thumb.status_code == 200
+    assert thumb.headers["content-type"] == "image/png"
+    assert len(thumb.content) < len(full.content) / 4
+    assert images.decode(thumb.content).shape[1] == 180
+    assert client.get(f"/images/{key}?w=4000").status_code == 400
+
+
 def test_queue_refresh_yields_to_an_in_flight_navigation(client):
     page = views.queue_page([])
     assert "data-poll='5000'" in page
     script = client.get(re.search(r"/static/app\.[0-9a-f]{8}\.js", page).group())
     assert script.headers["cache-control"] == "public, max-age=31536000, immutable"
     assert "addEventListener('submit', halt, true)" in script.text
-    assert "if (live &&" in script.text
-    assert "!busy()" in script.text
+    assert "if (!live" in script.text
+    assert "busy()" in script.text
 
 
 def test_execute_guards_unknown_and_already_started_runs(client, tmp_path):

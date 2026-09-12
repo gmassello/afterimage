@@ -356,11 +356,11 @@ and 128 colours where the dark one fit in 1100 px and 192. 1000 px against the R
 settling, compare a few palette sizes — 192, 160, 128, 96 — rather than assuming last take's
 numbers still hold.
 
-**The theme.** Since 11 September the first visit opens in the **light** theme; only a visitor who
-has toggled it gets dark, from `localStorage['afterimage-theme']`. A fresh recording profile is
-therefore light, which is what a judge lands on. The narrated video and everything published
-before that date are dark — if you want a take to match them, toggle first and let the palette
-settle before rolling.
+**The theme.** Since 12 September the first visit follows the machine, not the site: with nothing in
+`localStorage['afterimage-theme']`, `prefers-color-scheme` decides, and the toggle only overrides it.
+A fresh recording profile therefore shows whatever the recording machine is set to, so set the
+system appearance before rolling instead of trusting the default — or toggle once and let the
+palette settle. The narrated video and everything published before 11 September are dark.
 
 **No branding in the output.** Whatever records the frames, strip every overlay — watermarks,
 click indicators, action labels, progress bars. This is submission material.

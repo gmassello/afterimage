@@ -7,6 +7,7 @@ from services.observability.tests.sample_run import EVENTS, STATE
 from services.ui import views
 
 CSS = (views.STATIC / "app.css").read_text()
+JS = (views.STATIC / "app.js").read_text()
 
 HOSTILE = "<script>alert(1)</script>"
 ESCAPED = "&lt;script&gt;alert(1)&lt;/script&gt;"
@@ -59,9 +60,12 @@ def test_both_themes_ship_in_the_stylesheet():
     assert "localStorage.getItem('afterimage-theme')" in page.split("</head>")[0]
 
 
-def test_the_first_visit_opens_in_the_light_theme():
-    assert "<html lang='en' data-theme='light'>" in views.index_page([])
-    assert "paint(root.dataset.theme);" in (views.STATIC / "app.js").read_text()
+def test_the_first_visit_follows_the_system_theme():
+    head = views.index_page([]).split("</head>")[0]
+    assert "<html lang='en' data-theme='light'>" in head
+    assert "matchMedia('(prefers-color-scheme: dark)')" in head
+    assert head.index("localStorage.getItem") < head.index("matchMedia")
+    assert "paint(root.dataset.theme);" in JS
 
 
 def test_static_assets_are_content_addressed():
@@ -183,8 +187,9 @@ def test_the_vocabulary_carries_its_own_definition():
         "severity": {"label": "crack", "score": 0.6543},
         "alignment": {"inlier_ratio": 0.9988}}})
     assert "data-tip='human_approval: Severe enough" in page
-    assert "class='tip' tabindex='0' data-tip='Share of matched keypoints" in page
+    assert "class='tip' data-tip='Share of matched keypoints" in page
     assert "data-tip" not in page.split("class='ends'")[0]
+    assert "tabindex" not in page
 
 
 def test_the_warped_capture_says_so_in_the_caption_and_the_alt():
@@ -214,7 +219,66 @@ def test_the_upload_form_states_what_it_accepts():
     assert "image/jpeg,image/png,image/webp,image/tiff,image/bmp" in page
     assert "image/*" not in page
     assert "up to 6&nbsp;MB" in page
-    assert "title='Lowercase letters" in page
+    assert "lowercase letters, digits and hyphens" in page
+    assert "title=" not in page
+
+
+def test_both_upload_fields_carry_a_label():
+    page = views.index_page([])
+    for field, label in (("asset-id", "asset id"), ("capture", "capture")):
+        assert f"<label for='{field}'>{label}</label>" in page
+        assert f"id='{field}'" in page
+    assert "placeholder='panel-a7-north'" in page
+
+
+def test_a_rejected_upload_keeps_the_asset_id_already_typed():
+    page = views.index_page([], error="not a decodable image", asset_id="panel-a7-north")
+    assert "value='panel-a7-north'" in page
+    assert "value=''" in views.index_page([])
+
+
+@pytest.mark.parametrize("name", ["index", "asset", "queue", "trace"])
+def test_every_view_opens_with_one_heading_inside_a_main_landmark(name):
+    page = _hostile_pages()[name]
+    assert page.count("<main>") == 1
+    assert page.count("<h1") == 1
+    assert page.index("<main>") < page.index("<h1")
+
+
+def test_the_poller_defers_the_swap_while_the_block_is_in_use():
+    assert "shown.contains(document.activeElement)" in JS
+    assert "shown.querySelector('details[open]')" in JS
+    assert "if (!pending || busy()) return;" in JS
+
+
+def test_the_server_writes_the_state_the_live_region_announces():
+    queue = views.queue_page([])
+    assert ">nothing awaiting approval</span>" in queue
+    assert "1 awaiting approval" in views.queue_page([{
+        "run_id": "7f2ac91b04de", "asset_id": "a", "message": "",
+        "image_keys": {}, "metrics": {},
+    }])
+    done = views.render_html(STATE, EVENTS)
+    assert "done \u00b7 unrecognized_asset" in done
+    assert "working \u00b7 1 tool call<" in views.render_html({}, EVENTS[:2])
+    for page in (queue, done):
+        assert "role='status' aria-live='polite'" in page
+        assert page.index("class='runstate'") < page.index("data-poll")
+
+
+def test_the_timestamp_is_readable_and_survives_a_string_that_is_not_one():
+    assert views.when("2026-09-05T19:10:00+00:00") == "5 Sep 2026 \u00b7 19:10 UTC"
+    assert views.when("2026-09-05T21:10:00+02:00") == "5 Sep 2026 \u00b7 19:10 UTC"
+    assert views.when(HOSTILE) == HOSTILE
+    assert views.when("") == ""
+
+
+def test_the_history_asks_for_a_thumbnail_not_the_whole_capture():
+    page = _timeline({"inspection_id": "7f2ac91b04de", "image_keys": {
+        "capture": "assets/panel-a7-north/7f2ac91b04de/capture.png"}})
+    assert f"capture.png?w={views.THUMB_WIDTH}" in page
+    assert "loading='lazy'" in page
+    assert "26 Aug 2026" in page
 
 
 def test_a_rejected_upload_renders_inside_the_page():

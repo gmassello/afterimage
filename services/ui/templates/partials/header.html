@@ -1,8 +1,8 @@
 <header class='top'>
-<div class='row'><span class='brand'>afterimage</span><nav class='top'>
+<div class='row'><span class='brand'>afterimage</span><nav class='top' aria-label='views'>
 {%- for link in nav -%}
 {%- if link.href %}<a href='{{ link.href }}'{% if link.here %} class='here' aria-current='page'{% endif %}>{{ link.label }}</a>{% else %}<span class='here'>{{ link.label }}</span>{% endif -%}
 {%- endfor -%}
 </nav></div>
-<div class='row'><span class='runid'>{{ meta }}</span><button class='toggle' id='theme' type='button'>&#9680;<span id='theme-label'>Dark</span></button></div>
+<div class='row'><span class='runid'>{{ meta }}</span><a class='hint' href='https://github.com/gmassello/afterimage'>repo</a><button class='toggle' id='theme' type='button'><span aria-hidden='true'>&#9680;</span><span id='theme-label'>Dark</span></button></div>
 </header>

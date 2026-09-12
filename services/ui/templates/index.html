@@ -3,12 +3,12 @@
 {% if error %}
 <div class='alert' role='alert'><b>That capture was not accepted.</b><span class='why'>{{ error }}</span><span>Pick the file again before retrying &mdash; the browser cannot keep it for you.</span></div>
 {% endif %}
-<section class='col'><div class='kicker'>assets in memory</div><table class='table'><thead><tr><th>asset</th></tr></thead><tbody>
+<section class='col'><h1 class='kicker'>assets in memory</h1><p class='lede'>Each asset keeps every inspection the agent ran on it, the branch it took and the number that decided it. Open one, or send a new capture below.</p><table class='table'><thead><tr><th>asset</th></tr></thead><tbody>
 {%- if assets -%}
 {%- for asset in assets %}<tr><td><a href='/assets/{{ asset }}'>{{ asset }}</a></td></tr>{% endfor -%}
 {%- else -%}
 <tr><td class='dim'>no assets yet</td></tr>
 {%- endif -%}
 </tbody></table></section>
-<section class='panel'><div class='kicker'>new inspection</div><form class='field' method='post' action='/inspections' enctype='multipart/form-data'><input class='input' name='asset_id' placeholder='asset-id' required pattern='[a-z0-9-]{1,64}' title='Lowercase letters, digits and hyphens, up to 64 characters. For example: panel-a7-north'><input class='input' type='file' name='image' accept='image/jpeg,image/png,image/webp,image/tiff,image/bmp' required><button class='btn ok sm'>inspect</button></form><p class='hint'>JPEG, PNG, WebP, TIFF or BMP, up to 6&nbsp;MB. The trace opens immediately and fills in as the agent works.</p></section>
+<section class='panel'><div class='kicker'>new inspection</div><form class='field' method='post' action='/inspections' enctype='multipart/form-data'><span class='col tight'><label for='asset-id'>asset id</label><input class='input' id='asset-id' name='asset_id' value='{{ asset_id }}' placeholder='panel-a7-north' required pattern='[a-z0-9-]{1,64}'></span><span class='col tight'><label for='capture'>capture</label><input class='input' id='capture' type='file' name='image' accept='image/jpeg,image/png,image/webp,image/tiff,image/bmp' required></span><button class='btn ok sm'>inspect</button></form><p class='hint'>The asset id takes lowercase letters, digits and hyphens, up to 64 characters &mdash; an id memory already holds adds to that asset&rsquo;s history, a new one starts its own. JPEG, PNG, WebP, TIFF or BMP, up to 6&nbsp;MB. The trace opens immediately and fills in as the agent works.</p></section>
 {% endblock %}

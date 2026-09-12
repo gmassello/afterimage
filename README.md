@@ -188,4 +188,4 @@ Progress against the competition rubric is tracked in [docs/SUBMISSION.md](docs/
 
 ---
 
-<p align="center"><sub>MIT © 2026 · Built for the OpenCV AI Competition 2026 · <a href="https://gmassello.github.io/afterimage/">Field manual</a></sub></p>
+<p align="center"><sub>MIT © 2026 · Built for the OpenCV AI Competition 2026 · <a href="https://gmassello.github.io/afterimage/">Field manual</a><br>The front end ships the Inter typeface, used under the SIL Open Font License 1.1 — see <a href="NOTICE">NOTICE</a>.</sub></p>
