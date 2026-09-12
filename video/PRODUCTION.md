@@ -341,16 +341,20 @@ follows is the page's own, unmodified:
     Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
 
 **Encoding.** Whatever produces the frames, the export is oversized and over-coloured. Reduce it
-with a dedicated palette rather than the default web one — 1.6 MB becomes ~735 KB with no visible
-loss on the dark UI:
+with a dedicated palette rather than the default web one — 2.9 MB becomes ~848 KB with no visible
+loss:
 
-    ffmpeg -y -i raw.gif -vf "fps=0.8,scale=1100:-1:flags=lanczos,\
-    palettegen=max_colors=192:stats_mode=diff" palette.png
-    ffmpeg -y -i raw.gif -i palette.png -lavfi "fps=0.8,scale=1100:-1:flags=lanczos[x];\
+    ffmpeg -y -i raw.gif -vf "fps=0.8,scale=1000:-1:flags=lanczos,\
+    palettegen=max_colors=128:stats_mode=diff" palette.png
+    ffmpeg -y -i raw.gif -i palette.png -lavfi "fps=0.8,scale=1000:-1:flags=lanczos[x];\
     [x][1:v]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle" docs/img/demo.gif
 
-1100 px wide against the README's `width="880"` leaves a little headroom for a dense display
-without paying for a full 2×. Keep it under a megabyte.
+Keep it under a megabyte, and expect to spend the whole budget: the light theme is a pale gradient
+wash where the dark one was flat, so it costs more per frame. The 12 September take needed 1000 px
+and 128 colours where the dark one fit in 1100 px and 192. 1000 px against the README's
+`width="880"` still leaves headroom for a dense display without paying for a full 2×. Before
+settling, compare a few palette sizes — 192, 160, 128, 96 — rather than assuming last take's
+numbers still hold.
 
 **The theme.** Since 11 September the first visit opens in the **light** theme; only a visitor who
 has toggled it gets dark, from `localStorage['afterimage-theme']`. A fresh recording profile is
