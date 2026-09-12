@@ -21,6 +21,14 @@ def test_disk_backend(tmp_path):
     exercise_backend(tmp_path / uuid.uuid4().hex[:12])
 
 
+def test_the_queue_comes_back_oldest_first(tmp_path):
+    older = {"run_id": "ffffffffffff", "captured_at": "2026-09-12T09:00:00.000+00:00"}
+    newer = {"run_id": "000000000000", "captured_at": "2026-09-12T10:00:00.000+00:00"}
+    for payload in (older, newer):
+        runs.write(tmp_path / payload["run_id"], runs.PENDING, payload)
+    assert runs.pending(tmp_path) == [older, newer]
+
+
 @localstack
 def test_s3_backend(tmp_path, monkeypatch):
     from services.memory import images

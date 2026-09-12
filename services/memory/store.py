@@ -85,27 +85,29 @@ def promote_baseline(
     captured_at: str,
     image_key: str,
     quality_score: float,
-) -> None:
-    superseded = current_baseline(asset_id)
-    if superseded is not None:
+) -> bool:
+    item = {
+        "pk": asset_key(asset_id),
+        "sk": f"{BASELINE}{captured_at}",
+        "inspection_id": inspection_id,
+        "captured_at": captured_at,
+        "image_key": image_key,
+        "quality_score": quality_score,
+    }
+    current = current_baseline(asset_id)
+    promoted = current is None or current["sk"] <= item["sk"]
+    if not promoted:
+        item["superseded_by"] = current["inspection_id"]
+
+    _table().put_item(Item=_stored(item))
+
+    if promoted and current is not None and current["sk"] < item["sk"]:
         _table().update_item(
-            Key={"pk": superseded["pk"], "sk": superseded["sk"]},
+            Key={"pk": current["pk"], "sk": current["sk"]},
             UpdateExpression="SET superseded_by = :inspection",
             ExpressionAttributeValues={":inspection": inspection_id},
         )
-
-    _table().put_item(
-        Item=_stored(
-            {
-                "pk": asset_key(asset_id),
-                "sk": f"{BASELINE}{captured_at}",
-                "inspection_id": inspection_id,
-                "captured_at": captured_at,
-                "image_key": image_key,
-                "quality_score": quality_score,
-            }
-        )
-    )
+    return promoted
 
 
 def current_baseline(asset_id: str) -> dict | None:

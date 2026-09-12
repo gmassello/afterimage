@@ -176,6 +176,9 @@ async def run(
     def conclude(branch: str, message: str) -> RunResult:
         verdict = severity_verdict()
         if branch == policy_module.AUTO_WRITE:
+            # ponytail: the trace does not say whether this capture moved the baseline pointer (an
+            # older concurrent run files a historical one); the asset timeline does. Record it here
+            # if auto_write ever needs to be audited without the timeline.
             hitl.commit(asset_id, run_id, captured_at, stage_metrics, image_keys, verdict)
         elif branch == policy_module.NO_CHANGE:
             store.put_inspection(

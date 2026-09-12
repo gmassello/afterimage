@@ -63,15 +63,16 @@ def pending(runs_dir: str | Path = "runs") -> list[dict]:
     if _on_s3():
         # ponytail: single list page (1000 keys); paginate if the queue outgrows it
         listing = images._s3().list_objects_v2(Bucket=images.BUCKET, Prefix="runs/")
-        run_ids = sorted(
+        run_ids = [
             o["Key"].split("/")[1]
             for o in listing.get("Contents", [])
             if o["Key"].endswith(f"/{PENDING}")
-        )
+        ]
     else:
-        run_ids = sorted(p.parent.name for p in Path(runs_dir).glob(f"*/{PENDING}"))
-    return [
+        run_ids = [p.parent.name for p in Path(runs_dir).glob(f"*/{PENDING}")]
+    payloads = [
         payload
         for run_id in run_ids
         if (payload := read(Path(runs_dir) / run_id, PENDING)) is not None
     ]
+    return sorted(payloads, key=lambda payload: payload.get("captured_at", ""))

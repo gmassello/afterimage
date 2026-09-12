@@ -95,7 +95,7 @@ Concretely, in `services/memory/store.py`, one DynamoDB partition holds an asset
 |---|---|
 | `META` | the asset |
 | `INSPECTION#{captured_at}#{inspection_id}` | one capture, the metrics measured on it, and the `verdict` it was judged by — the metric, the value and the **threshold in force when it ran**, so moving a threshold never relabels the past |
-| `BASELINE#{captured_at}` | the current reference, gaining a `superseded_by` field when a newer one replaces it |
+| `BASELINE#{captured_at}` | the current reference, gaining a `superseded_by` field when a newer one replaces it. A capture older than the one in force is filed with that field already set — a baseline that never was current — and the pointer does not move |
 
 The baseline is a first-class item rather than a flag on an inspection, so fetching it is one small
 read no matter how long the history is — and **the chain of superseded baselines is the longitudinal

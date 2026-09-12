@@ -7,6 +7,9 @@ from services.observability import trace
 APPROVED = "approved"
 REJECTED = "rejected"
 
+PROMOTED = "promoted"
+HISTORICAL = "historical"
+
 
 def commit(
     asset_id: str,
@@ -15,9 +18,9 @@ def commit(
     metrics: dict,
     image_keys: dict,
     verdict: dict | None = None,
-) -> None:
+) -> bool:
     store.put_inspection(asset_id, inspection_id, captured_at, metrics, image_keys, verdict)
-    store.promote_baseline(
+    return store.promote_baseline(
         asset_id,
         inspection_id,
         captured_at,
@@ -35,20 +38,22 @@ def resolve(run_dir: Path, approved: bool) -> dict:
     payload = runs.read(run_dir, runs.PENDING)
     if payload is None:
         raise FileNotFoundError(run_dir / runs.PENDING)
+    extra = {}
     if approved:
-        commit(
+        extra["baseline"] = PROMOTED if commit(
             payload["asset_id"],
             payload["run_id"],
             payload["captured_at"],
             payload["metrics"],
             payload["image_keys"],
             payload.get("verdict"),
-        )
+        ) else HISTORICAL
     record = policy.decision(
         policy.HUMAN_GATE_METRIC,
         1.0 if approved else 0.0,
         1.0,
         APPROVED if approved else REJECTED,
+        **extra,
     )
     trace.emit(run_dir, "decision", **record)
     state = runs.read(run_dir, "state.json") or {}
