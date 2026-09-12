@@ -290,13 +290,24 @@ The full policy, with every default:
 | `coverage_ratio_min` | 0.0 — **deliberately disabled**, see §8 | `coverage_ratio` | quality |
 | `inlier_ratio_min_neural` | 0.90 | `inlier_ratio`, ALIKED + LightGlue | alignment |
 | `inlier_ratio_min_classic` | 0.30 | `inlier_ratio`, ORB | alignment |
+| `diff_delta_threshold` | 30.0 | per-pixel delta that counts as changed | diff |
+| `diff_min_region_area_ratio` | 0.0005 | smallest connected component that counts as a region — the real bar of the `no_change` branch | diff |
 | `mean_delta_confirm` | 35.0 | `mean_delta` of the top region | diff |
 | `rescan_area_ratio_min` | 0.02 | `area_ratio` after the zoom | rescan |
+| `severity_full_scale_delta` | 64.0 | divisor that turns `mean_delta` into `score` | severity |
 | `severity_score_approve` | 0.40 | `score` | severity |
 
 Each is overridable per deployment through `AFTERIMAGE_<FIELD>` environment variables. They are
 values in one frozen dataclass (`services/agent/policy.py`), not constants scattered through the
-perception code — which is what makes recalibrating for a site a configuration change.
+perception code — which is what makes recalibrating for a site a configuration change. The
+perception functions take them as arguments; the MCP server is what resolves them from the
+environment, so a threshold never travels as a tool argument the model could move.
+
+One family stays in code on purpose: the feature cuts that name the defect class
+(`BRIGHTNESS_DELTA_CRACK`, `SATURATION_DELTA_DELAMINATION`, `AREA_RATIO_SOILING` and
+`BRIGHTNESS_DELTA_HOTSPOT`, in `services/perception/severity.py`). They pick a label, not a branch,
+and they were measured on the fixtures rather than tuned per site — recalibrating those is a code
+change with a test behind it, not a deployment variable.
 
 ### Observability
 
@@ -330,9 +341,12 @@ shown in the video, where an OpenCV number stopped the loop and a person restart
   it without an account. Uploads are capped at 6 MB, `asset_id` and `run_id` are pattern-validated
   before touching storage, and everything uploaded expires at 180 days. It should be treated as a
   demonstrator: anything uploaded is visible to anyone with the URL.
-- **The human gate is real, not decorative.** On `HUMAN_APPROVAL` the run stops at
-  `awaiting_approval` and **nothing is committed to memory** until a person resolves it. Approval and
-  rejection are both recorded.
+- **The human gate is real, not decorative — but it gates policy, not identity.** On
+  `HUMAN_APPROVAL` the run stops at `awaiting_approval` and **nothing is committed to memory** until
+  someone resolves it. Since the endpoint is open, that someone is any visitor holding the URL: the
+  gate stops the machine from writing on its own, it does not authenticate an operator. Approval and
+  rejection are both recorded, each with an anonymous fingerprint of the caller — enough to tell two
+  actors apart in the trace, not enough to identify anyone.
 - **The agent assists an inspection; it does not sign one off.** It reports what changed, how much,
   and the number that made it say so. Every decision is reconstructible from its trace. A defect
   classification here is a prioritisation signal for a technician, not a certification of a module's

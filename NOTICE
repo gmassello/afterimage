@@ -1,4 +1,19 @@
-afterimage bundles one third-party asset.
+afterimage bundles three third-party assets: one font and two ONNX model files.
+
+models/aliked-n16rot-top1k-640.onnx (sha1 41faa7bf5d7eb68a2851471ba03aa20c9db30e4c)
+is the ALIKED keypoint detector, published by Shiaoming/ALIKED under the
+BSD 3-Clause License.
+
+models/aliked_lightglue.onnx (sha1 02723aa521990e57fe33d90b67977590c460e351) is
+the LightGlue matcher for ALIKED descriptors, published by cvg/LightGlue under
+the Apache License 2.0.
+
+Both are fetched by `make weights` from the ONNX exports at
+https://github.com/YangGuanyuhan/lightglue_opencv_project, which declares no
+license of its own; the licenses above are the ones of the original models it
+re-exports. OpenCV pins the same two files and the same two sha1 digests for its
+own DNN test data, in opencv_extra/testdata/dnn/download_models.py on the 5.x
+branch. They are copied into the deployed image at /opt/models.
 
 services/ui/static/inter.woff2 is the latin subset of the Inter variable font,
 served from the same origin so no request leaves for a font CDN. It is licensed

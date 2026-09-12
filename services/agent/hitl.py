@@ -33,12 +33,12 @@ def request_approval(run_dir: Path, payload: dict) -> None:
     runs.write(run_dir, runs.PENDING, payload)
 
 
-def resolve(run_dir: Path, approved: bool) -> dict:
+def resolve(run_dir: Path, approved: bool, actor: str | None = None) -> dict:
     run_dir = Path(run_dir)
     payload = runs.read(run_dir, runs.PENDING)
     if payload is None:
         raise FileNotFoundError(run_dir / runs.PENDING)
-    extra = {}
+    extra = {"actor": actor} if actor else {}
     if approved:
         extra["baseline"] = PROMOTED if commit(
             payload["asset_id"],

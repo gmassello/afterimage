@@ -1,5 +1,6 @@
 from mcp.server.mcpserver import MCPServer
 
+from services.agent.policy import Policy
 from services.memory import images
 from services.perception import alignment, diffing, quality, severity
 
@@ -15,6 +16,7 @@ def _bbox(raw: list[float]) -> tuple[int, int, int, int]:
 def _diff_payload(result: diffing.DiffResult) -> dict:
     return {
         "changed_ratio": round(float(result.changed_ratio), 4),
+        "largest_area_ratio": round(float(result.largest_area_ratio), 6),
         "regions": [
             {
                 "bbox": list(region.bbox),
@@ -68,16 +70,26 @@ def align_to_baseline(image_key: str, baseline_key: str, detector: str) -> dict:
 @server.tool()
 def diff_against_memory(aligned_key: str, baseline_key: str, valid_mask_key: str | None = None) -> dict:
     valid_mask = quality.gray(images.get_image(valid_mask_key)) if valid_mask_key else None
+    policy = Policy.from_env()
     result = diffing.diff_against_memory(
-        images.get_image(aligned_key), images.get_image(baseline_key), valid_mask
+        images.get_image(aligned_key),
+        images.get_image(baseline_key),
+        valid_mask,
+        delta_threshold=policy.diff_delta_threshold,
+        min_region_area_ratio=policy.diff_min_region_area_ratio,
     )
     return _diff_payload(result)
 
 
 @server.tool()
 def crop_and_rescan(aligned_key: str, baseline_key: str, bbox: list[float]) -> dict:
+    policy = Policy.from_env()
     result = diffing.crop_and_rescan(
-        images.get_image(aligned_key), images.get_image(baseline_key), _bbox(bbox)
+        images.get_image(aligned_key),
+        images.get_image(baseline_key),
+        _bbox(bbox),
+        delta_threshold=policy.diff_delta_threshold,
+        min_region_area_ratio=policy.diff_min_region_area_ratio,
     )
     return _diff_payload(result)
 
@@ -89,6 +101,7 @@ def classify_severity(aligned_key: str, baseline_key: str, bbox: list[float], ar
         diffing.crop_region(images.get_image(aligned_key), box),
         diffing.crop_region(images.get_image(baseline_key), box),
         float(area_ratio),
+        full_scale_delta=Policy.from_env().severity_full_scale_delta,
     )
     return {
         "label": result.label,

@@ -168,7 +168,7 @@ a real photograph, and measured the window exactly. Sweeping the injected darken
 | 20 | 35.54 | crosses `mean_delta_confirm`, confirms without zooming |
 
 The branch is not rare, it is **narrow**: a change has to be strong enough to clear the diff's
-`DELTA_THRESHOLD` of 30 and weak enough to stay under `mean_delta_confirm` of 35. Stage 6 was
+`diff_delta_threshold` of 30 and weak enough to stay under `mean_delta_confirm` of 35. Stage 6 was
 sampling a two-point-wide window by hand.
 
 Both `faint-spot-synthetic` and `faint-spot-real-et-solar` now walk

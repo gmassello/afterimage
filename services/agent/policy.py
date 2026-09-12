@@ -30,8 +30,11 @@ class Policy:
     coverage_ratio_min: float = 0.0
     inlier_ratio_min_neural: float = 0.90
     inlier_ratio_min_classic: float = 0.30
+    diff_delta_threshold: float = 30.0
+    diff_min_region_area_ratio: float = 0.0005
     mean_delta_confirm: float = 35.0
     rescan_area_ratio_min: float = 0.02
+    severity_full_scale_delta: float = 64.0
     severity_score_approve: float = 0.40
 
     @classmethod
@@ -87,7 +90,9 @@ def _evaluate_alignment(m: dict, p: Policy) -> dict:
 
 def _evaluate_diff(m: dict, p: Policy) -> dict:
     if not m["regions"]:
-        return decision("changed_ratio", m["changed_ratio"], 0.0, NO_CHANGE)
+        return decision(
+            "area_ratio", m["largest_area_ratio"], p.diff_min_region_area_ratio, NO_CHANGE
+        )
     top = m["regions"][0]
     branch = CROP_AND_RESCAN if top["mean_delta"] < p.mean_delta_confirm else CHANGE_CONFIRMED
     return decision(
@@ -98,7 +103,9 @@ def _evaluate_diff(m: dict, p: Policy) -> dict:
 
 def _evaluate_rescan(m: dict, p: Policy) -> dict:
     if not m["regions"]:
-        return decision("area_ratio", 0.0, p.rescan_area_ratio_min, NO_CHANGE)
+        return decision(
+            "area_ratio", m["largest_area_ratio"], p.rescan_area_ratio_min, NO_CHANGE
+        )
     top = m["regions"][0]
     if top["area_ratio"] < p.rescan_area_ratio_min:
         return decision("area_ratio", top["area_ratio"], p.rescan_area_ratio_min, NO_CHANGE)

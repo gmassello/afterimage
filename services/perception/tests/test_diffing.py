@@ -50,6 +50,17 @@ def test_rescan_returns_full_frame_coordinates(panel):
     assert contains(rescanned.regions[0].bbox, centre(cell_bbox(*CRACK_CELL)))
 
 
+def test_a_higher_minimum_area_discards_the_region_but_still_reports_it(panel):
+    """The threshold that really cuts the no_change branch, and the number that proves it."""
+    damaged = with_crack(panel, *CRACK_CELL)
+    measured = diff_against_memory(damaged, panel)
+
+    dismissed = diff_against_memory(damaged, panel, min_region_area_ratio=1.0)
+
+    assert not dismissed.regions
+    assert dismissed.largest_area_ratio == measured.largest_area_ratio > 0.0
+
+
 def test_the_uncovered_border_of_a_warp_is_not_a_change(panel):
     alignment = align_to_baseline(shifted(panel), panel, detector=CLASSIC)
 

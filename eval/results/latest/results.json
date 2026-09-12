@@ -128,13 +128,13 @@
       "mean_iou": 0.8258,
       "at_least_half": 9
     },
-    "generated_at": "2026-09-02T21:27:50+00:00"
+    "generated_at": "2026-09-12T17:26:31+00:00"
   },
   "scenarios": [
     {
       "id": "first-baseline-synthetic",
       "source": "synthetic",
-      "run_id": "499a865e728d",
+      "run_id": "756573ff8357",
       "status": "completed",
       "expected_branch": "first_baseline",
       "branch": "first_baseline",
@@ -178,7 +178,7 @@
     {
       "id": "recapture-blur-synthetic",
       "source": "synthetic",
-      "run_id": "9b41caa59a31",
+      "run_id": "70acbc2e887b",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
@@ -215,7 +215,7 @@
     {
       "id": "recapture-overexposed-synthetic",
       "source": "synthetic",
-      "run_id": "66c7ef3c1bf2",
+      "run_id": "1dbc1855de68",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
@@ -252,7 +252,7 @@
     {
       "id": "recapture-partial-frame-synthetic",
       "source": "synthetic",
-      "run_id": "fb52128641cc",
+      "run_id": "e8b394f99a6a",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "unrecognized_asset",
@@ -303,7 +303,7 @@
     {
       "id": "unrecognized-asset-synthetic",
       "source": "synthetic",
-      "run_id": "2d8b4f7b020c",
+      "run_id": "3e825a69b67b",
       "status": "completed",
       "expected_branch": "unrecognized_asset",
       "branch": "unrecognized_asset",
@@ -354,7 +354,7 @@
     {
       "id": "no-change-synthetic",
       "source": "synthetic",
-      "run_id": "9ab88496816a",
+      "run_id": "95cc5d2a2be4",
       "status": "completed",
       "expected_branch": "no_change",
       "branch": "no_change",
@@ -378,7 +378,7 @@
         "clipped_bright_ratio": 0.0,
         "coverage_ratio": 0.002227
       },
-      "deciding_number": "changed_ratio 0.0 vs 0.0",
+      "deciding_number": "area_ratio 0.0 vs 0.0005",
       "decisions": [
         {
           "input_metric": "blur_variance",
@@ -393,9 +393,9 @@
           "branch": "aligned"
         },
         {
-          "input_metric": "changed_ratio",
+          "input_metric": "area_ratio",
           "value": 0.0,
-          "threshold": 0.0,
+          "threshold": 0.0005,
           "branch": "no_change"
         }
       ],
@@ -405,7 +405,7 @@
     {
       "id": "crack-synthetic",
       "source": "synthetic",
-      "run_id": "770bb35e563c",
+      "run_id": "89b716da7630",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -482,7 +482,7 @@
     {
       "id": "hotspot-synthetic",
       "source": "synthetic",
-      "run_id": "8924c14ad3fb",
+      "run_id": "86f9cb7065b6",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -559,7 +559,7 @@
     {
       "id": "delamination-synthetic",
       "source": "synthetic",
-      "run_id": "ec94fff1862d",
+      "run_id": "5c03800071d8",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -636,7 +636,7 @@
     {
       "id": "soiling-synthetic",
       "source": "synthetic",
-      "run_id": "b3fc1a0a9405",
+      "run_id": "cd1e347cc8bb",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -708,7 +708,7 @@
     {
       "id": "faint-spot-synthetic",
       "source": "synthetic",
-      "run_id": "a3104c4aafed",
+      "run_id": "9719b3ae51f7",
       "status": "completed",
       "expected_branch": "auto_write",
       "branch": "auto_write",
@@ -801,7 +801,7 @@
     {
       "id": "crack-real-closeup",
       "source": "real",
-      "run_id": "2289fbadccf4",
+      "run_id": "91f5da21aa73",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -878,7 +878,7 @@
     {
       "id": "crack-real-israel-center",
       "source": "real",
-      "run_id": "17d04e934334",
+      "run_id": "918d5353aafd",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -955,7 +955,7 @@
     {
       "id": "hotspot-real-plain",
       "source": "real",
-      "run_id": "5455e850a11a",
+      "run_id": "de9326f06e75",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "recapture",
@@ -997,7 +997,7 @@
     {
       "id": "hotspot-real-cleaning",
       "source": "real",
-      "run_id": "70f788aca67f",
+      "run_id": "a3255b3882e0",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -1074,7 +1074,7 @@
     {
       "id": "delamination-real-jetion",
       "source": "real",
-      "run_id": "9ad23d0c608e",
+      "run_id": "28a7854cd54c",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -1151,7 +1151,7 @@
     {
       "id": "delamination-real-packed",
       "source": "real",
-      "run_id": "923f2c2e45d0",
+      "run_id": "be1ad8101f4d",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "auto_write",
@@ -1228,7 +1228,7 @@
     {
       "id": "faint-spot-real-et-solar",
       "source": "real",
-      "run_id": "52c5e8149532",
+      "run_id": "f581c321f91b",
       "status": "completed",
       "expected_branch": "auto_write",
       "branch": "auto_write",
@@ -1321,7 +1321,7 @@
     {
       "id": "no-change-real-et-solar",
       "source": "real",
-      "run_id": "5c13ca999a82",
+      "run_id": "83544e181c81",
       "status": "completed",
       "expected_branch": "no_change",
       "branch": "no_change",
@@ -1345,7 +1345,7 @@
         "clipped_bright_ratio": 0.014604,
         "coverage_ratio": 0.087542
       },
-      "deciding_number": "changed_ratio 0.0024 vs 0.0",
+      "deciding_number": "area_ratio 0.0001 vs 0.0005",
       "decisions": [
         {
           "input_metric": "blur_variance",
@@ -1360,9 +1360,9 @@
           "branch": "aligned"
         },
         {
-          "input_metric": "changed_ratio",
-          "value": 0.0024,
-          "threshold": 0.0,
+          "input_metric": "area_ratio",
+          "value": 0.0001,
+          "threshold": 0.0005,
           "branch": "no_change"
         }
       ],
@@ -1372,7 +1372,7 @@
     {
       "id": "no-change-real-warehouse",
       "source": "real",
-      "run_id": "389fd2df5ea2",
+      "run_id": "3b5666e60fd5",
       "status": "completed",
       "expected_branch": "no_change",
       "branch": "no_change",
@@ -1396,7 +1396,7 @@
         "clipped_bright_ratio": 0.000723,
         "coverage_ratio": 0.003169
       },
-      "deciding_number": "changed_ratio 0.0002 vs 0.0",
+      "deciding_number": "area_ratio 0.0 vs 0.0005",
       "decisions": [
         {
           "input_metric": "blur_variance",
@@ -1411,9 +1411,9 @@
           "branch": "aligned"
         },
         {
-          "input_metric": "changed_ratio",
-          "value": 0.0002,
-          "threshold": 0.0,
+          "input_metric": "area_ratio",
+          "value": 0.0,
+          "threshold": 0.0005,
           "branch": "no_change"
         }
       ],
@@ -1423,7 +1423,7 @@
     {
       "id": "recapture-blur-real-rooftop",
       "source": "real",
-      "run_id": "f780f784b956",
+      "run_id": "fc80bd73c07d",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
@@ -1460,7 +1460,7 @@
     {
       "id": "recapture-overexposed-real-ground",
       "source": "real",
-      "run_id": "ec976aa371f9",
+      "run_id": "40f76e0f8ec3",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
@@ -1497,7 +1497,7 @@
     {
       "id": "unrecognized-asset-real-marine",
       "source": "real",
-      "run_id": "8d0a4bd64a8f",
+      "run_id": "8c290c268888",
       "status": "completed",
       "expected_branch": "unrecognized_asset",
       "branch": "unrecognized_asset",

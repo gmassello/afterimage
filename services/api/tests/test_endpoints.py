@@ -125,6 +125,7 @@ def test_the_empty_queue_counts_what_memory_holds(client):
 @localstack
 def test_queue_flow(client, tmp_path):
     from services.agent import hitl
+    from services.observability import trace
 
     asset_id = unique("api-queue")
     run_id = uuid.uuid4().hex[:12]
@@ -143,6 +144,9 @@ def test_queue_flow(client, tmp_path):
     assert run_id in queue.text
     resolved = client.post(f"/queue/{run_id}/approve")
     assert resolved.status_code == 303
+    approval = trace.read_events(tmp_path / run_id)[-1]
+    assert approval["input_metric"] == "human_approved"
+    assert approval["extra"]["actor"]
     assert run_id not in client.get("/queue").text
     assert client.post(f"/queue/{run_id}/approve").status_code == 404
     skus = [item["sk"] for item in store.history(asset_id)]

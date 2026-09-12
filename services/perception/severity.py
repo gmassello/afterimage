@@ -68,11 +68,15 @@ def _label(features: dict[str, float]) -> str:
 
 
 def classify_severity(
-    crop: np.ndarray, baseline_crop: np.ndarray, area_ratio: float
+    crop: np.ndarray,
+    baseline_crop: np.ndarray,
+    area_ratio: float,
+    *,
+    full_scale_delta: float = FULL_SCALE_DELTA,
 ) -> SeverityResult:
     features = _features(crop, baseline_crop, area_ratio)
     return SeverityResult(
         label=_label(features),
-        score=round(min(features["mean_delta"] / FULL_SCALE_DELTA, 1.0), 4),
+        score=round(min(features["mean_delta"] / full_scale_delta, 1.0), 4),
         features={name: round(value, 4) for name, value in features.items()},
     )

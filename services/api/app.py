@@ -1,6 +1,7 @@
 import re
 import uuid
 from functools import lru_cache
+from hashlib import sha256
 from time import monotonic
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
@@ -100,12 +101,25 @@ def queue():
     return HTMLResponse(queue_page(pending, assets_in_memory=settled))
 
 
+def _actor(request: Request) -> str:
+    # The trace is public, so the approver is recorded as a fingerprint rather than an address:
+    # enough to tell two actors apart and to correlate approvals, not enough to identify anyone.
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    client = forwarded or (request.client.host if request.client else "unknown")
+    fingerprint = f"{client}\n{request.headers.get('user-agent', '')}".encode()
+    return sha256(fingerprint).hexdigest()[:12]
+
+
 @app.post("/queue/{run_id}/{verdict}")
-def resolve_pending(run_id: str, verdict: str):
+def resolve_pending(request: Request, run_id: str, verdict: str):
     if verdict not in ("approve", "reject") or not RUN_ID_PATTERN.fullmatch(run_id):
         raise HTTPException(status_code=404, detail="not found")
     try:
-        hitl.resolve(runs.runs_dir() / run_id, approved=verdict == "approve")
+        hitl.resolve(
+            runs.runs_dir() / run_id,
+            approved=verdict == "approve",
+            actor=_actor(request),
+        )
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="nothing pending for this run")
     return RedirectResponse("/queue", status_code=303)

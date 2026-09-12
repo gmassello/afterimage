@@ -22,6 +22,7 @@ class ChangedRegion:
 class DiffResult:
     regions: list[ChangedRegion]
     changed_ratio: float
+    largest_area_ratio: float = 0.0
 
 
 def _normalized_gray(image: np.ndarray) -> np.ndarray:
@@ -33,22 +34,30 @@ def _delta_map(aligned: np.ndarray, baseline: np.ndarray) -> np.ndarray:
 
 
 def diff_against_memory(
-    aligned: np.ndarray, baseline: np.ndarray, valid_mask: np.ndarray | None = None
+    aligned: np.ndarray,
+    baseline: np.ndarray,
+    valid_mask: np.ndarray | None = None,
+    *,
+    delta_threshold: float = DELTA_THRESHOLD,
+    min_region_area_ratio: float = MIN_REGION_AREA_RATIO,
 ) -> DiffResult:
     # Pixels the homography never covered are black, and black against the baseline reads
     # as the largest change in the frame. Only the warp knows which those are.
     delta = _delta_map(_normalized_gray(aligned), _normalized_gray(baseline))
     if valid_mask is not None:
         delta = cv2.bitwise_and(delta, valid_mask)
-    return _regions(delta)
+    return _regions(delta, delta_threshold, min_region_area_ratio)
 
 
-def _regions(delta: np.ndarray) -> DiffResult:
-    _, binary = cv2.threshold(delta, DELTA_THRESHOLD, 255, cv2.THRESH_BINARY)
+def _regions(
+    delta: np.ndarray, delta_threshold: float, min_region_area_ratio: float
+) -> DiffResult:
+    _, binary = cv2.threshold(delta, delta_threshold, 255, cv2.THRESH_BINARY)
     count, labels, stats, _ = cv2.connectedComponentsWithStats(binary, 8)
 
     frame_area = float(delta.shape[0] * delta.shape[1])
-    minimum_area = MIN_REGION_AREA_RATIO * frame_area
+    minimum_area = min_region_area_ratio * frame_area
+    largest_area = max((stats[label][4] for label in range(1, count)), default=0)
     regions = []
     for label in range(1, count):
         x, y, width, height, area = stats[label]
@@ -69,6 +78,7 @@ def _regions(delta: np.ndarray) -> DiffResult:
     return DiffResult(
         regions=regions,
         changed_ratio=float(np.count_nonzero(binary)) / frame_area,
+        largest_area_ratio=float(largest_area) / frame_area,
     )
 
 
@@ -93,6 +103,9 @@ def crop_and_rescan(
     bbox: tuple[int, int, int, int],
     margin: float = 0.15,
     scale: float = 2.0,
+    *,
+    delta_threshold: float = DELTA_THRESHOLD,
+    min_region_area_ratio: float = MIN_REGION_AREA_RATIO,
 ) -> DiffResult:
     # Normalize on the full frame, then crop. Running CLAHE on each crop independently
     # renormalizes them towards each other and erases the very defect being zoomed into.
@@ -105,7 +118,7 @@ def crop_and_rescan(
     enlarged = [
         cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC) for crop in crops
     ]
-    rescanned = _regions(_delta_map(*enlarged))
+    rescanned = _regions(_delta_map(*enlarged), delta_threshold, min_region_area_ratio)
 
     # Ratios stay relative to the crop — that is what the zoom measures. The bbox does not:
     # it comes back in full-frame coordinates so the agent can chain this into the next tool.
@@ -126,4 +139,5 @@ def crop_and_rescan(
             for region in rescanned.regions
         ],
         changed_ratio=rescanned.changed_ratio,
+        largest_area_ratio=rescanned.largest_area_ratio,
     )

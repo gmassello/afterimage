@@ -58,9 +58,24 @@ def test_unknown_detector_raises():
         evaluate("alignment", {"detector": "sift", "inlier_ratio": 0.5}, Policy())
 
 
-def test_no_regions_is_no_change():
-    decision = evaluate("diff", {"changed_ratio": 0.0, "regions": []}, Policy())
+def test_no_regions_records_the_area_that_fell_short():
+    policy = Policy()
+    metrics = {"changed_ratio": 0.0024, "largest_area_ratio": 0.0003, "regions": []}
+    decision = evaluate("diff", metrics, policy)
     assert decision["branch"] == pol.NO_CHANGE
+    assert decision["input_metric"] == "area_ratio"
+    assert decision["value"] == 0.0003
+    assert decision["threshold"] == policy.diff_min_region_area_ratio
+
+
+def test_a_rescan_without_regions_records_the_area_that_fell_short():
+    policy = Policy()
+    metrics = {"changed_ratio": 0.001, "largest_area_ratio": 0.0004, "regions": []}
+    decision = evaluate("rescan", metrics, policy)
+    assert decision["branch"] == pol.NO_CHANGE
+    assert decision["input_metric"] == "area_ratio"
+    assert decision["value"] == 0.0004
+    assert decision["threshold"] == policy.rescan_area_ratio_min
 
 
 def test_faint_change_triggers_rescan_with_bbox():
