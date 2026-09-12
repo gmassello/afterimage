@@ -306,14 +306,19 @@ reader who hesitates mid-sentence — is what the real takes test, and it is why
 by pause length *and* by how well the split matches the length of the text around it. `LONG_BONUS`
 sets the balance; anywhere from 25 to 200 satisfies both cases, and it ships at 60.
 
-## 6. The README GIF
+## 6. The README captures
 
-`docs/img/demo.gif` is the first thing a judge sees, in the README and on Devpost. It had no
-recipe: the original was made by hand and the method was lost, which is why it was still showing
-the pre-Nocturne look months after the front end was redesigned, while the two PNGs beside it had
-already been retaken. This section exists so that does not happen again.
+`docs/img/demo.gif` is the first thing a judge sees, in the README and on Devpost, with
+`trace.png` and `history.png` beside it. The GIF had no recipe: the original was made by hand and
+the method was lost, which is why it was still showing the pre-Nocturne look months after the
+front end was redesigned, while the two PNGs had already been retaken. This section exists so
+that does not happen again.
 
-**The arc**, five beats, ten seconds:
+The arc, the frame count and the palette below are the GIF's. Everything else — the state the
+endpoint needs, the three lines before each shot, what may appear in the frame, and the trim —
+is how any of the three is captured, including a retake of the PNGs on their own.
+
+**The arc**, eight frames, ten seconds:
 
 1. the asset list and the upload form
 2. the form filled — asset id and the capture chosen
@@ -333,37 +338,64 @@ seed a fresh one first, off camera:
     # upload 2-baseline.png to a new asset id -> first_baseline
     # then record, uploading 3-defect.png to that same asset -> crack, human_approval
 
-**One gotcha when recording through automation.** The trace page stops polling while
-`document.hidden` is true, and a driven tab reports itself hidden, so the page never fills in and
-the central beat is lost. Make the tab report itself visible before the run starts; the swap that
-follows is the page's own, unmodified:
+That fresh asset is not in the `KEEP` default of `reset-demo.sh`, so the next run of it deletes the
+asset the GIF is showing. Either name it in `KEEP` or accept that the recording outlives the row.
 
+**Before the take, and after every navigation in it.** Three lines in the driven tab:
+
+    localStorage.setItem('afterimage-theme', 'light');
     Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+    document.querySelector('.page').style.paddingRight = '140px';
 
-**Encoding.** Whatever produces the frames, the export is oversized and over-coloured. Reduce it
-with a dedicated palette rather than the default web one — 2.9 MB becomes ~848 KB with no visible
-loss:
+The first pins the theme. With nothing in `localStorage['afterimage-theme']` the first visit follows
+`prefers-color-scheme`, so a fresh profile shows whatever the machine is set to; the key has to be
+set before the navigation, because the inline script in `base.html` reads it on the first paint.
+The narrated video and everything published before 11 September are dark.
 
-    ffmpeg -y -i raw.gif -vf "fps=0.8,scale=1000:-1:flags=lanczos,\
-    palettegen=max_colors=128:stats_mode=diff" palette.png
-    ffmpeg -y -i raw.gif -i palette.png -lavfi "fps=0.8,scale=1000:-1:flags=lanczos[x];\
-    [x][1:v]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle" docs/img/demo.gif
+The second keeps the trace page polling. It stops while `document.hidden` is true, a driven tab
+reports itself hidden permanently, and the page never fills in — the central beat is lost. The swap
+that follows is the page's own, unmodified.
 
-Keep it under a megabyte, and expect to spend the whole budget: the light theme is a pale gradient
-wash where the dark one was flat, so it costs more per frame. The 12 September take needed 1000 px
-and 128 colours where the dark one fit in 1100 px and 192. 1000 px against the README's
-`width="880"` still leaves headroom for a dense display without paying for a full 2×. Before
-settling, compare a few palette sizes — 192, 160, 128, 96 — rather than assuming last take's
-numbers still hold.
+The third re-centres the page inside what is actually captured, which is narrower than the viewport:
+above roughly 1045 px of captured width the right tenth is dropped silently, enough to cut the
+right-hand figure of the comparison in half without anything looking broken. Verify it once with a
+fixed bar at each edge of the viewport and check both appear. Shrinking the page beats resizing the
+window, which macOS will not always do, and 140 px is the knob — it depends on the window.
 
-**The theme.** Since 12 September the first visit follows the machine, not the site: with nothing in
-`localStorage['afterimage-theme']`, `prefers-color-scheme` decides, and the toggle only overrides it.
-A fresh recording profile therefore shows whatever the recording machine is set to, so set the
-system appearance before rolling instead of trusting the default — or toggle once and let the
-palette settle. The narrated video and everything published before 11 September are dark.
+**Capture each beat as a still, not as a recording.** Save each one to disk and build the GIF from
+the numbered sequence: the arc is then exactly what the frame list says it is. The browser GIF
+recorder samples frames from the actions it sees and drops some without saying so — the 12 September
+retake asked for fifteen and got seven, and every one it dropped was a trace beat, the middle of the
+arc.
 
-**No branding in the output.** Whatever records the frames, strip every overlay — watermarks,
-click indicators, action labels, progress bars. This is submission material.
+**Encoding.** The stills arrive at more than one size and the image sequence demuxer refuses a size
+change mid-stream, so normalise first — scale to width 1000, crop to the shortest — and number them
+from `01`. Then reduce with a dedicated palette rather than the default web one:
+
+    ffmpeg -y -i shot.png -vf "scale=1000:-2:flags=lanczos,crop=1000:602:0:0" frames/NN.png
+    ffmpeg -y -i frames/%02d.png -vf "palettegen=max_colors=128:stats_mode=diff" palette.png
+    ffmpeg -y -framerate 0.8 -i frames/%02d.png -i palette.png \
+    -lavfi "[0:v][1:v]paletteuse=dither=bayer:bayer_scale=3:diff_mode=rectangle" docs/img/demo.gif
+
+The frame rate belongs to the second pass only: on `palettegen` it changes nothing, and neither does
+`-loop 0`, which is already the muxer's default.
+
+Keep it under a megabyte and expect to spend it: the light theme is a pale gradient wash where the
+dark one was flat, and lossless stills cost more again than a recorder's already-quantised frames.
+The 12 September retake measured 778 / 860 / 908 / 945 KB at 96 / 128 / 160 / 192 colours over eight
+1000x602 frames, and shipped 128 at 870 KB. Re-measure that ladder each take rather than reusing the
+number. The width is what the README asks for plus headroom for a dense display, so read the `width`
+of the `<img>` in `README.md` before changing it.
+
+**Nothing in the frame but the page.** The cursor is not an overlay a tool can strip — it is in the
+frame, so park it in a corner the crop discards before each still, or a stray arrow lands in the
+middle of the hero image and has to be patched out afterwards from the same region of an adjacent
+frame. Whatever records the frames, strip every overlay it adds: watermarks, click indicators,
+action labels, progress bars. This is submission material.
+
+Trim the capture to the content before shipping it. The padding of the third line above stays in the
+shot as a dead band on the right, and a PNG that carries one renders smaller than the one beside it
+in the README's two-column table.
 
 **When the front end changes, this file and `docs/img/` change with it.** Retaking the two PNGs
 and forgetting the GIF is the exact mistake this section documents.
