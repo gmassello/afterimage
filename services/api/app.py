@@ -1,5 +1,7 @@
 import re
 import uuid
+from functools import lru_cache
+from time import monotonic
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
@@ -22,6 +24,10 @@ def health():
     return {"ok": True}
 
 
+def wants_html(request: Request) -> bool:
+    return "text/html" in request.headers.get("accept", "")
+
+
 @app.get("/")
 def index():
     return HTMLResponse(index_page(store.list_assets()))
@@ -34,17 +40,30 @@ def asset_history(asset_id: str):
     return HTMLResponse(asset_page(asset_id, store.history(asset_id)))
 
 
-@app.post("/inspections")
-async def create_inspection(asset_id: str = Form(...), image: UploadFile = File(...)):
+async def _accept_capture(asset_id: str, image: UploadFile | None):
     if not ASSET_ID_PATTERN.fullmatch(asset_id):
         raise HTTPException(status_code=400, detail="asset_id must match [a-z0-9-]{1,64}")
+    if image is None:
+        raise HTTPException(status_code=400, detail="an image file is required")
     data = await image.read()
     if len(data) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="image larger than 6 MB")
     try:
-        capture = images.decode(data)
+        return images.decode(data)
     except ValueError:
         raise HTTPException(status_code=400, detail="not a decodable image")
+
+
+@app.post("/inspections")
+async def create_inspection(request: Request, asset_id: str = Form(""),
+                            image: UploadFile | None = File(None)):
+    try:
+        capture = await _accept_capture(asset_id, image)
+    except HTTPException as rejected:
+        if not wants_html(request):
+            raise
+        return HTMLResponse(index_page(store.list_assets(), error=str(rejected.detail)),
+                            status_code=rejected.status_code)
     store.put_asset(asset_id)
     capture_key = images.put_image(asset_id, uuid.uuid4().hex[:12], "capture", capture)
     started = loop.start(asset_id, capture_key, runs_dir=runs.runs_dir())
@@ -64,9 +83,18 @@ async def execute_run(run_id: str):
     return {"run_id": result.run_id, "status": result.status, "branch": result.branch}
 
 
+# ponytail: list_assets is a table scan and the empty queue re-renders every 5 s, so the count is
+# memoised per minute; a GSI or a counter item is the upgrade if the table ever grows
+@lru_cache(maxsize=1)
+def _assets_in_memory(minute: int) -> int:
+    return len(store.list_assets())
+
+
 @app.get("/queue")
 def queue():
-    return HTMLResponse(queue_page(runs.pending(runs.runs_dir())))
+    pending = runs.pending(runs.runs_dir())
+    settled = 0 if pending else _assets_in_memory(int(monotonic() // 60))
+    return HTMLResponse(queue_page(pending, assets_in_memory=settled))
 
 
 @app.post("/queue/{run_id}/{verdict}")
@@ -111,7 +139,6 @@ def get_trace(run_id: str, request: Request):
     state, events = load_run(run_dir)
     if not events:
         raise HTTPException(status_code=404, detail="trace not found")
-    wants_html = "text/html" in request.headers.get("accept", "")
-    if wants_html and request.query_params.get("format") != "json":
+    if wants_html(request) and request.query_params.get("format") != "json":
         return HTMLResponse(render_html(state, events))
     return {"state": state, "events": events}

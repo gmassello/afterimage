@@ -4,7 +4,7 @@ const paint = (theme) => {
   root.dataset.theme = theme;
   label.textContent = theme === 'dark' ? 'Light' : 'Dark';
 };
-paint(root.dataset.theme === 'light' ? 'light' : 'dark');
+paint(root.dataset.theme);
 document.getElementById('theme').addEventListener('click', () => {
   const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
   paint(next);

@@ -5,6 +5,8 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from services.agent import policy as policy_module
+from services.agent.loop import STAGE_OF
 from services.agent.policy import HUMAN_GATE_METRIC, SEVERITY_METRIC, Policy
 from services.memory import runs, store
 from services.observability import trace
@@ -31,6 +33,60 @@ _QUESTION = {
     "classify_severity": "What kind of defect, and can it be written unattended?",
 }
 
+# ponytail: the headline metric per stage is a copy of what policy branched on; the real numbers
+# are in the run trace, but reading them costs one S3 GET per row against the item we already have
+_HEADLINE = {
+    "assess_quality": ("blur_variance",),
+    "align_to_baseline": ("inlier_ratio",),
+    "diff_against_memory": ("mean_delta", "changed_ratio"),
+    "crop_and_rescan": ("area_ratio", "changed_ratio"),
+    "classify_severity": ("score",),
+}
+
+_STAGES = tuple((stage, _QUESTION[tool], _HEADLINE[tool]) for tool, stage in STAGE_OF.items())
+
+_TIP = {
+    "blur_variance": "How sharp the capture is. Low means the photo is too soft to score.",
+    "inlier_ratio": "Share of matched keypoints that agree on one geometry. Low means this is "
+                    "not the asset memory holds.",
+    "mean_delta": "Average pixel difference against the baseline, inside the changed region.",
+    "area_ratio": "How much of the frame the changed region covers.",
+    "changed_ratio": "Share of the aligned frame whose pixels moved at all since the baseline.",
+    "score": "Severity of the change, 0 to 1. Above the threshold nothing is written without a "
+             "human.",
+    policy_module.RECAPTURE: "The capture was not good enough to score. The agent asked for "
+                             "another photo.",
+    policy_module.QUALITY_OK: "The capture was sharp and well exposed enough to score.",
+    policy_module.RETRY_CLASSIC: "Modern features failed to match, so the agent retried with the "
+                                 "classic detector.",
+    policy_module.UNRECOGNIZED_ASSET: "Too few matches to believe this is the same asset. The "
+                                      "agent refused rather than guess.",
+    policy_module.ALIGNED: "The capture was anchored to the stored baseline of the same asset.",
+    policy_module.NO_CHANGE: "Nothing changed enough since the baseline to be worth reporting.",
+    policy_module.CROP_AND_RESCAN: "The change was borderline, so the agent zoomed in and "
+                                   "measured again.",
+    policy_module.CHANGE_CONFIRMED: "The change survived a closer look and is real.",
+    policy_module.HUMAN_APPROVAL: "Severe enough that nothing is written to memory until a person "
+                                  "approves it.",
+    policy_module.AUTO_WRITE: "Mild enough for the agent to write to memory on its own.",
+    policy_module.FIRST_BASELINE: "The first capture of this asset. There was nothing to compare "
+                                  "it against.",
+}
+
+_TONE = {
+    policy_module.QUALITY_OK: "ok",
+    policy_module.ALIGNED: "ok",
+    policy_module.NO_CHANGE: "ok",
+    policy_module.CHANGE_CONFIRMED: "ok",
+    policy_module.AUTO_WRITE: "ok",
+    policy_module.FIRST_BASELINE: "ok",
+    policy_module.RECAPTURE: "warn",
+    policy_module.RETRY_CLASSIC: "warn",
+    policy_module.CROP_AND_RESCAN: "warn",
+    policy_module.HUMAN_APPROVAL: "warn",
+    policy_module.UNRECOGNIZED_ASSET: "bad",
+}
+
 
 @lru_cache(maxsize=1)
 def _assets() -> dict[str, tuple[bytes, str]]:
@@ -52,7 +108,7 @@ def _static_url(suffix: str) -> str:
 
 def _nav(current: str) -> list[dict]:
     links = [
-        {"label": label} if key == current else {"href": href, "label": label}
+        {"href": href, "label": label, "here": key == current}
         for href, label, key in _NAV
     ]
     if not any(key == current for _, _, key in _NAV):
@@ -97,7 +153,22 @@ def _bar(value: float, threshold: float | None, ends: list[dict], large: bool = 
         "mark": None if threshold is None else f"{_pct(float(threshold), scale):.2f}",
         "ends": ends,
         "large": large,
+        "scale": scale,
     }
+
+
+def _decided_bar(verdict: dict, large: bool = False) -> dict:
+    value, threshold, branch = verdict["value"], verdict.get("threshold"), verdict.get("branch")
+    head = (
+        f"{verdict['input_metric']} {_fmt(float(value))}" if threshold is None
+        else f"threshold {_fmt(threshold)}"
+    )
+    bar = _bar(value, threshold, [{"text": "0"}, {"text": head, "lit": True}], large=large)
+    bar["ends"].append({"text": _fmt(bar["scale"])})
+    bar["tone"] = _TONE.get(branch)
+    bar["causal"] = causal_line(verdict) if threshold is not None and branch else None
+    bar["causal_tip"] = f"{branch}: {_TIP[branch]}" if branch in _TIP else None
+    return bar
 
 
 def _tag(label, delta) -> dict:
@@ -107,7 +178,8 @@ def _tag(label, delta) -> dict:
     }
 
 
-def _figures(baseline_key: str, capture_key: str, bbox=None, tag: dict | None = None) -> dict | None:
+def _figures(baseline_key: str, capture_key: str, bbox=None, tag: dict | None = None,
+             aligned: bool = False) -> dict | None:
     if not (baseline_key and capture_key):
         return None
     return {
@@ -115,47 +187,58 @@ def _figures(baseline_key: str, capture_key: str, bbox=None, tag: dict | None = 
         "capture_key": capture_key,
         "bbox": list(bbox) if bbox else None,
         "tag": tag or {},
+        "aligned": aligned,
     }
 
 
 # ponytail: per-process cache keyed by run directory, so a run is read once per container;
 # a finished trace never changes, and the key carries the runs root so tests do not collide
 @lru_cache(maxsize=128)
-def _threshold_from_trace(run_dir: str) -> float | None:
-    for event in trace.read_events(Path(run_dir)):
-        verdict = event.get("policy") if event["type"] == "tool_call" else event
-        if isinstance(verdict, dict) and verdict.get("input_metric") == SEVERITY_METRIC:
-            return float(verdict["threshold"])
-    return None
+def _verdict_from_trace(run_dir: str) -> dict | None:
+    decisions = _decisions(trace.read_events(Path(run_dir)))
+    return next((d for d in reversed(decisions) if d["input_metric"] == SEVERITY_METRIC), None)
 
 
-def _threshold_of(item: dict) -> float | None:
-    persisted = (item.get("verdict") or {}).get("threshold")
-    if persisted is not None:
-        return float(persisted)
+def _verdict_of(item: dict) -> dict | None:
+    persisted = item.get("verdict") or {}
+    if persisted.get("threshold") is not None:
+        return persisted
     run_id = item.get("inspection_id") or item.get("run_id") or ""
-    return _threshold_from_trace(str(runs.runs_dir() / run_id)) if run_id else None
+    recovered = _verdict_from_trace(str(runs.runs_dir() / run_id)) if run_id else None
+    return dict(recovered) if recovered else None
 
 
-def _severity_bar(metrics: dict, threshold: float | None) -> dict | None:
+def _severity_bar(metrics: dict, verdict: dict | None) -> dict | None:
     score = (metrics.get("severity") or {}).get("score")
     if score is None:
         return None
-    ends = [{"text": f"score {float(score):g}", "lit": True}]
-    if threshold is not None:
-        ends.append({"text": f"approve {threshold:g}"})
-    return _bar(score, threshold, ends)
+    return _decided_bar(verdict or {"input_metric": SEVERITY_METRIC, "value": float(score)})
 
 
-def _metrics_payload(metrics: dict) -> str | None:
-    return json.dumps(metrics, indent=2) if metrics else None
+def _headline(payload: dict, keys: tuple[str, ...]) -> dict | None:
+    region = (payload.get("regions") or [{}])[0]
+    for key in keys:
+        for source in (payload, region):
+            if source.get(key) is not None:
+                return {"metric": key, "tip": _TIP.get(key), "value": _fmt(source[key])}
+    return None
 
 
-def index_page(assets: list[dict]) -> str:
+def _stage_rows(metrics: dict) -> list[dict]:
+    rows = []
+    for stage, question, keys in _STAGES:
+        found = _headline(metrics.get(stage) or {}, keys)
+        if found:
+            rows.append({"question": question, **found})
+    return rows
+
+
+def index_page(assets: list[dict], error: str = "") -> str:
     return _render(
         "index.html", "assets", "assets",
         narrow=True,
         assets=[asset["asset_id"] for asset in assets],
+        error=error,
     )
 
 
@@ -173,8 +256,8 @@ def _inspection_entry(item: dict, entry: dict) -> dict:
     entry["pills"] = [{"label": "inspection"}]
     if label:
         entry["pills"].append({"label": str(label)})
-    entry["bar"] = _severity_bar(metrics, _threshold_of(item))
-    entry["metrics"] = _metrics_payload(metrics)
+    entry["bar"] = _severity_bar(metrics, _verdict_of(item))
+    entry["stages"] = _stage_rows(metrics)
     entry["image_key"] = (item.get("image_keys") or {}).get("capture", "")
     return entry
 
@@ -187,7 +270,7 @@ def _timeline_entry(item: dict) -> dict:
         "trace_id": item.get("inspection_id", ""),
         "note": None,
         "bar": None,
-        "metrics": None,
+        "stages": [],
     }
     if promoted:
         return _baseline_entry(item, entry)
@@ -212,27 +295,31 @@ def _queue_entry(item: dict) -> dict:
     diff, severity = metrics.get("diff") or {}, metrics.get("severity") or {}
     region = (diff.get("regions") or [{}])[0]
     image_keys = item.get("image_keys") or {}
+    warped = image_keys.get("aligned")
     return {
         "run_id": item["run_id"],
         "asset_id": item.get("asset_id", ""),
         "message": item.get("message", ""),
         "figures": _figures(
             image_keys.get("baseline", ""),
-            image_keys.get("aligned") or image_keys.get("capture", ""),
+            warped or image_keys.get("capture", ""),
             region.get("bbox"),
             _tag(severity.get("label"), region.get("mean_delta")),
+            aligned=bool(warped),
         ),
-        "bar": _severity_bar(metrics, _threshold_of(item)),
-        "metrics": _metrics_payload(metrics),
+        "bar": _severity_bar(metrics, _verdict_of(item)),
+        "stages": _stage_rows(metrics),
+        "raw_url": f"/traces/{item['run_id']}?format=json",
     }
 
 
-def queue_page(items: list[dict]) -> str:
+def queue_page(items: list[dict], assets_in_memory: int = 0) -> str:
     threshold = Policy.from_env().severity_score_approve
     return _render(
         "queue.html", "approval queue", "queue",
         threshold=f"{threshold:g}",
         entries=[_queue_entry(item) for item in items],
+        assets_in_memory=assets_in_memory,
     )
 
 
@@ -267,7 +354,8 @@ def _summary(state: dict, events: list[dict]) -> dict:
 def _pills(summary: dict, calls: list[dict]) -> list[dict]:
     pills = []
     if summary.get("branch"):
-        pills.append({"label": str(summary["branch"]), "on": True})
+        branch = str(summary["branch"])
+        pills.append({"label": branch, "on": True, "tip": _TIP.get(branch)})
     if summary.get("status"):
         pills.append({"label": str(summary["status"])})
     detector = next(
@@ -282,17 +370,11 @@ def _decider(decisions: list[dict]) -> dict | None:
     if not decisions:
         return None
     final = decisions[-1]
-    scale = _scale(float(final["value"]), float(final["threshold"]))
-    ends = [
-        {"text": "0"},
-        {"text": f"threshold {_fmt(final['threshold'])}", "lit": True},
-        {"text": _fmt(scale)},
-    ]
     return {
         "value": _fmt(final["value"]),
         "metric": final["input_metric"],
-        "bar": _bar(final["value"], final["threshold"], ends, large=True),
-        "causal": causal_line(final),
+        "metric_tip": _TIP.get(final["input_metric"]),
+        "bar": _decided_bar(final, large=True),
     }
 
 
@@ -371,6 +453,7 @@ def _card(event: dict) -> dict:
             {"text": f"{word} {_fmt(policy['threshold'])}"},
         ]
         bar = _bar(policy["value"], policy["threshold"], ends)
+        bar["tone"] = _TONE.get(policy["branch"])
     facts = {
         key: value
         for key, value in event.get("metrics", {}).items()
@@ -385,17 +468,18 @@ def _card(event: dict) -> dict:
         "facts": _flatten(facts),
         "error": event.get("error"),
         "verdict": policy["branch"] if policy else None,
+        "verdict_tip": _TIP.get(policy["branch"]) if policy else None,
     }
 
 
-def _image_refs(summary: dict, events: list[dict]) -> tuple[str, str]:
-    baseline, capture = "", str(summary.get("capture_key") or "")
+def _image_refs(summary: dict, events: list[dict]) -> tuple[str, str, bool]:
+    baseline, warped = "", ""
     for event in events:
         if event.get("tool") != "align_to_baseline":
             continue
         baseline = event.get("args", {}).get("baseline_key") or baseline
-        capture = event.get("metrics", {}).get("aligned_key") or capture
-    return baseline, capture
+        warped = event.get("metrics", {}).get("aligned_key") or warped
+    return baseline, warped or str(summary.get("capture_key") or ""), bool(warped)
 
 
 def _region(events: list[dict]) -> tuple[list | None, dict]:
@@ -424,7 +508,7 @@ def render_html(state: dict, events: list[dict]) -> str:
     summary = _summary(state, events)
     run_state = trace.run_state(events)
     run_id = str(summary.get("run_id") or "")
-    baseline, capture = _image_refs(summary, events)
+    baseline, capture, aligned = _image_refs(summary, events)
     bbox, tag = _region(events)
     return _render(
         "trace.html", "inspection trace", "trace",
@@ -434,7 +518,7 @@ def render_html(state: dict, events: list[dict]) -> str:
         hero=_hero(summary, events, _decisions(events)),
         path=_path(events, run_state),
         cards=[_card(e) for e in events if e["type"] == "tool_call"],
-        comparison=_figures(baseline, capture, bbox, tag),
+        comparison=_figures(baseline, capture, bbox, tag, aligned=aligned),
         cta=_cta(summary),
         footer={"run_id": run_id, "asset_id": str(summary.get("asset_id") or "")},
     )

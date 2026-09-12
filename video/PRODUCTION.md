@@ -186,8 +186,9 @@ to compress this stretch in the fit no longer applies.
 approval already in flight — five clicks in a row were swallowed during the first rehearsal. Fixed
 on 5 September by standing the timer down as soon as the page starts navigating, and since the
 front end moved to one unified poller it no longer reloads at all: it swaps the queue in place, so
-the scroll position and the theme hold. Opening `metrics` before approving is still worth doing on camera
-— the numbers behind the decision belong on screen before the human acts on them.
+the scroll position and the theme hold. Opening `what it measured` before approving is still worth doing on
+camera — it now reads as four questions in plain English with the number that answered each, not
+as raw JSON, so it survives being on screen for a second.
 
 **A defect upload takes ~33 s** end to end; the clean baseline takes ~6 s. Do not navigate away
 before the trace appears, or the inspection is cancelled and nothing is written.
@@ -350,6 +351,12 @@ loss on the dark UI:
 
 1100 px wide against the README's `width="880"` leaves a little headroom for a dense display
 without paying for a full 2×. Keep it under a megabyte.
+
+**The theme.** Since 11 September the first visit opens in the **light** theme; only a visitor who
+has toggled it gets dark, from `localStorage['afterimage-theme']`. A fresh recording profile is
+therefore light, which is what a judge lands on. The narrated video and everything published
+before that date are dark — if you want a take to match them, toggle first and let the palette
+settle before rolling.
 
 **No branding in the output.** Whatever records the frames, strip every overlay — watermarks,
 click indicators, action labels, progress bars. This is submission material.

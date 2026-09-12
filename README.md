@@ -89,7 +89,7 @@ Perception runs in an arm64 OpenCV 5 container on Lambda (Graviton): capture qua
 
 | Trace viewer | Asset history |
 |---|---|
-| <img src="docs/img/trace.png" alt="Per-run trace: one span per tool call with its metric, threshold and verdict" width="420"> | <img src="docs/img/history.png" alt="Asset history showing every inspection and the current baseline" width="420"> |
+| <img src="docs/img/trace.png" alt="Per-run trace: one span per tool call with its metric, threshold and verdict" width="420"> | <img src="docs/img/history.png" alt="Asset history: every inspection scored against the threshold that was in force, with the sentence that decided it, and the current baseline" width="420"> |
 | One span per tool call, with the value that triggered the branch. | Every inspection of an asset, and which capture is the baseline. |
 
 ## Quickstart

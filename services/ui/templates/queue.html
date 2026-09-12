@@ -3,9 +3,9 @@
 {% block body %}
 <section class='col'><div class='kicker'>runs the policy would not write unattended &middot; approval threshold {{ threshold }}</div><div class='queue' data-poll='5000'>
 {%- if entries -%}
-{%- for e in entries %}<section class='panel'><div class='top'>{{ c.trace_link(e.run_id) }}<span class='pill'>{{ e.asset_id }}</span></div>{{ c.figures(e.figures) }}{{ c.bar(e.bar) }}<p class='hint'>{{ e.message }}</p><div class='foot'>{{ c.metrics_details(e.metrics) }}{{ c.approve(e.run_id) }}</div></section>{% endfor -%}
+{%- for e in entries %}<section class='panel'><div class='top'>{{ c.trace_link(e.run_id) }}<span class='pill'>{{ e.asset_id }}</span></div>{{ c.figures(e.figures) }}{{ c.bar(e.bar) }}<p class='hint'>{{ e.message }}</p><div class='foot'>{{ c.stages(e.stages, e.raw_url) }}{{ c.approve(e.run_id) }}</div></section>{% endfor -%}
 {%- else -%}
-<p class='hint'>nothing awaiting approval</p>
+<p class='hint'>nothing awaiting approval{% if assets_in_memory %} &middot; <a href='/'>{{ assets_in_memory }} asset{{ '' if assets_in_memory == 1 else 's' }} in memory</a>, all of them settled{% endif %}</p>
 {%- endif -%}
 </div></section>
 {% endblock %}

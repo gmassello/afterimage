@@ -82,11 +82,44 @@ def test_upload_rejects_bad_input(client):
         data={"asset_id": "UPPER CASE"},
         files={"image": ("panel.png", ok_image, "image/png")},
     ).status_code == 400
-    assert client.post(
+    undecodable = client.post(
         "/inspections",
         data={"asset_id": unique("api-bad")},
         files={"image": ("panel.png", b"not an image", "image/png")},
-    ).status_code == 400
+    )
+    assert undecodable.status_code == 400
+    assert undecodable.json() == {"detail": "not a decodable image"}
+
+
+@localstack
+def test_a_browser_sees_a_rejected_upload_inside_the_page(client):
+    asset_id = unique("api-html")
+    browser = client.post(
+        "/inspections",
+        data={"asset_id": asset_id},
+        files={"image": ("phone.heic", b"not an image", "image/heic")},
+        headers={"accept": "text/html,application/xhtml+xml"},
+    )
+    assert browser.status_code == 400
+    assert browser.headers["content-type"].startswith("text/html")
+    assert "assets in memory" in browser.text
+
+    missing = client.post("/inspections", data={"asset_id": asset_id},
+                          headers={"accept": "text/html"})
+    assert missing.status_code == 400
+    assert "an image file is required" in missing.text
+
+    gone = client.get("/traces/ffffffffffff", headers={"accept": "text/html"})
+    assert gone.status_code == 404
+    assert "assets in memory" not in gone.text
+
+
+@localstack
+def test_the_empty_queue_counts_what_memory_holds(client):
+    store.put_asset(unique("api-count"))
+    page = client.get("/queue")
+    assert page.status_code == 200
+    assert f"{len(store.list_assets())} asset" in page.text
 
 
 @localstack
@@ -166,7 +199,7 @@ def test_asset_timeline_scores_every_inspection_against_the_threshold():
          "image_key": "array-rooftop/c904ab21fe58/capture.png"},
     ])
     assert "score 0.6543" in page
-    assert "approve 0.4" in page
+    assert "threshold 0.4" in page
     assert "crack" in page
     assert "current baseline" in page
 
