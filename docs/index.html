@@ -1030,9 +1030,9 @@ flowchart TB
       </pre>
       <figcaption>
         The deploy carries no stored credentials: GitHub federates over OIDC into a role whose trust
-        is pinned to numeric owner and repository IDs, and a permissions boundary caps that role at
-        this stack's own table, bucket and logs. Nothing else in the account is reachable from a
-        build.
+        is pinned to numeric owner and repository IDs, and whose grant reaches only this stack's own
+        repository, stack, function, table, bucket, log group and warmer rule. Nothing else in the
+        account is reachable from a build.
       </figcaption>
     </figure>
   </section>

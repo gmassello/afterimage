@@ -56,9 +56,51 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
                 token.actions.githubusercontent.com:sub: !Ref GitHubSubject
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/PowerUserAccess
       Policies:
+        - PolicyName: deploy-afterimage
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
+                  - ecr:GetAuthorizationToken
+                  - cloudformation:ListStacks
+                  - cloudformation:GetTemplateSummary
+                  - logs:DescribeLogGroups
+                Resource: '*'
+              - Effect: Allow
+                Action: cloudformation:CreateChangeSet
+                Resource: 'arn:aws:cloudformation:*:aws:transform/Serverless-2016-10-31'
+              - Effect: Allow
+                Action: cloudformation:*
+                Resource:
+                  - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/${AppStackName}/*'
+                  - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:changeSet/*/*'
+              - Effect: Allow
+                Action: ecr:*
+                Resource: !Sub 'arn:aws:ecr:*:${AWS::AccountId}:repository/${AppStackName}'
+              - Effect: Allow
+                Action: lambda:*
+                Resource: !Sub 'arn:aws:lambda:*:${AWS::AccountId}:function:${AppStackName}-*'
+              - Effect: Allow
+                Action: dynamodb:*
+                Resource:
+                  - !Sub 'arn:aws:dynamodb:*:${AWS::AccountId}:table/${AppStackName}'
+                  - !Sub 'arn:aws:dynamodb:*:${AWS::AccountId}:table/${AppStackName}/*'
+              - Effect: Allow
+                Action: s3:*
+                Resource:
+                  - !Sub 'arn:aws:s3:::${AppStackName}-${AWS::AccountId}'
+                  - !Sub 'arn:aws:s3:::${AppStackName}-${AWS::AccountId}/*'
+              - Effect: Allow
+                Action: logs:*
+                Resource:
+                  - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${AppStackName}*'
+                  - !Sub 'arn:aws:logs:*:${AWS::AccountId}:log-group:/aws/lambda/${AppStackName}*:*'
+              - Effect: Allow
+                Action: events:*
+                Resource: !Sub 'arn:aws:events:*:${AWS::AccountId}:rule/${AppStackName}-*'
         - PolicyName: sam-managed-roles
           PolicyDocument:
             Version: '2012-10-17'

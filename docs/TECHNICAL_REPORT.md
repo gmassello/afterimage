@@ -319,7 +319,7 @@ shown in the video, where an OpenCV number stopped the loop and a person restart
 | Reproducibility | Exact pins in `requirements.txt`; image tagged with the git short SHA; `make weights` sha1-verifies the two ONNX files |
 | Infrastructure as code | `infra/template.yaml` (SAM) and `infra/github-oidc.yaml`; `make deploy` and the GitHub Actions workflow run the same `deploy.sh` |
 | Deploy credentials | **None stored.** GitHub Actions federates over OIDC; the trust policy pins `sub` to the immutable numeric owner and repo IDs, not to names that can be transferred |
-| Blast radius | A permissions boundary caps the deploy role at this stack's own table, bucket and logs; role creation is only permitted with that boundary attached, and `iam:PassRole` only to Lambda |
+| Blast radius | The deploy role carries no managed policy: its inline grant reaches only this stack's ECR repository, CloudFormation stack, function, table, bucket, log group and warmer rule. It may create roles only under `afterimage-*` and only with the stack's permissions boundary attached, and `iam:PassRole` only to Lambda |
 | Image retention | ECR lifecycle policy keeps the last 5 images |
 | Data retention | S3 objects expire at 180 days; incomplete multipart uploads at 7; CloudWatch Logs at 30 days |
 | Cost | The account billed $0.0138 in August; this stack adds roughly $1/month, nearly all ECR storage. The 5-minute warmer burns ~1,700 GB-s against 400,000 free, so Lambda itself stays inside the perpetual free tier |

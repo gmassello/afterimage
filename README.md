@@ -151,7 +151,7 @@ GOOGLE_API_KEY=... make deploy   # ECR + docker buildx arm64 + CloudFormation, i
 <details>
 <summary>Deploy internals — one-time OIDC bootstrap and repo configuration</summary>
 
-The Deploy workflow authenticates with GitHub's OIDC provider under a permissions boundary, so no long-lived AWS keys live in the repository. Bootstrap once:
+The Deploy workflow authenticates with GitHub's OIDC provider into a role scoped to this stack's own resources, so no long-lived AWS keys live in the repository. Bootstrap once:
 
 ```bash
 # immutable IDs for the OIDC sub claim (already baked into the template default)
