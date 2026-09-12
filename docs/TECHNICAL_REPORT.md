@@ -275,7 +275,7 @@ before the model ever sees it. The verdict is recorded and then injected into th
 The model orchestrates the calls and phrases the operator message; it does not decide anything:
 
 - a `submit` naming a branch other than the one the policy computed comes back as an error tool
-  result naming the mandated branch (`services/agent/loop.py:220-227`);
+  result naming the mandated branch (`loop.WRONG_BRANCH`, in `services/agent/loop.py`);
 - a `submit` bundled with other calls in the same turn is discarded as premature;
 - calling a tool out of sequence is rejected against the expected next tool;
 - and the run fails outright rather than guessing if no valid submit arrives within 12 turns.

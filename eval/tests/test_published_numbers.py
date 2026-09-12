@@ -7,8 +7,13 @@ import pytest
 PAGE = Path("docs/EVALUATION.md")
 REPORT = Path("docs/TECHNICAL_REPORT.md")
 README = Path("README.md")
+SITE = Path("docs/index.html")
 RESULTS = Path("eval/results/latest/results.json")
 SCRIPT = Path("video/script.tsv")
+
+DELIVERABLES = (PAGE, REPORT, README, SITE)
+SPELLED = "zero one two three four five six seven eight nine ten eleven twelve".split()
+NO_DEFECT = "NONE"  # the class for a capture with nothing wrong, not one of the defect classes
 
 # Read off the screen during the 5 September browser rehearsal — see video/PRODUCTION.md.
 ON_CAMERA = {"3.6589", "2483.1292", "1064.0321", "0.9988", "67.7646", "0.6798"}
@@ -74,6 +79,35 @@ def test_the_readme_restates_the_same_figures(measured):
     assert _claim(readme, r"— (\d+) synthetic") == str(measured["synthetic"])
     assert _claim(readme, r"synthetic, (\d+) on licensed") == str(measured["real"])
     assert _claim(readme, r"\*\*(\d+) pass\*\*") == str(measured["passed"])
+
+
+def test_the_public_page_restates_the_same_figures(measured):
+    site = SITE.read_text()
+    assert _claim(site, r"(\d+) scenarios, \w+ of them real") == str(measured["scenarios"])
+    assert _claim(site, r"\d+ scenarios, (\w+) of them real") == SPELLED[measured["real"]]
+    assert _claim(site, r"macro F1 ([\d.]+)") == str(measured["defect"]["macro"]["f1"])
+    assert _claim(site, r"scores ([\d.]+) on picking the right branch") == str(
+        measured["branch"]["accuracy"]
+    )
+    defects = {
+        label: row
+        for label, row in measured["defect"]["per_class"].items()
+        if label != NO_DEFECT
+    }
+    assert len(defects) == 4, "the page says four defect classes"
+    assert _claim(site, r"precision ([\d.]+) on all four defect classes") == str(
+        min(row["precision"] for row in defects.values())
+    )
+
+
+def test_no_deliverable_cites_a_line_number():
+    rotted = [
+        f"{doc}:{number}: {line.strip()}"
+        for doc in DELIVERABLES
+        for number, line in enumerate(doc.read_text().splitlines(), 1)
+        if re.search(r"\.py:\d+", line)
+    ]
+    assert not rotted, "cite a symbol, not a line — lines move on every edit: " + "; ".join(rotted)
 
 
 def test_every_readme_path_resolves():

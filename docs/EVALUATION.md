@@ -15,7 +15,7 @@ it substitutes is the language model, replaced by the scripted driver in
 
 That substitution costs nothing in validity and buys reproducibility. Branch verdicts are computed
 in code by `policy.evaluate()`, never by the model, and the loop rejects a submit that names the
-wrong branch (`services/agent/loop.py:220-227`). The model supplies tool arguments and the final
+wrong branch (`loop.WRONG_BRANCH`, in `services/agent/loop.py`). The model supplies tool arguments and the final
 submit; it cannot move a threshold. So these numbers measure perception and policy — which is what
 "task effectiveness" means here — and they are identical on every run, with no network and no tokens.
 
@@ -111,8 +111,9 @@ It is the single reason `hotspot` recall is 0.6667 rather than 1.0.
 
 **3. Severity underestimates a defect that covers a small area.** A delamination on a real
 photograph scored 0.3412, under the 0.40 approval threshold, so it was written automatically instead
-of escalating. Root cause is structural, not a bad threshold: `score` is `mean_delta / 64.0` in
-`services/perception/severity.py:76` and **ignores the label the classifier just produced**. The
+of escalating. Root cause is structural, not a bad threshold: `score` is
+`mean_delta / severity_full_scale_delta` in `severity.classify_severity` and **ignores the label
+the classifier just produced**. The
 classifier is confident enough to say "delamination" and the score does not use that at all. Raising
 the threshold would not fix it; making the score class-aware would. That change is not made here —
 this stage produces the evidence, and rewriting the scoring function on the strength of one scenario
@@ -122,7 +123,7 @@ would be exactly the overfitting this dataset exists to prevent.
 
 ### `severity.py`: the threshold heuristic holds
 
-`services/perception/severity.py:57` carried a note saying to replace the heuristic with a trained
+`severity._label` carried a note saying to replace the heuristic with a trained
 classifier if the week 7 evaluation showed the classes did not separate. They separate: macro F1
 **0.9513**, with precision 1.0 on all four defect classes and a single recall miss, and that miss
 (case 2 above) is an exposure gate firing first, not a confusion between classes. **No classifier is
@@ -130,7 +131,7 @@ warranted.** The note stays in the code, now with a measured reason to leave it 
 
 ### `coverage_ratio_min`: cannot be enabled with one global default
 
-`services/agent/policy.py:26` disables the frame-coverage check because the contour heuristic reads
+`Policy.coverage_ratio_min` disables the frame-coverage check because the contour heuristic reads
 approximately zero on synthetic fixtures. Real photographs let us test that for the first time, and
 the finding is worse than "the synthetic images are unrepresentative":
 

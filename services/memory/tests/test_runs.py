@@ -11,6 +11,9 @@ def exercise_backend(run_dir):
     runs.write(run_dir, "pending.json", {"run_id": run_dir.name})
     runs.write(run_dir.parent / "other0runab", "state.json", {"status": "completed"})
     assert runs.pending(run_dir.parent) == [{"run_id": run_dir.name}]
+    runs.append(run_dir, "events.json", {"type": "run_started"})
+    runs.append(run_dir, "events.json", {"type": "run_finished"})
+    assert [e["type"] for e in runs.read(run_dir, "events.json")] == ["run_started", "run_finished"]
     runs.delete(run_dir, "pending.json")
     assert runs.pending(run_dir.parent) == []
     assert runs.read(run_dir, "pending.json") is None
