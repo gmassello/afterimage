@@ -486,5 +486,152 @@
     "expect": {
       "branch": "unrecognized_asset"
     }
+  },
+  {
+    "id": "soiling-real-forest",
+    "base": {
+      "file": "array_forest.jpg"
+    },
+    "capture": [
+      [
+        "with_soiling",
+        {}
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "soiling"
+    }
+  },
+  {
+    "id": "recapture-partial-frame-real-arapaho",
+    "base": {
+      "file": "array_arapaho.jpg"
+    },
+    "capture": [
+      [
+        "partial_frame",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "recapture"
+    }
+  },
+  {
+    "id": "crack-real-tororo",
+    "base": {
+      "file": "array_tororo.jpg"
+    },
+    "capture": [
+      [
+        "crack_at",
+        {
+          "region": [
+            0.3,
+            0.52,
+            0.12,
+            0.12
+          ]
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "crack"
+    }
+  },
+  {
+    "id": "hotspot-real-ogiinuur",
+    "base": {
+      "file": "array_ogiinuur.jpg"
+    },
+    "capture": [
+      [
+        "hotspot_at",
+        {
+          "region": [
+            0.42,
+            0.4,
+            0.12,
+            0.12
+          ]
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "hotspot"
+    }
+  },
+  {
+    "id": "delamination-real-bifacial",
+    "base": {
+      "file": "array_bifacial_roof.jpg"
+    },
+    "capture": [
+      [
+        "delamination_at",
+        {
+          "region": [
+            0.4,
+            0.25,
+            0.12,
+            0.12
+          ]
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "human_approval",
+      "defect": "delamination"
+    }
+  },
+  {
+    "id": "faint-spot-real-hannover-roof",
+    "base": {
+      "file": "array_hannover_roof.jpg"
+    },
+    "capture": [
+      [
+        "faint_spot_at",
+        {
+          "region": [
+            0.4,
+            0.45,
+            0.14,
+            0.14
+          ],
+          "delta": 16
+        }
+      ],
+      [
+        "shifted",
+        {}
+      ]
+    ],
+    "expect": {
+      "branch": "auto_write",
+      "path_contains": [
+        "crop_and_rescan"
+      ]
+    },
+    "score_defect": false
   }
 ]

@@ -1,6 +1,6 @@
 # Evaluation base photos — sources and licences
 
-Twelve real photographs of photovoltaic modules, downloaded from Wikimedia Commons at 1200 px
+Eighteen real photographs of photovoltaic modules, downloaded from Wikimedia Commons at 1200 px
 wide and committed to the repository so `make eval` runs offline and deterministically.
 
 They are the **base** images: the harness derives every scenario from them by injecting a known
@@ -21,6 +21,12 @@ defect — `docs/EVALUATION.md` states what that does and does not let us claim.
 | `module_soiled_cleaning.jpg` | [Dornbirn-Photovoltaic module cleaning-13ASD.jpg](https://commons.wikimedia.org/wiki/File:Dornbirn-Photovoltaic_module_cleaning-13ASD.jpg) | Asurnipal | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 | `array_marine.jpg` | [Marine Solar Panel Array on Blue Start Delos.jpg](https://commons.wikimedia.org/wiki/File:Marine_Solar_Panel_Array_on_Blue_Start_Delos.jpg) | Gregory Atkinson | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 | `modules_packed.jpg` | [Dornbirn-packed photovoltaic panels-01ASD.jpg](https://commons.wikimedia.org/wiki/File:Dornbirn-packed_photovoltaic_panels-01ASD.jpg) | Asurnipal | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| `array_tororo.jpg` | [Solar modules at Tororo PV.jpg](https://commons.wikimedia.org/wiki/File:Solar_modules_at_Tororo_PV.jpg) | Ami Abdul-rahman | [CC0](http://creativecommons.org/publicdomain/zero/1.0/deed.en) |
+| `array_forest.jpg` | [Panels in forest.jpg](https://commons.wikimedia.org/wiki/File:Panels_in_forest.jpg) | Tiia Monto | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| `array_ogiinuur.jpg` | [Solar panels in Ogiinuur.jpg](https://commons.wikimedia.org/wiki/File:Solar_panels_in_Ogiinuur.jpg) | Chinneeb | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) |
+| `array_hannover_roof.jpg` | [Photovoltaik Dachanlage Hannover - Schwarze Heide - 1 MW.jpg](https://commons.wikimedia.org/wiki/File:Photovoltaik_Dachanlage_Hannover_-_Schwarze_Heide_-_1_MW.jpg) | AleSpa | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) |
+| `array_bifacial_roof.jpg` | [Vertical bifacial solar panels on a green roof.jpg](https://commons.wikimedia.org/wiki/File:Vertical_bifacial_solar_panels_on_a_green_roof.jpg) | Trygvetv | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| `array_arapaho.jpg` | [Solar panels at Arapaho National Wildlife Refuge (6009458404).jpg](https://commons.wikimedia.org/wiki/File:Solar_panels_at_Arapaho_National_Wildlife_Refuge_(6009458404).jpg) | USFWS Mountain Prairie | Public domain |
 
 Share-alike licences (CC BY-SA) apply to the photographs themselves. They are redistributed here
 unmodified, with attribution; the derived scenarios the harness generates at run time are not

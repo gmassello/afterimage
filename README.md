@@ -54,24 +54,27 @@ The loop is the product, not the development process: an unusable capture is sen
 
 ## Results
 
-23 scenarios — 11 synthetic, 12 on licensed photographs of real photovoltaic modules. **20 pass** every assertion: branch, defect class and required decision path. Reproduce with `make eval`; the test suite fails if these figures drift from `eval/results/latest/results.json`.
+29 scenarios — 11 synthetic, 18 on licensed photographs of real photovoltaic modules. **24 pass** every assertion: branch, defect class and required decision path. Reproduce with `make eval`; the test suite fails if these figures drift from `eval/results/latest/results.json`.
 
 | Metric | Score | Measured over |
 |:---|---:|:---|
-| Branch accuracy | 0.8696 | 23 scenarios, macro F1 0.8815 |
-| Defect macro F1 | 0.9513 | precision 1.0 on every defect class |
-| Mean IoU | 0.8258 | 10 localised regions, 9 at IoU ≥ 0.5 |
-| Scenarios passed | 20 / 23 | 12 of them on real photographs |
+| Real photographs | 18 / 29 | the majority of the suite runs on photographs, not on generated panels |
+| Branch accuracy | 0.8621 | 29 scenarios, macro F1 0.8624 |
+| Defect macro F1 | 0.8753 | precision 0.75 or better on every defect class |
+| Mean IoU | 0.7875 | 14 localised regions, 12 at IoU ≥ 0.5 |
+| Scenarios passed | 24 / 29 | 18 of them on real photographs |
 
 ### Where it fails
 
 | Scenario | Got instead | Deciding number |
 |---|---|---|
 | `recapture-partial-frame-synthetic` | unrecognized_asset | `inlier_ratio 0.0602 vs 0.3` |
+| `recapture-partial-frame-real-arapaho` | unrecognized_asset | `inlier_ratio 0.1232 vs 0.3` |
 | `hotspot-real-plain` | recapture / NONE | `clipped_bright_ratio 0.3086 vs 0.3` |
 | `delamination-real-packed` | auto_write | `score 0.3412 vs 0.4` |
+| `soiling-real-forest` | human_approval / hotspot | `area_ratio 0.076 vs 0.25` |
 
-Each of the three is traced to a root cause in [the evaluation](docs/EVALUATION.md) — a coverage gate that cannot take one global default, an exposure gate firing before severity is ever assessed, and a severity score that ignores the class the classifier just produced.
+Each of the five is traced to a root cause in [the evaluation](docs/EVALUATION.md) — a coverage gate that cannot take one global default, an exposure gate firing before severity is ever assessed, a severity score that ignores the class the classifier just produced, and a soiling rule whose area threshold was calibrated on the synthetic panel and does not survive real texture. The two partial-frame rows are the same root cause seen twice: once on a generated panel and once on a photograph.
 
 ## How the loop works
 
@@ -123,7 +126,7 @@ Docker with Compose v2 (arm64 host or emulation) and `make`. Nothing else instal
    make demo
    ```
 
-4. Score the agent over the 23 scenarios
+4. Score the agent over the 29 scenarios
 
    ```bash
    make eval   # writes eval/results/latest/
@@ -134,7 +137,7 @@ Docker with Compose v2 (arm64 host or emulation) and `make`. Nothing else instal
 
 ## The dataset
 
-Twelve Wikimedia Commons photographs of photovoltaic modules, committed under `eval/dataset/base/` so `make eval` is offline and deterministic. Author and licence for each are listed in `eval/dataset/SOURCES.md`. Defects are injected, which is what makes the ground truth exact — and what makes this a test of threshold robustness on real texture, not a field trial.
+Eighteen Wikimedia Commons photographs of photovoltaic modules, committed under `eval/dataset/base/` so `make eval` is offline and deterministic. Author and licence for each are listed in `eval/dataset/SOURCES.md`. Defects are injected, which is what makes the ground truth exact — and what makes this a test of threshold robustness on real texture, not a field trial.
 
 | Module, close range | Soiling | Rooftop array |
 |---|---|---|
