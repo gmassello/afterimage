@@ -73,9 +73,9 @@ genesis link.
 
 - **No authentication or authorisation.** See above.
 - **No rate limiting in the stack.** The account's Lambda concurrency quota is 10 and AWS will not
-  let any of it be reserved, so the account limit is the only limit that exists. The
-  `ReservedConcurrentExecutions` line is commented in `infra/template.yaml` with that reason and
-  should be restored if the quota is ever raised.
+  let any of it be reserved, so the account limit is the only limit that exists. The property is
+  deliberately absent from `infra/template.yaml`, where a `ponytail:` note records that reason and
+  the upgrade path if the quota is ever raised.
 - **No WAF, no bucket versioning, no CORS policy.** Out of scope for a demonstrator on a free-tier
   account.
 

@@ -5,7 +5,10 @@ Track: **Agentic Vision path**. Deadline 26 Oct 23:59 PT (27 Oct 03:59 ART); sub
 ## Try it first
 
 **<https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/>** — live, no login,
-**`200` in 0.58 s** (median of seven warm requests, 15 September 2026, range 0.57–0.67 s).
+**`200` in 0.58 s** (median of seven warm requests, 15 September 2026, range 0.57–0.67 s). Cold, the
+function takes **2.34 s** to start on top of that; an inspection takes **22.8 s** and bills
+**$0.0006** at list price. Those last three are read from the function's own logs — method and
+queries in [`TECHNICAL_REPORT.md` §7](TECHNICAL_REPORT.md#7-deployment-and-responsible-operation).
 
 Upload a photograph of a solar panel and the agent runs in front of you: it gates the capture, aligns
 it to the baseline it holds for that asset, diffs against memory, and either files the inspection or
@@ -112,8 +115,11 @@ each one is compared against, is the policy's business.
 
 - [x] Endpoint tested from another network — reached from mobile data on 7 September, off the WiFi the deploy was made
       from — and budgeted to stay alive until 10 November (judging runs 27 Oct – 9 Nov).
-      Cost measured, not estimated: the account billed $0.0138 in August with the sibling `recall` stack running all month;
-      afterimage adds ~$1/month, almost all of it ECR storage for the 2 GB arm64 image
+      Cost measured, not estimated: the account billed $0.0407 from 1–16 September, $0.0366 of it ECR. afterimage settles
+      near $0.10/month, nearly all image storage — the arm64 build measures 227 MB, not the 2 GB an earlier estimate
+      assumed — and Lambda itself bills nothing: 2,381 GB-s over a fortnight against
+      400,000 free every month. Series and method in
+      [`TECHNICAL_REPORT.md` §7](TECHNICAL_REPORT.md#7-deployment-and-responsible-operation)
 - [x] No credentials anywhere in git history — swept the full history for key patterns and credential filenames; the only match is `AWS_SECRET_ACCESS_KEY=test`, the LocalStack dummy
 - [x] The trace linked from the report — [`docs/TECHNICAL_REPORT.md` §6](TECHNICAL_REPORT.md#observability) links two live traces: the zoom branch, and the run the video shows stopping for a human
 - [x] Video recorded against the public URL, not localhost — the address bar is legible in every browser shot, and the

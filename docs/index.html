@@ -1020,6 +1020,25 @@
         redirects. The same diagram opens the
         <a href="https://github.com/gmassello/afterimage/blob/main/docs/TECHNICAL_REPORT.md">technical report</a>.
       </p>
+      <p>
+        That function sleeps when nobody is using it, and waking it costs
+        <strong>2.34&nbsp;s</strong> — the median of 211 cold starts across the fortnight of logs the
+        group holds. Awake, the function itself answers in <strong>4&nbsp;ms</strong>; the
+        0.58&nbsp;s quoted at the top of this page is that plus the round trip to us-east-1, which is
+        the larger share. The EventBridge rule in the diagram exists to keep the awake number the one
+        you get, and the evidence that it works is not the headline ratio — 4.3% of invocations paid
+        an init, but most of those invocations are the warmer's own — it is that no request which
+        paid one was ever an inspection. The longest was 295&nbsp;ms.
+      </p>
+      <p>
+        An inspection is the one number no warmer can move: <strong>22.8&nbsp;s</strong> at the
+        median, 39.0&nbsp;s at worst. That is ALIKED, LightGlue and the diff running on a CPU, and it
+        is why the page streams the trace instead of spinning. It bills 22.79 seconds at 2&nbsp;GB,
+        which at the published arm64 rate is <strong>$0.0006 a run</strong> — in practice nothing,
+        because the whole function burns 2,381&nbsp;GB-s a fortnight against the 400,000 a month AWS
+        never charges for. The account's bill is image storage, near $0.10 a month.
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/TECHNICAL_REPORT.md#7-deployment-and-responsible-operation">Where each of these figures comes from</a>.
+      </p>
     </div>
 
     <figure class="diagram">
@@ -1114,7 +1133,8 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
         document that explains it end to end: the
         <a href="https://github.com/gmassello/afterimage/blob/main/docs/TECHNICAL_REPORT.md">technical report</a>,
         which is where this manual sends you when you want the numbers rather than the plain-language
-        version. What remains is the video.
+        version, and the <a href="https://youtu.be/zUFR96a33IM">five-minute walkthrough</a> if you
+        want neither. What remains is the submission itself.
       </p>
       <p>
         Three shorter documents answer the questions this manual deliberately does not:

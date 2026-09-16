@@ -77,9 +77,10 @@ are cited here.** A fabricated ROI number would be the easiest thing in this rep
 
 What we can state is our own measured cost, because we own those numbers: alignment runs in about
 **1.5 s per image pair** on CPU, and the AWS account carrying this stack billed **$0.0138** in
-August. afterimage itself adds on the order of **$1/month**, nearly all of it ECR storage for the
-2 GB arm64 image — Lambda stays inside the perpetual free tier even with a warmer firing every five
-minutes, which burns about 1,700 GB-s a month against 400,000 free.
+August. afterimage itself adds about **$0.10/month**, nearly all of it ECR storage for the five
+retained arm64 images — 0.99 GB compressed, not the 2 GB the image measures unpacked. Lambda stays
+inside the perpetual free tier even with a warmer firing every five minutes: the function billed
+**2,381 GB-s** over the fortnight measured in §7, against 400,000 free every month.
 
 <sub>
 [1] Solar Star, 579 MW / ~1.7 million modules — <https://en.wikipedia.org/wiki/Solar_Star>. Press-grade
@@ -355,14 +356,60 @@ shown in the video, where an OpenCV number stopped the loop and a person restart
 
 | Concern | How it is handled |
 |---|---|
-| Compute | One Lambda container image, `arm64` Graviton, 2048 MB, 900 s timeout, behind a Function URL |
+| Compute | One Lambda container image, `arm64` Graviton, 2048 MB, 900 s timeout, behind a Function URL. A full inspection peaks at 1,891 MB of that 2,048 |
+| Latency | Cold start **2.34 s** at p50 (p90 2.53 s, worst 9.01 s); warm and server-side, **4 ms** at p50, 24 ms at p90, 2.13 s at p99; a full inspection **22.8 s** at p50, 39.0 s at worst |
 | Reproducibility | Exact pins in `requirements.txt`; image tagged with the git short SHA; `make weights` sha1-verifies the two ONNX files |
 | Infrastructure as code | `infra/template.yaml` (SAM) and `infra/github-oidc.yaml`; `make deploy` and the GitHub Actions workflow run the same `deploy.sh` |
 | Deploy credentials | **None stored.** GitHub Actions federates over OIDC; the trust policy pins `sub` to the immutable numeric owner and repo IDs, not to names that can be transferred |
 | Blast radius | The deploy role carries no managed policy: its inline grant reaches only this stack's ECR repository, CloudFormation stack, function, table, bucket, log group and warmer rule. It may create roles only under `afterimage-*` and only with the stack's permissions boundary attached, and `iam:PassRole` only to Lambda |
 | Image retention | ECR lifecycle policy keeps the last 5 images |
 | Data retention | S3 objects expire at 180 days; incomplete multipart uploads at 7; CloudWatch Logs at 30 days |
-| Cost | The account billed $0.0138 in August; this stack adds roughly $1/month, nearly all ECR storage. The 5-minute warmer burns ~1,700 GB-s against 400,000 free, so Lambda itself stays inside the perpetual free tier |
+| Cost | **$0.0006 per inspection** at list price, and **~$0.10/month** for the stack, nearly all of it ECR image storage. Lambda itself bills nothing: 2,381 GB-s over the fortnight measured, against 400,000 free every month |
+
+These come from the function's own `REPORT` lines. The log group dates from the 2 September
+redeploy, so the window is a fortnight rather than the full 30 days of retention: **2–16 September
+2026, 4,906 invocations**, 211 of which paid an init and 21 of which ran longer than 10 s and are
+the real inspections. Four Logs Insights queries over `/aws/lambda/afterimage-api` reproduce every
+figure above — cold, warm, inspection, and the totals:
+
+```text
+filter @type="REPORT" and ispresent(@initDuration)
+| stats count(), pct(@initDuration,50), pct(@initDuration,90), max(@initDuration), max(@duration)
+```
+
+```text
+filter @type="REPORT" and not ispresent(@initDuration)
+| stats count(), pct(@duration,50), pct(@duration,90), pct(@duration,99)
+```
+
+```text
+filter @type="REPORT" and @duration > 10000
+| stats count(), pct(@duration,50), max(@duration), pct(@billedDuration,50), max(@maxMemoryUsed)/1048576
+```
+
+```text
+filter @type="REPORT"
+| stats count(), sum(@billedDuration)/1000*2 as gb_s, sum(ispresent(@initDuration)) as cold
+```
+
+Two traps in reading those back. `@maxMemoryUsed` returns **bytes**, hence the division — and
+Lambda's own "MB" is mebibytes, which is why a peak of 1,891 against 2,048 is 92% rather than the
+97% a decimal reading would give. And the share of invocations that paid an init, 4.3%, is flattered
+by the warmer's own synthetic calls being in the denominator; the honest version of that claim is
+that no request which paid an init was ever an inspection — the longest was 295 ms. The 22.8 s is
+the figure no warmer can move, being ALIKED, LightGlue and the diff running on a CPU.
+
+The per-inspection cost is 22.79 billed seconds × 2 GB × $0.0000133334 per GB-second (arm64,
+us-east-1), plus $0.0000002 for the request; that rate is read from the Price List API rather than
+the pricing page (`aws pricing get-products --service-code AWSLambda`, group
+`AWS-Lambda-Duration-ARM`, first tier). It is a median over 21 runs whose spread is 10.0 to 39.0 s,
+so treat it as an order of magnitude, not a quote. What the account actually pays comes from Cost
+Explorer: $0.0020 in July, $0.0138 in August, $0.0407 from 1–16 September, of which ECR is $0.0366 —
+five retained images of ~198 MB, 0.99 GB in all.
+
+The 0.58 s a browser sees is a different measurement on the other side of the network. `curl` from
+Buenos Aires puts 0.34 s of it in DNS, TCP and the TLS handshake and most of the remaining 0.24 s in
+the request's own round trip; the function's 4 ms is the small share of it we control.
 
 ### Responsible use, security, and the use of AI
 
@@ -470,6 +517,10 @@ Written as they were measured, not assembled at the end.
   measuring 33.34 and 34.37 enter it, 35.54 skips it. Narrow, but reproducible on demand — and
   reproduced against the public endpoint.
 - Alignment costs about 1.5 s per pair on CPU, and OpenCV 5's DNN engine has no GPU support.
+- A full inspection peaked at **1,891 MB of the 2,048 configured**, across 21 measured runs — 92%, and the
+  narrowest margin in the stack. That is a maximum over a small sample, not a distribution: a larger capture
+  is an out-of-memory kill rather than a degraded result, and Lambda answers one with a 502 and no trace.
+  Raising `MemorySize` to 3008 costs nothing measurable against the free tier and is the standing fix.
 - The evaluation injects its defects. That is what makes ground truth exact, and it means the numbers
   describe threshold robustness on real photographic texture, not field detection rates. No public
   dataset offers what the longitudinal claim needs: the same physical panel photographed twice.

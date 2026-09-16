@@ -240,11 +240,13 @@ the same endpoint falls back to the deterministic `PolicyFollowingLLM` — which
 tests exercise, no network, no key.
 
 Anti-abuse, deliberately minimal: 6 MB upload cap (`services/api/app.py`, the Function URL body limit), `^[a-z0-9-]{1,64}$` on asset ids, and
-`ReservedConcurrentExecutions: 10` as an infra-level rate limit. No auth — Basic Auth breaks the
-video recording (a lesson already paid for).
+the account's own concurrency quota as the rate limit — it is 10 executions, and AWS keeps those 10
+unreserved, so `ReservedConcurrentExecutions` cannot be set at all (`infra/template.yaml` carries the
+`ponytail:` note and the upgrade path). No auth — Basic Auth
+breaks the video recording (a lesson already paid for).
 
 IaC split: the app stack (`infra/template.yaml`, SAM) owns table, bucket
-(`afterimage-${AccountId}`, 60-day lifecycle so nothing expires inside the judging window), log
+(`afterimage-${AccountId}`, 180-day lifecycle so nothing expires inside the judging window), log
 retention and the warmer; `infra/github-oidc.yaml` (one manual deploy, `CAPABILITY_NAMED_IAM`)
 owns the OIDC provider, the deploy role and the permissions boundary scoped to exactly the table
 and bucket. `ensure_table`/`ensure_bucket` remain LocalStack-only — the Lambda role cannot create
@@ -322,11 +324,15 @@ at `with_faint_spot` deltas 10, 16 and 22 landed on either side. Stage 7 found t
 this — see below.
 
 **Cost, measured rather than estimated.** Cost Explorer over the account: $0 in June, $0.0020 in
-July, **$0.0138 in August** with `recall` running the whole month. afterimage is the first
-container-image workload in the account — there was no ECR repository at all — so it adds roughly
-$1/month, nearly all of it ECR storage for the ~2 GB arm64 image under the 5-image lifecycle.
-Lambda itself stays inside the perpetual free tier: the 5-minute warmer burns ~1,700 GB-s a month
-against 400,000 free.
+July, **$0.0138 in August** with `recall` running the whole month, **$0.0407 from 1–16 September** of
+which ECR is $0.0366. afterimage is the first container-image workload in the account — there was no
+ECR repository at all — and ECR storage is what it actually costs: five images of ~198 MB hold
+0.99 GB under the 5-image lifecycle, so it settles near **$0.10/month**. The earlier ~$1/month figure
+assumed a 2 GB image; `docker image inspect` puts the arm64 build at **227 MB** locally and ECR stores
+~198 MB of it, so that estimate was 10× high on a size nobody had measured. Lambda itself stays inside the perpetual free tier: the function billed **2,381 GB-s** across
+4,906 invocations between 2 and 16 September — the log group dates from that redeploy, so a fortnight
+is all the history there is — against 400,000 free every month. Latency and cost per run are published
+in `docs/TECHNICAL_REPORT.md` §7, with the Logs Insights queries.
 
 Checked from another network (mobile data, not WiFi): the endpoint answers from outside.
 
