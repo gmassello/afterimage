@@ -10,7 +10,8 @@ server = MCPServer("afterimage")
 def _bbox(raw: list[float]) -> tuple[int, int, int, int]:
     if len(raw) != 4:
         raise ValueError(f"bbox must be [x, y, w, h], got {raw!r}")
-    return tuple(int(v) for v in raw)
+    x, y, width, height = (int(v) for v in raw)
+    return x, y, width, height
 
 
 def _diff_payload(result: diffing.DiffResult) -> dict:
@@ -47,7 +48,7 @@ def align_to_baseline(image_key: str, baseline_key: str, detector: str) -> dict:
         images.get_image(image_key), images.get_image(baseline_key), detector
     )
     aligned_key = valid_mask_key = None
-    if result.warped is not None:
+    if result.warped is not None and result.valid_mask is not None:
         asset_id, inspection_id = images.ids_from_key(image_key)
         aligned_key = images.put_image(asset_id, inspection_id, "aligned", result.warped)
         valid_mask_key = images.put_image(asset_id, inspection_id, "valid_mask", result.valid_mask)

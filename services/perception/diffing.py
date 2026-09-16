@@ -53,7 +53,7 @@ def _regions(
     delta: np.ndarray, delta_threshold: float, min_region_area_ratio: float
 ) -> DiffResult:
     _, binary = cv2.threshold(delta, delta_threshold, 255, cv2.THRESH_BINARY)
-    count, labels, stats, _ = cv2.connectedComponentsWithStats(binary, 8)
+    count, labels, stats, _ = cv2.connectedComponentsWithStats(binary, connectivity=8)
 
     frame_area = float(delta.shape[0] * delta.shape[1])
     minimum_area = min_region_area_ratio * frame_area

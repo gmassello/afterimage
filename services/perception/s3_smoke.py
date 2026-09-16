@@ -1,8 +1,8 @@
 from functools import lru_cache
 
+import boto3
 import cv2
 import numpy as np
-import boto3
 
 from services.perception.quality import laplacian_variance
 

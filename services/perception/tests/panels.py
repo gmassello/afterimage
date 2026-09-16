@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 
-
 ROWS, COLS, CELL, BORDER = 6, 10, 60, 20
 FAINT_SPOT_FRACTION = 0.35
 HOTSPOT_RADIUS_FRACTION = 1 / 3

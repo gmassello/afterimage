@@ -19,6 +19,7 @@ services:
       - ./README.md:/app/README.md:ro
       - ./NOTICE:/app/NOTICE:ro
       - ./video/script.tsv:/app/video/script.tsv:ro
+      - ./pyproject.toml:/app/pyproject.toml:ro
     command: uvicorn services.api.app:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"

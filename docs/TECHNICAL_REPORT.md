@@ -454,7 +454,10 @@ Written as they were measured, not assembled at the end.
 ```bash
 make weights   # the two ONNX files, 52 MB, sha1 verified
 make dev       # arm64 container + LocalStack (S3 + DynamoDB)
-make test      # the suite, inside the container
+make test      # the suite, inside the container, with a 90% coverage floor
+make verify-runtime  # OpenCV 5 on aarch64, with ALIKED and LightGlueMatcher in the binary
+make lint      # ruff
+make typecheck # mypy
 make demo      # drive all four action branches locally
 make eval      # regenerate every number in section 8
 ```

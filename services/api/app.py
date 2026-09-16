@@ -11,8 +11,14 @@ from services.agent import hitl, loop
 from services.memory import images, runs, store
 from services.observability.render import load_run
 from services.observability.trace import RUN_ID_PATTERN
-from services.ui.views import (THUMB_WIDTH, asset_page, index_page, queue_page, render_html,
-                               static_asset)
+from services.ui.views import (
+    THUMB_WIDTH,
+    asset_page,
+    index_page,
+    queue_page,
+    render_html,
+    static_asset,
+)
 
 ASSET_ID_PATTERN = re.compile(r"^[a-z0-9-]{1,64}$")
 # ponytail: the Function URL rejects bodies over 6 MB anyway; this guard is for local uvicorn

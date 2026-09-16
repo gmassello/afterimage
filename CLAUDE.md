@@ -23,7 +23,10 @@ Everything runs in the arm64 container — there is no local `cv2`, so plain `py
 ```bash
 make weights   # ALIKED + LightGlue ONNX weights into models/ (52 MB, sha1 verified); prerequisite of every other target
 make dev       # compose up: LocalStack (S3 + DynamoDB) + uvicorn on :8000
-make test      # full suite (services/ + eval/) in the container, then compose down
+make test      # full suite (services/ + eval/) in the container with a 90% coverage floor, then compose down
+make verify-runtime  # the container really is OpenCV 5 on aarch64, with the Features APIs present
+make lint      # ruff over services/ and eval/
+make typecheck # mypy over services/ (tests excluded)
 make demo      # scripted driver through the four action branches
 make eval      # score the 23 scenarios; writes eval/results/latest/  (ARGS=... is forwarded)
 make deploy    # ECR + buildx arm64 + CloudFormation; needs GOOGLE_API_KEY

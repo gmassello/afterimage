@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 from services.memory import images
 
@@ -22,7 +23,7 @@ def _key(run_dir: Path, name: str) -> str:
     return f"runs/{Path(run_dir).name}/{name}"
 
 
-def read(run_dir: Path, name: str) -> dict | list | None:
+def read(run_dir: Path, name: str) -> Any:
     if _on_s3():
         client = images._s3()
         try:

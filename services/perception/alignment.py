@@ -82,17 +82,17 @@ def align_to_baseline(
     image_keypoints, baseline_keypoints, matches = MATCHERS[detector](image, baseline)
     homography = mask = source = destination = None
     if len(matches) >= MIN_MATCHES:
-        source = cv2.KeyPoint.convert(
-            image_keypoints, [m.queryIdx for m in matches]
+        source = np.asarray(
+            cv2.KeyPoint.convert(image_keypoints, [m.queryIdx for m in matches])
         ).reshape(-1, 1, 2)
-        destination = cv2.KeyPoint.convert(
-            baseline_keypoints, [m.trainIdx for m in matches]
+        destination = np.asarray(
+            cv2.KeyPoint.convert(baseline_keypoints, [m.trainIdx for m in matches])
         ).reshape(-1, 1, 2)
         homography, mask = cv2.findHomography(
             source, destination, cv2.USAC_MAGSAC, RANSAC_REPROJECTION_THRESHOLD
         )
 
-    if homography is None:
+    if homography is None or mask is None or source is None or destination is None:
         return AlignmentResult(
             homography=None,
             warped=None,
@@ -113,8 +113,8 @@ def align_to_baseline(
 
     height, width = baseline.shape[:2]
     image_height, image_width = image.shape[:2]
-    corners = np.float32(
-        [[0, 0], [image_width, 0], [image_width, image_height], [0, image_height]]
+    corners = np.array(
+        [[0, 0], [image_width, 0], [image_width, image_height], [0, image_height]], np.float32
     ).reshape(-1, 1, 2)
     covered = np.zeros((height, width), np.uint8)
     cv2.fillConvexPoly(

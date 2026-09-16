@@ -96,7 +96,7 @@ def promote_baseline(
     }
     current = current_baseline(asset_id)
     promoted = current is None or current["sk"] <= item["sk"]
-    if not promoted:
+    if current is not None and not promoted:
         item["superseded_by"] = current["inspection_id"]
 
     _table().put_item(Item=_stored(item))

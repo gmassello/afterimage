@@ -191,7 +191,7 @@ def _decided_bar(verdict: dict, large: bool = False) -> dict:
     )
     bar = _bar(value, threshold, [{"text": "0"}, {"text": head, "lit": True}], large=large)
     bar["ends"].append({"text": _fmt(bar["scale"])})
-    bar["tone"] = _TONE.get(branch)
+    bar["tone"] = _TONE.get(branch) if branch else None
     bar["causal"] = causal_line(verdict) if threshold is not None and branch else None
     bar["causal_tip"] = f"{branch}: {_TIP[branch]}" if branch in _TIP else None
     return bar
@@ -477,7 +477,7 @@ def _card(event: dict) -> dict:
     bar = None
     if policy:
         word = "max" if policy["value"] < policy["threshold"] else "min"
-        ends = [
+        ends: list[dict] = [
             {"text": f"{policy['input_metric']} {_fmt(policy['value'])}", "lit": True},
             {"text": f"{word} {_fmt(policy['threshold'])}"},
         ]

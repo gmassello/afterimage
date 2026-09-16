@@ -214,7 +214,7 @@ async def run(
             began = time.perf_counter()
             result = await session.call_tool(name, args)
             duration_ms = round((time.perf_counter() - began) * 1000, 1)
-            text = result.content[0].text if result.content else ""
+            text = getattr(result.content[0], "text", "") if result.content else ""
             payload = {"error": text} if result.is_error else json.loads(text)
             span = {"tool": name, "args": args, "duration_ms": duration_ms}
             if "error" in payload:
