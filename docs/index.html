@@ -467,6 +467,17 @@
       those two frames is where every defect lives — and it is the one thing no inspection system
       keeps. This one does.
     </p>
+    <div class="callout col" style="margin-top:0">
+      <span class="label">Needs OpenCV 5</span>
+      <p style="margin:0">
+        Two of the APIs this runs on <strong>do not exist in OpenCV 4</strong>:
+        <code>cv2.ALIKED</code> finds the keypoints in every capture and its stored baseline, and
+        <code>cv2.LightGlueMatcher</code> matches them — both in the <code>Features</code> module
+        that replaced <code>Features2D</code> in 5.x. Version 4 ships no learned detector and no
+        learned matcher, only descriptor distance. Section 06 shows what the difference buys:
+        <strong>0.997</strong> agreement on a pair where classical ORB reaches <strong>0.409</strong>.
+      </p>
+    </div>
   </header>
 
   <section>
