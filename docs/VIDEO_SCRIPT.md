@@ -9,6 +9,10 @@ must be recorded **against the public endpoint** — not localhost.
 `docs/EVALUATION.md`, and the citations in `docs/TECHNICAL_REPORT.md` §2. Nothing is rounded up for
 the camera.
 
+> This is the script of the take that was recorded and published, against the 23-scenario dataset of
+> the time. The dataset has since grown to 29 scenarios, 18 of them photographic; `video/script.tsv`
+> carries the current figures for a re-record.
+
 ---
 
 ## How it is recorded

@@ -29,7 +29,7 @@ the visual evidence must change what the system does next."*
 |---|---|---|---|---|
 | OpenCV 5 + agent integration | 30% | Five perception tools exposed over MCP; every one returns the numeric metrics the agent branches on | `services/perception/`, `services/mcp_server/server.py` | done |
 | Orchestration and appropriate autonomy | 25% | Four branches that actually fire: recapture, retry with another detector, zoom on an uncertain region, ask a human — `make demo` drives all four; every decision recorded as `{input_metric, value, threshold, branch}` | `services/agent/loop.py`, `services/agent/policy.py`, `services/agent/tests/test_loop.py` | done |
-| Task effectiveness and evaluation | 20% | 23 scenarios, 12 of them on real photographs: branch accuracy 0.8696, defect macro F1 0.9513, mean IoU 0.8258, and three failure cases analysed to root cause | `docs/EVALUATION.md`, `eval/results/latest/` | done |
+| Task effectiveness and evaluation | 20% | 29 scenarios, **18 of them on real photographs**: branch accuracy 0.8621, defect macro F1 0.8753, mean IoU 0.7875, and five failure cases analysed to root cause | `docs/EVALUATION.md`, `eval/results/latest/` | done |
 | Failure handling, observability, security, human control | 15% | One span per tool call carrying args, metrics, duration and the verdict that the value triggered, persisted per run and served as JSON or a human-readable page | `services/observability/`, `services/ui/`, `services/api/app.py`, `GET /traces/{run_id}` | done |
 | UX and documentation | 10% | Agent loop diagram plus the trace viewer | [`docs/TECHNICAL_REPORT.md` §6](TECHNICAL_REPORT.md#6-the-agentic-loop) and the field manual §03, `GET /traces/{run_id}` with `Accept: text/html` | done |
 
@@ -89,8 +89,8 @@ each one is compared against, is the policy's business.
       | 3:35–4:25 | Evaluation, including a failure |
       | 4:25–4:54 | The close — the evaluation tables and the public URL |
 - [x] 7. Evaluation evidence in `eval/results/latest/` and `docs/EVALUATION.md`, **including failure cases** —
-      23 scenarios (11 synthetic, 12 on licensed real photographs), branch accuracy 0.8696, defect macro F1 0.9513.
-      Three failures analysed to root cause, and `eval/tests/test_published_numbers.py` fails CI if the page and
+      29 scenarios (11 synthetic, 18 on licensed real photographs), branch accuracy 0.8621, defect macro F1 0.8753.
+      Five failures analysed to root cause, and `eval/tests/test_published_numbers.py` fails CI if the page and
       the artefact disagree
 
 ## Final checklist
@@ -110,8 +110,10 @@ each one is compared against, is the policy's business.
 Written as we go, not the night before. Admitting a limit costs less than a judge finding it.
 
 - Defect classification is a threshold heuristic over OpenCV features, not a trained classifier.
-  Stage 7 measured it rather than assuming: macro F1 0.9513 with precision 1.0 on all four classes,
-  so no classifier is warranted. See `docs/EVALUATION.md`.
+  Measured rather than assumed: macro F1 0.8753, precision 1.0 on `crack` and `delamination` and at
+  least 0.75 on all four classes. The soiling rule recognises dirt by the area it covers, and that
+  threshold does not transfer from the generated panel to a photograph — a stated rule to fix, not a
+  boundary a model has to learn, so no classifier is warranted. See `docs/EVALUATION.md`.
 - `severity.score` is `mean_delta / 64.0` and ignores the label the classifier just produced, so a
   defect covering a small area can score under the approval threshold and be written automatically —
   measured once, at 0.3412 vs 0.40, on a real photograph.

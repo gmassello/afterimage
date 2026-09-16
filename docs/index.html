@@ -1133,10 +1133,10 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
       <ul class="plain">
         <li>
           Defect classification is a threshold heuristic over OpenCV features, not a trained
-          classifier. Week 7 measured it on 23 scenarios, twelve of them real photographs of solar
-          modules: macro F1 0.9513, with precision 1.0 on all four defect classes. The heuristic
-          holds, so no classifier was built — but every lesion in that set was injected by us, so
-          this measures robustness on real texture, not field detection rates.
+          classifier. It is measured on 29 scenarios, eighteen of them real photographs of solar
+          modules: macro F1 0.8753, with precision at least 0.75 on all four defect classes. Most of the suite
+          is photographic — but every lesion in that set was injected by us, so this measures
+          robustness on real texture, not field detection rates.
         </li>
         <li>
           <code>inlier_ratio</code> is not comparable across detectors, so the policy holds one
@@ -1150,12 +1150,15 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
           per-site setting rather than a promise.
         </li>
         <li>
-          The agent scores 0.8696 on picking the right branch, and it never once asked a human to
-          look at something that did not warrant it. It fails in three ways worth knowing: a
-          half-framed photo gets rejected for the wrong reason, a very bright defect can trip the
-          exposure check before anyone looks at the defect itself, and a small but serious defect can
-          be filed automatically instead of escalated, because severity scores how much changed and
-          ignores what its own classifier just called it.
+          The agent scores 0.8621 on picking the right branch, and it never once asked a human to
+          look at something that did not warrant it. It fails in four ways worth knowing: a
+          half-framed photo gets rejected for the wrong reason — on a generated panel and on a
+          photograph alike — a very bright defect can trip the exposure check before anyone looks at
+          the defect itself, a small but serious defect can be filed automatically instead of
+          escalated, because severity scores how much changed and ignores what its own classifier
+          just called it, and soiling on a photograph is labelled a hot spot, because the rule that
+          recognises dirt asks whether the change covers a quarter of the frame and real dust breaks
+          into fragments that never do.
         </li>
         <li>
           <code>crop_and_rescan</code> buys measurement precision on a marginal region. It cannot

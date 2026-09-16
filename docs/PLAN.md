@@ -351,6 +351,11 @@ measures whether the thresholds survive real photographic texture, not field det
 | Mean IoU of the located region | 0.8258 (9 of 10 at ≥ 0.5) |
 | `human_approval` precision | 1.0 — it never escalated something that did not warrant it |
 
+> These are the figures as measured when stage 7 closed, on the 23 scenarios that existed then. The
+> dataset later grew to 29 scenarios with 18 real photographs; the current numbers live in
+> `eval/results/latest/results.json` and in [`docs/EVALUATION.md`](EVALUATION.md). This log is kept
+> as it was written.
+
 **The two verdicts the stage owed, both now answered with a number:**
 
 - **`severity.py` holds.** The `# ponytail:` note said to replace the heuristic with a trained

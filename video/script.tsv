@@ -43,11 +43,11 @@ beat	en	es
 3:15	Submit the wrong branch and the loop rejects it	Si propone algo distinto de lo que dicen los números, se lo rechaza.
 3:15	It cannot move a threshold	Y no puede mover un umbral.
 3:15	A number, in a field, next to the action it caused	Un número guardado, justo al lado de la acción que provocó.
-4:00	23 scenarios, 12 on real licensed photographs	Lo probé con veintitrés casos. Doce son fotografías reales de paneles, con licencia.
-4:00	Branch accuracy 0.8696 · defect macro F1 0.9513	Acierta qué hacer en el ochenta y siete por ciento de los casos.
-4:00	Mean IoU 0.8258 locating the region · precision 1.0 on calling a human	Clasifica bien el tipo de defecto, y ubica dónde está dentro de la imagen.
+4:00	29 scenarios, 18 on real licensed photographs	Lo probé con veintinueve casos. Dieciocho son fotografías reales de paneles, con licencia.
+4:00	Branch accuracy 0.8621 · defect macro F1 0.8753	Acierta qué hacer en el ochenta y seis por ciento de los casos.
+4:00	Mean IoU 0.7875 locating the region · precision 1.0 on calling a human	Clasifica bien el tipo de defecto, y ubica dónde está dentro de la imagen.
 4:00	It never interrupted someone for nothing	Y cada vez que llamó a una persona, hacía falta. Ni una interrupción de más.
-4:00	Three of the 23 fail, and they're in the report	Tres de los veintitrés fallan, y están en el reporte.
+4:00	Five of the 29 fail, and they're in the report	Cinco de los veintinueve fallan, y están en el reporte.
 4:00	A delamination scored 0.3412 against a 0.4 threshold — auto-filed instead of escalated	Una delaminación —el vidrio despegándose— en un área chica sacó cero coma treinta y cuatro, contra un umbral de cero coma cuarenta. Lo archivó solo, en vez de avisar a una persona.
 4:00	The score ignores the label its own classifier produced	El score solo mira cuánto cambió. No mira qué tipo de defecto encontró él mismo.
 4:00	I know how to fix it. I didn't fix it here	Sé cómo arreglarlo. No lo arreglé acá.

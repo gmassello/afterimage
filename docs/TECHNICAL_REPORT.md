@@ -387,18 +387,20 @@ shown in the video, where an OpenCV number stopped the loop and a person restart
 Full method, dataset, failure analysis and limits: **[`docs/EVALUATION.md`](EVALUATION.md)**.
 Regenerate everything with `make eval`.
 
-**23 scenarios** — 11 synthetic and 12 built on licensed Wikimedia Commons photographs of real
-photovoltaic modules, committed to the repository with per-file attribution. **20 passed** every
-assertion. The harness runs the real loop, the real MCP tools and the real thresholds, substituting
+**29 scenarios** — 11 synthetic and 18 built on licensed Wikimedia Commons photographs of real
+photovoltaic modules, committed to the repository with per-file attribution. **24 passed** every
+assertion. **Most of the suite is photographic: 18 of 29**, across close-range modules, ground-mounted
+rows, rooftop and warehouse arrays, a marine installation and panels under forest canopy. The harness runs the real loop, the real MCP tools and the real thresholds, substituting
 only the language model for a scripted driver, so the table is identical on every run with no
 network and no tokens.
 
 | Metric | Value |
 |---|---|
-| Branch accuracy | **0.8696** · macro F1 **0.8815** |
-| Defect classification accuracy | **0.9524** · macro F1 **0.9513** |
-| Mean IoU of the located region | **0.8258**, 9 of 10 at IoU ≥ 0.5 |
-| `human_approval` precision | **1.0** — a human was never called for nothing |
+| Scenarios on real photographs | **18 of 29** |
+| Branch accuracy | **0.8621** · macro F1 **0.8624** |
+| Defect classification accuracy | **0.9231** · macro F1 **0.8753** |
+| Mean IoU of the located region | **0.7875**, 12 of 14 at IoU ≥ 0.5 |
+| `human_approval` precision | **1.0** over 14 scenarios — a human was never called for nothing |
 
 `eval/tests/test_published_numbers.py` parses this page and `docs/EVALUATION.md` and fails the suite
 if either disagrees with `eval/results/latest/results.json`. A number here cannot go stale silently.
@@ -409,9 +411,11 @@ Both were annotated in the code, waiting for measurement rather than opinion.
 
 **The severity heuristic holds.** `services/perception/severity.py` classifies defects with
 thresholds over OpenCV features and carried a note to replace it with a trained classifier if the
-classes failed to separate. They separate: macro F1 0.9513 with **precision 1.0 on all four defect
-classes**, and the single recall miss is an exposure gate firing first, not a confusion between
-classes. No classifier is warranted, and that is now a measured conclusion.
+classes failed to separate. They mostly separate: macro F1 0.8753, **precision 1.0 on `crack` and
+`delamination`** and at least 0.75 on all four. Neither miss is a confusion between neighbouring
+classes: one is an exposure gate firing first, and one is the soiling rule's area threshold, measured
+on the generated panel, failing to transfer to a photograph. No classifier is warranted — both are
+rules that can be stated and fixed — and that is now a measured conclusion rather than an opinion.
 
 **Frame-coverage checking cannot be enabled with a global default.** Real photographs gave the first
 honest reading of `coverage_ratio`, and the result was worse than "synthetic images are
@@ -423,15 +427,25 @@ measured floor.
 
 ### Where it fails
 
-Three scenarios, kept and analysed rather than tuned away.
+Five scenarios, kept and analysed rather than tuned away.
 
 | Scenario | Expected | Got | The number that decided it |
 |---|---|---|---|
-| Partially framed panel | recapture | unrecognized_asset | `inlier_ratio` 0.0602 vs 0.30 |
+| Partially framed panel, generated | recapture | unrecognized_asset | `inlier_ratio` 0.0602 vs 0.30 |
+| Partially framed panel, photograph | recapture | unrecognized_asset | `inlier_ratio` 0.1232 vs 0.30 |
 | Hot spot on a bright photograph | human_approval | recapture | `clipped_bright_ratio` 0.3086 vs 0.30 |
 | Delamination over a small area | human_approval | auto_write | `score` 0.3412 vs 0.40 |
+| Soiling on a photograph | soiling | hotspot | `area_ratio` 0.0759 vs 0.25 |
 
-The third is the one that matters, because it is structural rather than a mis-set threshold:
+The first two are the same root cause seen twice, once generated and once photographed, which is
+what makes the diagnosis trustworthy rather than an artefact of the synthetic panel. The last one is
+what the six new photographs bought: the soiling rule fires on the largest changed region covering a
+quarter of the frame, a threshold measured on the synthetic panel, and on a photograph the blurred
+dust breaks into fragments that never reach it — none of the six got past 0.25. The branch stays
+correct and nothing is written without a person; only the label is wrong.
+
+The delamination one is the one that matters most, because it is structural rather than a mis-set
+threshold:
 `score` is `mean_delta / 64.0` and **ignores the label the classifier just produced**. The classifier
 is confident enough to say "delamination" and the score does not consult that at all. Raising the
 threshold would not fix it; making the score class-aware would. That change is deliberately not made
@@ -443,7 +457,7 @@ the overfitting this dataset exists to prevent.
 Written as they were measured, not assembled at the end.
 
 - Defect classification is a threshold heuristic over OpenCV features, not a trained classifier —
-  measured, not assumed, at macro F1 0.9513.
+  measured, not assumed, at macro F1 0.8753.
 - `severity.score` ignores the classifier's label, so a defect over a small area can be written
   automatically. Observed once, at 0.3412 against a 0.40 threshold.
 - `crop_and_rescan` re-measures the same capture at higher resolution. It buys measurement precision
@@ -459,7 +473,7 @@ Written as they were measured, not assembled at the end.
 - The evaluation injects its defects. That is what makes ground truth exact, and it means the numbers
   describe threshold robustness on real photographic texture, not field detection rates. No public
   dataset offers what the longitudinal claim needs: the same physical panel photographed twice.
-- 23 scenarios is a small sample — one scenario moves accuracy by 4.3 points.
+- 29 scenarios is a small sample — one scenario moves accuracy by 3.4 points.
 - Tests and the default demo drive the loop with a scripted policy-following model; `--live` runs the
   same loop against Gemini. Branch verdicts are computed in code either way.
 

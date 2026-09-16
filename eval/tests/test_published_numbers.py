@@ -12,7 +12,10 @@ RESULTS = Path("eval/results/latest/results.json")
 SCRIPT = Path("video/script.tsv")
 
 DELIVERABLES = (PAGE, REPORT, README, SITE)
-SPELLED = "zero one two three four five six seven eight nine ten eleven twelve".split()
+SPELLED = (
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen "
+    "fifteen sixteen seventeen eighteen nineteen twenty"
+).split()
 NO_DEFECT = "NONE"  # the class for a capture with nothing wrong, not one of the defect classes
 
 # Read off the screen during the 5 September browser rehearsal — see video/PRODUCTION.md.
@@ -95,7 +98,7 @@ def test_the_public_page_restates_the_same_figures(measured):
         if label != NO_DEFECT
     }
     assert len(defects) == 4, "the page says four defect classes"
-    assert _claim(site, r"precision ([\d.]+) on all four defect classes") == str(
+    assert _claim(site, r"precision (?:at least )?([\d.]+) on all four defect classes") == str(
         min(row["precision"] for row in defects.values())
     )
 
