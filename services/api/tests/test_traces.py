@@ -6,6 +6,8 @@ from fastapi.testclient import TestClient
 from services.api.app import app
 from services.observability.tests.sample_run import EVENTS, RUN_ID, STATE
 
+INTACT = {"algorithm": "sha256", "verified": True, "broken_at": None}
+
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
@@ -21,7 +23,7 @@ def test_json_trace_is_idempotent(client):
     first = client.get(f"/traces/{RUN_ID}")
     second = client.get(f"/traces/{RUN_ID}")
     assert first.status_code == 200
-    assert first.json() == second.json() == {"state": STATE, "events": EVENTS}
+    assert first.json() == second.json() == {"state": STATE, "events": EVENTS, "chain": INTACT}
 
 
 def test_html_when_the_browser_asks_for_it(client):
@@ -34,7 +36,7 @@ def test_html_when_the_browser_asks_for_it(client):
 
 def test_format_json_overrides_the_html_accept_header(client):
     response = client.get(f"/traces/{RUN_ID}?format=json", headers={"accept": "text/html"})
-    assert response.json() == {"state": STATE, "events": EVENTS}
+    assert response.json() == {"state": STATE, "events": EVENTS, "chain": INTACT}
 
 
 def test_unknown_run_is_404(client):
@@ -45,3 +47,12 @@ def test_malformed_run_id_is_404(client):
     assert client.get("/traces/not-a-run-id").status_code == 404
     assert client.get("/traces/..%2F..%2Fetc").status_code == 404
     assert client.get(f"/traces/{RUN_ID.upper()}").status_code == 404
+
+
+def test_an_edited_event_is_reported_as_a_broken_chain(client, tmp_path):
+    tampered = [dict(event) for event in EVENTS]
+    tampered[1]["policy"] = {**tampered[1]["policy"], "value": 0.999}
+    (tmp_path / RUN_ID / "events.json").write_text(json.dumps(tampered))
+
+    chain = client.get(f"/traces/{RUN_ID}?format=json").json()["chain"]
+    assert chain == {"algorithm": "sha256", "verified": False, "broken_at": 1}

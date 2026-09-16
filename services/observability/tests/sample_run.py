@@ -1,3 +1,5 @@
+from services.observability import trace
+
 RUN_ID = "abcdef123456"
 
 STATE = {
@@ -7,7 +9,7 @@ STATE = {
     "branch": "unrecognized_asset",
 }
 
-EVENTS = [
+EVENTS = trace.chain([
     {
         "type": "run_started",
         "ts": "2026-08-26T12:00:00.000+00:00",
@@ -36,4 +38,4 @@ EVENTS = [
         "branch": "unrecognized_asset",
         "message": "panel not recognized",
     },
-]
+])

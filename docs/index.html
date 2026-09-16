@@ -986,6 +986,17 @@
         prints the text rendering above; the runs root is configurable with
         <code>AFTERIMAGE_RUNS_DIR</code>.
       </p>
+      <div class="callout">
+        <span class="label">The trace is hash-chained</span>
+        <p style="margin:0">
+          Each event carries the sha256 of the event before it, and its own hash over the canonical
+          form of its fields. <code>GET /traces/&lt;run_id&gt;</code> reports whether the chain
+          closes, and the page prints it in the footer: edit a metric, a threshold or a branch after
+          the run, and the verdict names the event it happened in. It is a chain, not a signature —
+          it catches an edit, a removal or a reordering; it does not catch a trace truncated at the
+          end, nor anyone who rewrites every hash from the first link.
+        </p>
+      </div>
     </div>
   </section>
 

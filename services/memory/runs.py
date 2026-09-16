@@ -53,6 +53,13 @@ def append(run_dir: Path, name: str, item) -> None:
     write(run_dir, name, items)
 
 
+def last(run_dir: Path, name: str) -> Any:
+    items = _append_cache.get((str(run_dir), name))
+    if items is None:
+        items = read(run_dir, name) or []
+    return items[-1] if items else None
+
+
 def delete(run_dir: Path, name: str) -> None:
     if _on_s3():
         images._s3().delete_object(Bucket=images.BUCKET, Key=_key(run_dir, name))

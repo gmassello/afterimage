@@ -329,6 +329,20 @@ Every tool call emits one span into `runs/{run_id}/events.json` carrying its arg
 it returned, its duration and the policy verdict the value triggered. `GET /traces/{run_id}` serves
 it as JSON or as a readable page. Traces persist in S3, so they survive redeploys and cold sandboxes.
 
+**The trace is hash-chained.** Each event carries `prev`, the sha256 of the event before it, and its
+own `hash` over the canonical JSON of its fields — `trace.emit` links the event before appending, and
+`trace.broken_at` walks the chain and returns the index of the first link that does not close.
+`GET /traces/{run_id}` reports the verdict beside the events, and the page prints it in the footer
+next to the run id, so editing a metric, a threshold or a branch after the fact does not merely look
+wrong to a careful reader — it names the event it happened in. Three tests in
+`services/observability/tests/test_trace.py` and one in `services/api/tests/test_traces.py` alter a
+written trace and assert the detection.
+
+The limit, stated rather than hidden: this is a chain, not a signature. It catches an edit, a removal
+and a reordering; it does not catch a trace truncated at the end, and it does not stop anyone who
+rewrites every hash from the genesis link. Anchoring the head outside the run is the upgrade path,
+and the shortcut is marked in the code.
+
 Two live traces, both on the deployed endpoint. The first is the zoom branch; the second is the run
 shown in the video, where an OpenCV number stopped the loop and a person restarted it:
 

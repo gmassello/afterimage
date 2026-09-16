@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from services.agent import hitl, loop
 from services.memory import images, runs, store
 from services.observability.render import load_run
-from services.observability.trace import RUN_ID_PATTERN
+from services.observability.trace import RUN_ID_PATTERN, broken_at
 from services.ui.views import (
     THUMB_WIDTH,
     asset_page,
@@ -156,6 +156,11 @@ def image(key: str, w: int | None = None):
     return Response(body, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 
+def chain_verdict(events: list[dict]) -> dict:
+    broken = broken_at(events)
+    return {"algorithm": "sha256", "verified": broken is None, "broken_at": broken}
+
+
 @app.get("/traces/{run_id}")
 def get_trace(run_id: str, request: Request):
     if not RUN_ID_PATTERN.fullmatch(run_id):
@@ -166,4 +171,4 @@ def get_trace(run_id: str, request: Request):
         raise HTTPException(status_code=404, detail="trace not found")
     if wants_html(request) and request.query_params.get("format") != "json":
         return HTMLResponse(render_html(state, events))
-    return {"state": state, "events": events}
+    return {"state": state, "events": events, "chain": chain_verdict(events)}

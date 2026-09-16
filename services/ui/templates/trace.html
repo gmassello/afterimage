@@ -36,5 +36,5 @@
 <footer class='bot'><span>GET /traces/{{ footer.run_id }}</span>
 {%- if footer.run_id %}<a href='/traces/{{ footer.run_id }}?format=json'>raw json</a>{% endif -%}
 {%- if footer.asset_id %}<a href='/assets/{{ footer.asset_id }}'>asset history</a>{% endif -%}
-<span>thresholds from services/agent/policy.py</span></footer>
+<span>{{ footer.chain }}</span><span>thresholds from services/agent/policy.py</span></footer>
 {% endblock %}

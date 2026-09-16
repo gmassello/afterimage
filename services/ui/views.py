@@ -540,6 +540,13 @@ def _cta(summary: dict) -> dict | None:
     }
 
 
+def _chain_line(events: list[dict]) -> str:
+    broken = trace.broken_at(events)
+    if broken is None:
+        return f"sha256 chain intact over {len(events)} events"
+    return f"sha256 chain broken at event {broken + 1} of {len(events)}"
+
+
 def render_html(state: dict, events: list[dict]) -> str:
     summary = _summary(state, events)
     run_state = trace.run_state(events)
@@ -557,5 +564,9 @@ def render_html(state: dict, events: list[dict]) -> str:
         cards=[_card(e) for e in events if e["type"] == "tool_call"],
         comparison=_figures(baseline, capture, bbox, tag, aligned=aligned),
         cta=_cta(summary),
-        footer={"run_id": run_id, "asset_id": str(summary.get("asset_id") or "")},
+        footer={
+            "run_id": run_id,
+            "asset_id": str(summary.get("asset_id") or ""),
+            "chain": _chain_line(events),
+        },
     )
