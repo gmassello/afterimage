@@ -31,6 +31,15 @@
 
 Built for the [OpenCV AI Competition 2026](https://opencv26.devpost.com/) — Agentic Vision path ([the submission](https://devpost.com/software/afterimage-ibp376)). Every branch below is decided in code by `services/agent/policy.py` and recorded with the numeric value that triggered it, so any run can be replayed from its trace.
 
+**Two of the APIs this project runs on do not exist in OpenCV 4** — it cannot be ported back to 4.x by changing an import.
+
+| OpenCV 5 API | What it does here | In OpenCV 4 |
+|---|---|---|
+| `cv2.ALIKED.create` | learned keypoints on every capture and on the stored baseline of the same asset | no equivalent — `Features2D` ships no learned detector |
+| `cv2.LightGlueMatcher.create` + `setPairInfo` | matches those keypoints with geometry-aware attention over the image pair | no equivalent — only `BFMatcher` / `FLANN` descriptor distance |
+
+Both live in [`services/perception/alignment.py`](services/perception/alignment.py), inside the `Features` module that replaced `Features2D` in 5.x. They are load-bearing, not decorative: on the same pair of panel images — same panel, rotated and scaled — ALIKED + LightGlue scores `inlier_ratio` **0.997** where ORB scores **0.409**, which is why the policy carries one alignment threshold per detector instead of a shared one.
+
 [What it does](#what-it-does) · [Results](#results) · [How the loop works](#how-the-loop-works) · [Quickstart](#quickstart) · [The dataset](#the-dataset) · [Deploy](#deploy)
 
 ## What it does

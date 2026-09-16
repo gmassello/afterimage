@@ -11,6 +11,20 @@ agentic loop, the AWS deployment, what was measured and where it fails. Every nu
 produced by `make eval` and stored in `eval/results/latest/results.json`, read from a file in this
 repository and cited with its path, or taken from a public source listed with its URL.
 
+**Two of the APIs this project runs on do not exist in OpenCV 4** — it cannot be ported back to 4.x
+by changing an import.
+
+| OpenCV 5 API | What it does here | In OpenCV 4 |
+|---|---|---|
+| `cv2.ALIKED.create` | learned keypoints on every capture and on the stored baseline of the same asset | no equivalent — `Features2D` ships no learned detector |
+| `cv2.LightGlueMatcher.create` + `setPairInfo` | matches those keypoints with geometry-aware attention over the image pair | no equivalent — only `BFMatcher` / `FLANN` descriptor distance |
+
+Both live in `services/perception/alignment.py`, inside the `Features` module that replaced
+`Features2D` in 5.x. They are load-bearing, not decorative: on the same pair of panel images ALIKED +
+LightGlue scores `inlier_ratio` **0.997** where ORB scores **0.409**, which is why the policy carries
+one alignment threshold per detector. [Section 5](#5-the-opencv-5-implementation) has the rest of
+the OpenCV 5 surface and the three behaviours measured against the running binary.
+
 ---
 
 ## 1. The problem, and who has it
