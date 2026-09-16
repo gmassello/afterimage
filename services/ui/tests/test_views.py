@@ -228,7 +228,7 @@ def test_both_upload_fields_carry_a_label():
     for field, label in (("asset-id", "asset id"), ("capture", "capture")):
         assert f"<label for='{field}'>{label}</label>" in page
         assert f"id='{field}'" in page
-    assert "placeholder='panel-a7-north'" in page
+    assert "placeholder='e.g. panel-a7-north'" in page
 
 
 def test_a_rejected_upload_keeps_the_asset_id_already_typed():
