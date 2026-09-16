@@ -2,6 +2,21 @@
 
 Track: **Agentic Vision path**. Deadline 26 Oct 23:59 PT (27 Oct 03:59 ART); submit 24–25 Oct.
 
+## Try it first
+
+**<https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/>** — live, no login,
+**`200` in 0.58 s** (median of seven warm requests, 15 September 2026, range 0.57–0.67 s).
+
+Upload a photograph of a solar panel and the agent runs in front of you: it gates the capture, aligns
+it to the baseline it holds for that asset, diffs against memory, and either files the inspection or
+stops and asks you to approve it. `/queue` is the approval queue, `/assets/{id}` the history of one
+asset, and `/traces/{run_id}` the full record of any run — as a page, or as JSON with `?format=json`,
+with the hash chain verified.
+
+Everything below is the evidence behind that.
+
+---
+
 This file is a build checklist first and a deliverable second. Every row names where a judge
 sees the evidence — a file and line, a URL, or a timestamp in the video. A row without evidence
 is unfinished work, not a formatting gap.
@@ -17,7 +32,7 @@ Status: `done` · `wip` · `todo`
 | Real-world impact | 20% | Preventive maintenance of solar plants, argued from cited primary sources: ~2,900 modules per MW, PID degrading ~15%/year in affected modules and partially reversible if caught before saturation, soiling at 5–20% annual loss — every figure with organism, year and URL, and the absence of a published early-detection ROI stated rather than invented | [`docs/TECHNICAL_REPORT.md` §2](TECHNICAL_REPORT.md#2-why-change-over-time-is-the-right-thing-to-measure) | done |
 | User experience | 10% | Approval queue and asset history legible without explanation | public endpoint (`/`, `/queue`, `/assets/{id}`), video 1:22–2:44 — three uploads, a live approval and the baseline chain, no narration of the UI needed | done |
 | Documentation and presentation | 10% | A judge-first README — the loop in a GIF captured from the live endpoint, measured results and failure cases above the fold, the weekly log folded away — plus a self-contained technical report and both diagrams, the infrastructure one also published on GitHub Pages | `README.md`, [`docs/TECHNICAL_REPORT.md`](TECHNICAL_REPORT.md), <https://gmassello.github.io/afterimage/> | done |
-| Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, per-run event traces | `infra/template.yaml`, `infra/github-oidc.yaml`, `deploy.sh`, `requirements.txt`, video 0:55–1:29 (the infrastructure diagram) and 3:00–3:35 (a run trace) | done |
+| Cloud, reproducibility, responsible operation | 10% | IaC, exact pins, OIDC with a permissions boundary, image retention policy, per-run event traces — plus three dedicated documents: responsible use and limits, the security model, and the use of AI | `infra/template.yaml`, `infra/github-oidc.yaml`, `deploy.sh`, `requirements.txt`, [`docs/SECURITY.md`](SECURITY.md), [`docs/RESPONSIBLE_USE.md`](RESPONSIBLE_USE.md), [`docs/AI_DISCLOSURE.md`](AI_DISCLOSURE.md), video 0:55–1:29 (the infrastructure diagram) and 3:00–3:35 (a run trace) | done |
 
 ## Agentic Vision Award
 
@@ -131,7 +146,7 @@ Written as we go, not the night before. Admitting a limit costs less than a judg
   single global default works. It is a per-deployment setting, calibrated from a sample of that
   site's own captures.
 - Policy thresholds (`blur_variance_min=100`, `mean_delta_confirm=35`, `severity_score_approve=0.4`)
-  were calibrated on synthetic fixtures and then checked against 12 real photographs in stage 7.
+  were calibrated on synthetic fixtures and then checked against 18 real photographs.
   `mean_delta_confirm` leaves the zoom branch a two-point-wide window (33.34 and 34.37 enter it,
   35.54 does not), which is narrow but reproducible on demand.
 - Tests and the default demo drive the loop with a scripted policy-following LLM; `--live` runs the

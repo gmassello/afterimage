@@ -468,6 +468,16 @@
       keeps. This one does.
     </p>
     <div class="callout col" style="margin-top:0">
+      <span class="label">Try it — live, no login</span>
+      <p style="margin:0">
+        <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/"><strong>jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws</strong></a>
+        — the agent described here, running. Upload a photograph of a panel and watch it decide:
+        <code>200</code> in <strong>0.58&nbsp;s</strong>, the median of seven warm requests measured
+        on 15 September 2026. <code>/queue</code> is the approval queue, <code>/assets/{id}</code>
+        one asset's history, and <code>/traces/{run_id}</code> the full record of any run.
+      </p>
+    </div>
+    <div class="callout col">
       <span class="label">Needs OpenCV 5</span>
       <p style="margin:0">
         Two of the APIs this runs on <strong>do not exist in OpenCV 4</strong>:
@@ -1105,6 +1115,17 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
         <a href="https://github.com/gmassello/afterimage/blob/main/docs/TECHNICAL_REPORT.md">technical report</a>,
         which is where this manual sends you when you want the numbers rather than the plain-language
         version. What remains is the video.
+      </p>
+      <p>
+        Three shorter documents answer the questions this manual deliberately does not:
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/RESPONSIBLE_USE.md">responsible use and limits</a>
+        — what the agent is for, what it is not, and what its numbers do and do not let anyone claim;
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/SECURITY.md">the security model</a>
+        — a public endpoint by design, what is checked before anything is stored, and what the deploy
+        role can reach; and
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/AI_DISCLOSURE.md">the use of AI</a>
+        — what the model decides inside the product, what it cannot decide, and what was verified by
+        hand while building it.
       </p>
     </div>
 

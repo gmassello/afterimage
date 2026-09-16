@@ -10,15 +10,22 @@
   <img src="https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white&style=flat" alt="python: 3.12">
   <img src="https://img.shields.io/badge/AWS_Lambda-arm64-FF9900?logo=awslambda&logoColor=white&style=flat" alt="AWS Lambda: arm64">
   <img src="https://img.shields.io/badge/license-MIT-black?style=flat" alt="license: MIT">
-  <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/"><img src="https://img.shields.io/badge/demo-live-success?style=flat" alt="demo: live"></a>
+  <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/"><img src="https://img.shields.io/badge/demo-live%20%C2%B7%20200%20in%200.58s-success?style=flat" alt="demo: live, 200 in 0.58 s"></a>
 </p>
 
 <p align="center">
-  <b><a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/">Try the live agent</a></b> ·
+  <b><a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/">Try the live agent</a></b> — no login, <b>200 in 0.58 s</b> ·<br>
   <b><a href="https://youtu.be/zUFR96a33IM">Watch the demo (4:54)</a></b> ·
   <b><a href="https://gmassello.github.io/afterimage/">Field manual</a></b> ·
   <b><a href="docs/TECHNICAL_REPORT.md">Technical report</a></b> ·
-  <b><a href="docs/EVALUATION.md">Evaluation</a></b>
+  <b><a href="docs/EVALUATION.md">Evaluation</a></b> ·
+  <b><a href="docs/RESPONSIBLE_USE.md">Responsible use</a></b> ·
+  <b><a href="docs/SECURITY.md">Security</a></b> ·
+  <b><a href="docs/AI_DISCLOSURE.md">AI use</a></b>
+</p>
+
+<p align="center">
+  <sub>Response time is the median of seven warm requests to the Function URL, measured with <code>curl -o /dev/null -w '%{http_code} %{time_total}'</code> on 15 September 2026 (range 0.57–0.67 s). It is a warm figure: an EventBridge rule replays a synthetic <code>/health</code> every five minutes.</sub>
 </p>
 
 <p align="center">

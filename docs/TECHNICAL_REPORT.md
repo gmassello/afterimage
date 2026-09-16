@@ -6,8 +6,9 @@ A visual inspection agent with longitudinal memory, built for the
 **Live agent:** <https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/> — no login.
 **Field manual:** <https://gmassello.github.io/afterimage/> · **Source:** <https://github.com/gmassello/afterimage>
 
-This report is self-contained: problem, users, architecture, the OpenCV 5 implementation, the
-agentic loop, the AWS deployment, what was measured and where it fails. Every number in it is either
+This report is self-contained on the system itself: problem, users, architecture, the OpenCV 5
+implementation, the agentic loop, the AWS deployment, what was measured and where it fails.
+Responsible use, security and the use of AI have their own documents, linked from §7. Every number in it is either
 produced by `make eval` and stored in `eval/results/latest/results.json`, read from a file in this
 repository and cited with its path, or taken from a public source listed with its URL.
 
@@ -363,24 +364,23 @@ shown in the video, where an OpenCV number stopped the loop and a person restart
 | Data retention | S3 objects expire at 180 days; incomplete multipart uploads at 7; CloudWatch Logs at 30 days |
 | Cost | The account billed $0.0138 in August; this stack adds roughly $1/month, nearly all ECR storage. The 5-minute warmer burns ~1,700 GB-s against 400,000 free, so Lambda itself stays inside the perpetual free tier |
 
-### Responsible use
+### Responsible use, security, and the use of AI
 
-- **The endpoint is public and unauthenticated by design** — the competition requires a judge to use
-  it without an account. Uploads are capped at 6 MB, `asset_id` and `run_id` are pattern-validated
-  before touching storage, and everything uploaded expires at 180 days. It should be treated as a
-  demonstrator: anything uploaded is visible to anyone with the URL.
-- **The human gate is real, not decorative — but it gates policy, not identity.** On
-  `HUMAN_APPROVAL` the run stops at `awaiting_approval` and **nothing is committed to memory** until
-  someone resolves it. Since the endpoint is open, that someone is any visitor holding the URL: the
-  gate stops the machine from writing on its own, it does not authenticate an operator. Approval and
-  rejection are both recorded, each with an anonymous fingerprint of the caller — enough to tell two
-  actors apart in the trace, not enough to identify anyone.
-- **The agent assists an inspection; it does not sign one off.** It reports what changed, how much,
-  and the number that made it say so. Every decision is reconstructible from its trace. A defect
-  classification here is a prioritisation signal for a technician, not a certification of a module's
-  condition.
-- **Model behaviour is bounded by construction.** Branch verdicts are computed in code, so the
-  system's decisions do not depend on the model provider, its version, or prompt phrasing.
+Each of these has its own document, so that a reader looking for one does not have to read this
+report to find it. In one line each:
+
+- **[`docs/RESPONSIBLE_USE.md`](RESPONSIBLE_USE.md)** — the agent assists an inspection and does not
+  sign one off; the human gate stops the machine from writing on its own but does not authenticate an
+  operator; and what the published numbers do and do not authorise anyone to claim.
+- **[`SECURITY.md`](SECURITY.md)** — the endpoint is public and unauthenticated by design, what is
+  validated before anything is stored, what the deploy role can reach, how long data is kept, and
+  what is deliberately absent.
+- **[`docs/AI_DISCLOSURE.md`](AI_DISCLOSURE.md)** — what the model does inside the product and what
+  it cannot do, and what assistance was used to build the project and what was verified by hand.
+
+The one claim that belongs here, because it is a property of the architecture rather than a policy:
+**model behaviour is bounded by construction.** Branch verdicts are computed in code, so the system's
+decisions do not depend on the model provider, its version, or prompt phrasing.
 
 ## 8. Evaluation
 
