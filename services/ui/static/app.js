@@ -49,12 +49,11 @@ const zone = document.querySelector('.dropzone');
 if (zone) {
   const input = zone.querySelector('input[type=file]');
   const preview = zone.querySelector('.drop-preview');
-  const accepted = input.accept.split(',');
   const review = () => {
     const file = input.files[0];
     let problem = '';
     if (file && file.size > MAX_UPLOAD_BYTES) problem = 'image larger than 6 MB';
-    else if (file && !accepted.includes(file.type)) problem = 'not a decodable image';
+    else if (file && file.type && !file.type.startsWith('image/')) problem = 'not a decodable image';
     input.setCustomValidity(problem);
     if (preview.src) URL.revokeObjectURL(preview.src);
     preview.hidden = !file || !!problem;
@@ -112,13 +111,11 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
     const shown = block();
     return shown.contains(document.activeElement) || !!shown.querySelector('details[open]');
   };
-  const swap = () => {
-    block().replaceWith(pending);
-    pending = null;
-    placeBoxes();
-  };
   const flush = () => {
     if (!pending || busy()) return;
+    const arrived = pending;
+    pending = null;
+    const swap = () => { block().replaceWith(arrived); placeBoxes(); };
     document.startViewTransition ? document.startViewTransition(swap) : swap();
   };
   addEventListener('focusout', () => setTimeout(flush, 0));

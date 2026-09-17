@@ -208,7 +208,8 @@ bounding box the agent crops to is drawn on the capture instead of staying hidde
 the capture are one wipe comparator with a range input driving a `clip-path`, falling back to the two
 figures side by side without JavaScript; the poll swap runs inside `document.startViewTransition`
 where the browser has it; the home page is a gallery whose cards read a summary denormalised onto the
-`META` item by `store.put_inspection`; and an asset's history opens with the severity of every
+`META` item by `store.put_inspection`, with `python -m services.memory.backfill` to fill it
+once for the assets written before that summary existed; and an asset's history opens with the severity of every
 inspection plotted against the approval threshold. Every one of those is a layer over markup that
 already worked: no build step, no bundler, no Node in the image.
 

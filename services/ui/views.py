@@ -503,7 +503,9 @@ def _expected_tool(events: list[dict]) -> str | None:
         if event["type"] != "tool_call" or event.get("tool") not in STAGE_OF:
             continue
         branch = _branch_of(event)
-        expected = NEXT_TOOL.get(branch) if branch else None
+        if branch is None:
+            continue
+        expected = NEXT_TOOL.get(branch)
     return expected
 
 

@@ -155,7 +155,7 @@ def test_the_asset_card_is_one_link_to_its_history():
     page = views.index_page([{"asset_id": "panel-a7-north"}])
     assert "<a class='asset' href='/assets/panel-a7-north'>" in page
     assert page.count("href='/assets/panel-a7-north'") == 1
-    assert "never inspected" in page
+    assert "no inspection summary yet" in page
 
 
 def test_the_asset_card_shows_the_last_capture_and_the_branch_that_scored_it():
@@ -339,9 +339,9 @@ RAILS = {
          _call("diff_against_memory", "change_confirmed")], trace.RUNNING,
         ["done", "done", "done", "skipped", "active"],
     ),
-    "tool_error": (
+    "recoverable_tool_error": (
         [_call("assess_quality", error="boom")], trace.RUNNING,
-        ["done", "skipped", "skipped", "skipped", "skipped"],
+        ["done", "pending", "pending", "pending", "pending"],
     ),
 }
 
@@ -399,6 +399,7 @@ def test_the_comparator_falls_back_to_the_two_figures_without_javascript():
 
 def test_the_live_swap_keeps_working_where_view_transitions_are_missing():
     assert "document.startViewTransition ? document.startViewTransition(swap) : swap();" in JS
+    assert JS.index("pending = null;") < JS.index("document.startViewTransition ?")
     assert "::view-transition-group(*) { animation-duration: var(--dur-live); }" in CSS
     assert "--dur-live: 0ms" in CSS.split("prefers-reduced-motion")[1]
 
@@ -447,3 +448,13 @@ def test_the_history_plots_every_inspection_oldest_first():
 
 def test_one_inspection_is_not_a_trend():
     assert "<figure class='spark'>" not in _history(0.2)
+
+
+def test_a_failed_tool_call_leaves_the_rest_of_the_rail_pending():
+    steps = views._path([_call("assess_quality", error="boom")], trace.RUNNING)["steps"]
+    assert steps[0]["failed"] is True
+    assert steps[1]["outcome"] == "waiting"
+
+
+def test_a_capture_the_dropzone_cannot_type_is_left_to_the_server():
+    assert "file.type && !file.type.startsWith('image/')" in JS
