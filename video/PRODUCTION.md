@@ -194,7 +194,7 @@ as raw JSON, so it survives being on screen for a second.
 before the trace appears, or the inspection is cancelled and nothing is written.
 
 The centred column is **1120 px** on the trace, the asset history and the queue; only the home page
-is the narrow 760. So the corner is no longer guaranteed empty background — check the PiP against
+is the narrow 880. So the corner is no longer guaranteed empty background — check the PiP against
 the trace and the queue before committing to `PIP_POS=tl`, because the hero panel and the
 comparison figures now reach further out than they did.
 

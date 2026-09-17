@@ -177,6 +177,22 @@ def test_the_empty_gallery_invites_the_first_capture():
     assert "Nothing in memory yet." in page
 
 
+def test_the_deciding_counts_read_as_english():
+    one = views.render_html({}, [_call("assess_quality", "quality_ok"), _finished("first_baseline")])
+    assert "1 tool call, 1 threshold," in one
+    many = views.render_html({}, [
+        _call("assess_quality", "quality_ok"),
+        _call("align_to_baseline", "aligned"),
+        _finished("aligned"),
+    ])
+    assert "2 tool calls, 2 thresholds," in many
+
+
+def test_the_picked_file_hides_the_hint_that_asked_for_one():
+    assert "zone.classList.toggle('picked', !preview.hidden);" in JS
+    assert ".js .dropzone.picked .drop-hint { display: none; }" in CSS
+
+
 def test_the_dropzone_mirrors_the_limits_the_server_enforces():
     assert "const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;" in JS
     assert "'image larger than 6 MB'" in JS and "'not a decodable image'" in JS
@@ -354,6 +370,34 @@ def test_the_rail_says_which_stages_never_ran_instead_of_promising_them(case):
     assert [step["state"] for step in steps] == expected
 
 
+def _finished(branch):
+    return {"type": "run_finished", "ts": "2026-08-26T12:00:09.000+00:00",
+            "status": "completed" if branch else "failed", "branch": branch, "message": ""}
+
+
+def test_a_first_baseline_blames_the_missing_baseline_not_the_capture_quality():
+    steps = views._path([
+        {"type": "decision", "ts": "2026-08-26T12:00:00.000+00:00",
+         "input_metric": "baseline_exists", "value": 0.0, "threshold": 1.0,
+         "branch": "first_baseline"},
+        _call("assess_quality", "quality_ok"),
+        _finished("first_baseline"),
+    ], trace.DONE)["steps"]
+    assert steps[0]["outcome"] == "quality_ok"
+    assert [step["outcome"] for step in steps[1:]] == ["not run \u00b7 first_baseline"] * 4
+
+
+def test_a_run_that_died_without_a_branch_does_not_blame_the_stage_before_it():
+    steps = views._path([
+        _call("assess_quality", "quality_ok"),
+        _call("align_to_baseline", "aligned"),
+        _call("diff_against_memory", error="boom"),
+        _finished(None),
+    ], trace.DONE)["steps"]
+    assert steps[2]["failed"] is True
+    assert [step["outcome"] for step in steps[3:]] == ["not run", "not run"]
+
+
 def test_a_stage_the_branch_skipped_names_the_branch_that_skipped_it():
     events, run_state, _ = RAILS["skipped_while_running"]
     steps = views._path(events, run_state)["steps"]
@@ -422,9 +466,16 @@ def test_the_queue_puts_the_worst_run_first():
 def test_approving_asks_once_before_it_writes_to_memory():
     assert "e.target.closest?.('.acts button')" in JS
     assert "button.textContent = 'Confirm?';" in JS
-    assert "<form method='post' action='/queue/7f2ac91b04de/approve'>" in views.queue_page(
-        [_queued("7f2ac91b04de", 0.5)]
-    )
+    page = views.queue_page([_queued("7f2ac91b04de", 0.5)])
+    assert "<form method='post' action='/queue/7f2ac91b04de/approve'>" in page
+    assert "<span class='say' role='status' aria-live='polite'></span>" in page
+
+
+def test_the_armed_confirmation_waits_for_the_operator_instead_of_a_timer():
+    armed = JS.split("button.textContent = 'Confirm?';")[1]
+    assert "setTimeout" not in armed.split("addEventListener('focusout'")[0]
+    assert "button.focus();" in armed
+    assert "if (button && button.dataset.armed) disarm(button);" in JS
 
 
 def _history(*scores):
@@ -458,3 +509,22 @@ def test_a_failed_tool_call_leaves_the_rest_of_the_rail_pending():
 
 def test_a_capture_the_dropzone_cannot_type_is_left_to_the_server():
     assert "file.type && !file.type.startsWith('image/')" in JS
+
+
+def test_the_baseline_in_force_is_marked_apart_from_the_ones_it_superseded():
+    page = views.asset_page("array-rooftop", [
+        {"sk": f"{store.BASELINE}2026-09-02", "inspection_id": "insp2",
+         "captured_at": "2026-09-02T12:00:00+00:00", "image_key": "a/b2.png"},
+        {"sk": f"{store.BASELINE}2026-09-01", "inspection_id": "insp1",
+         "captured_at": "2026-09-01T12:00:00+00:00", "image_key": "a/b1.png",
+         "superseded_by": "insp2"},
+    ])
+    assert page.count("<div class='tl promoted now'>") == 1
+    assert "<div class='tl promoted'>" in page
+    assert ".tl.now .facts" in CSS
+
+
+def test_the_deciding_number_counts_up_only_when_it_changes():
+    assert "if (shown === counted) return;" in JS
+    assert "document.querySelector('.hero .big .n')" in JS
+    assert "parseFloat(getComputedStyle(root).getPropertyValue('--dur-live'))" in JS

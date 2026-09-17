@@ -117,6 +117,7 @@ figcaption { font-size: 0.8125rem; color: var(--dim); font-family: var(--mono); 
          padding: 22.4px; display: flex; flex-direction: column; gap: 16.8px; }
 .acts { display: flex; gap: 8.4px; flex-wrap: wrap; }
 .acts form { display: inline; }
+.acts .say { flex: 0 0 100%; font-size: 0.9375rem; color: var(--dim); }
 .btn { background: transparent; border-radius: 8px; padding: 8.4px 22.4px; font: inherit;
        font-family: var(--font-heading); font-weight: 500; font-size: 1rem; cursor: pointer;
        color: var(--dim); border: 1px solid var(--color-divider); }
@@ -234,6 +235,7 @@ footer.bot { display: flex; gap: 16.8px; flex-wrap: wrap; font-family: var(--mon
 .dropzone.over .input { border-color: var(--color-accent); }
 .drop-hint { display: none; font-size: 0.875rem; color: var(--dim); }
 .js .drop-hint { display: inline; }
+.js .dropzone.picked .drop-hint { display: none; }
 .drop-preview { width: 54px; height: 36px; object-fit: cover; border-radius: 4px;
                 box-shadow: var(--shadow-sm); }
 .thumb { width: 90px; height: 60px; object-fit: cover; border-radius: 4px;
@@ -267,6 +269,8 @@ details pre { margin: 8.4px 0 0; padding: 11.2px; border-radius: 8px; background
 .tl .node { position: relative; margin-top: 12px; width: 9px; height: 9px; border-radius: 50%;
             background: var(--track); box-shadow: 0 0 0 3px var(--color-bg); }
 .tl.promoted .node { background: var(--color-accent); }
+.tl.now .node { box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 28%, transparent); }
+.tl.now .facts { border-left: 2px solid var(--color-accent); padding-left: 11.2px; }
 .tl .entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16.8px;
              align-items: start; padding: 5.6px 0 22.4px; min-width: 0; }
 @media (max-width: 620px) { .tl .entry { grid-template-columns: minmax(0, 1fr); } }

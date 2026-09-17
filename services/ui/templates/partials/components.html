@@ -8,7 +8,7 @@
 
 {% macro compare(f) %}{% if f %}<div class='compare' style='--split:50%'>{{ figures(f) }}<input class='split' type='range' min='0' max='100' value='50' aria-label='Wipe between the baseline and the capture'></div>{% endif %}{% endmacro %}
 
-{% macro approve(run_id) %}<div class='acts'><form method='post' action='/queue/{{ run_id }}/approve'><button class='btn ok'>Approve write</button></form><form method='post' action='/queue/{{ run_id }}/reject'><button class='btn'>Reject</button></form></div>{% endmacro %}
+{% macro approve(run_id) %}<div class='acts'><form method='post' action='/queue/{{ run_id }}/approve'><button class='btn ok'>Approve write</button></form><form method='post' action='/queue/{{ run_id }}/reject'><button class='btn'>Reject</button></form><span class='say' role='status' aria-live='polite'></span></div>{% endmacro %}
 
 {% macro pills(items) %}{% for pill in items %}<span class='pill{{ ' on' if pill.on else '' }}'>{{ tip(pill.label, pill.tip) }}</span>{% endfor %}{% endmacro %}
 

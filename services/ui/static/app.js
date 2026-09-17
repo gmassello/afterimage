@@ -13,6 +13,27 @@ toggle.addEventListener('click', () => {
   try { localStorage.setItem('afterimage-theme', next); } catch (e) {}
 });
 
+let counted = null;
+function countUp() {
+  const cell = document.querySelector('.hero .big .n');
+  if (!cell) return;
+  const shown = cell.textContent.trim();
+  if (shown === counted) return;
+  counted = shown;
+  const target = Number(shown);
+  const span = parseFloat(getComputedStyle(root).getPropertyValue('--dur-live'));
+  if (!isFinite(target) || !span) return;
+  const decimals = (shown.split('.')[1] || '').length;
+  const began = performance.now();
+  const tick = (now) => {
+    const at = Math.min(1, (now - began) / span);
+    cell.textContent = at < 1 ? (target * at).toFixed(decimals) : shown;
+    if (at < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+countUp();
+
 function placeBoxes() {
   document.querySelectorAll('.box[data-bbox]').forEach((box) => {
     const img = box.parentElement.querySelector('img');
@@ -31,17 +52,27 @@ function placeBoxes() {
 }
 placeBoxes();
 
+const disarm = (button) => {
+  button.textContent = button.dataset.armed;
+  delete button.dataset.armed;
+  const say = button.closest('.acts')?.querySelector('.say');
+  if (say) say.textContent = '';
+};
+
 addEventListener('click', (e) => {
   const button = e.target.closest?.('.acts button');
   if (!button || button.dataset.armed) return;
   e.preventDefault();
   button.dataset.armed = button.textContent;
   button.textContent = 'Confirm?';
-  setTimeout(() => {
-    if (!button.dataset.armed) return;
-    button.textContent = button.dataset.armed;
-    delete button.dataset.armed;
-  }, 4000);
+  button.focus();
+  const say = button.closest('.acts')?.querySelector('.say');
+  if (say) say.textContent = `Click Confirm? again to ${button.dataset.armed.toLowerCase()}, or move away to cancel.`;
+});
+
+addEventListener('focusout', (e) => {
+  const button = e.target.closest?.('.acts button');
+  if (button && button.dataset.armed) disarm(button);
 });
 
 const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
@@ -57,6 +88,7 @@ if (zone) {
     input.setCustomValidity(problem);
     if (preview.src) URL.revokeObjectURL(preview.src);
     preview.hidden = !file || !!problem;
+    zone.classList.toggle('picked', !preview.hidden);
     if (!preview.hidden) preview.src = URL.createObjectURL(file);
   };
   input.addEventListener('change', review);
@@ -115,7 +147,7 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
     if (!pending || busy()) return;
     const arrived = pending;
     pending = null;
-    const swap = () => { block().replaceWith(arrived); placeBoxes(); };
+    const swap = () => { block().replaceWith(arrived); placeBoxes(); countUp(); };
     document.startViewTransition ? document.startViewTransition(swap) : swap();
   };
   addEventListener('focusout', () => setTimeout(flush, 0));

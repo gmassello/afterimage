@@ -285,6 +285,7 @@ def index_page(assets: list[dict], error: str = "", asset_id: str = "") -> str:
 def _baseline_entry(item: dict, entry: dict) -> dict:
     superseded = item.get("superseded_by")
     entry["pills"] = [{"label": "baseline", "on": True}]
+    entry["current"] = not superseded
     entry["note"] = {"link": superseded} if superseded else {"text": "current baseline"}
     entry["image_key"] = item.get("image_key", "")
     return entry
@@ -307,6 +308,7 @@ def _timeline_entry(item: dict) -> dict:
     promoted = item["sk"].startswith(store.BASELINE)
     entry = {
         "promoted": promoted,
+        "current": False,
         "captured_at": item.get("captured_at", ""),
         "trace_id": item.get("inspection_id", ""),
         "note": None,
@@ -413,7 +415,7 @@ def _decisions(events: list[dict]) -> list[dict]:
 
 def _summary(state: dict, events: list[dict]) -> dict:
     started = trace.started_event(events) or {}
-    finished = next((e for e in reversed(events) if e["type"] == "run_finished"), {})
+    finished = _finished(events) or {}
     merged = {
         "run_id": started.get("run_id"),
         "asset_id": started.get("asset_id"),
@@ -489,6 +491,10 @@ def _branch_of(event: dict) -> str | None:
     return (event.get("policy") or {}).get("branch")
 
 
+def _finished(events: list[dict]) -> dict | None:
+    return next((event for event in reversed(events) if event["type"] == "run_finished"), None)
+
+
 def _calls_by_tool(events: list[dict]) -> dict[str, list[dict]]:
     grouped: dict[str, list[dict]] = {}
     for event in events:
@@ -523,14 +529,14 @@ def _ran_node(tool: str, attempts: list[dict]) -> dict:
     }
 
 
-def _idle_node(tool: str, index: int, reach: int, last_branch: str | None) -> dict:
+def _idle_node(tool: str, index: int, reach: int, reason: str | None) -> dict:
     if index > reach:
         state, outcome = "pending", "waiting"
     elif index == reach:
         state, outcome = "active", "working\u2026"
     else:
         state = "skipped"
-        outcome = f"not run \u00b7 {last_branch}" if last_branch else "not run"
+        outcome = f"not run \u00b7 {reason}" if reason else "not run"
     return {"name": tool, "state": state, "outcome": outcome,
             "tone": None, "ms": None, "failed": False, "tries": 0}
 
@@ -542,6 +548,8 @@ def _path(events: list[dict], run_state: str) -> dict | None:
         return None
     expected = _expected_tool(events)
     reach = len(_ORDER) if done or expected is None else _ORDER.index(expected)
+    finished = _finished(events)
+    last_ran = max((index for index, tool in enumerate(_ORDER) if tool in calls), default=-1)
     nodes: list[dict] = []
     last_branch: str | None = None
     for index, tool in enumerate(_ORDER):
@@ -550,7 +558,8 @@ def _path(events: list[dict], run_state: str) -> dict | None:
             nodes.append(_ran_node(tool, attempts))
             last_branch = _branch_of(attempts[-1]) or last_branch
         else:
-            nodes.append(_idle_node(tool, index, reach, last_branch))
+            reason = finished.get("branch") if finished and index > last_ran else last_branch
+            nodes.append(_idle_node(tool, index, reach, reason))
     return {
         "kicker": "the path this run took" if done else "the path so far",
         "steps": nodes,
