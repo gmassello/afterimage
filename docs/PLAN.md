@@ -201,6 +201,17 @@ HTML now comes from Jinja2 templates with `autoescape=True`, so escaping is a pr
 renderer rather than 44 hand-written `html.escape` calls, and the CSS and JS are served from
 `GET /static/{name}` under a content hash instead of riding inline on every poll.
 
+The front end was taken further once the four views worked. `_path` stopped being the list of tool
+calls that had already happened and became a fixed rail of the five stages, where a stage the branch
+never reached says so with the branch that skipped it instead of pretending it is still pending; the
+bounding box the agent crops to is drawn on the capture instead of staying hidden; the baseline and
+the capture are one wipe comparator with a range input driving a `clip-path`, falling back to the two
+figures side by side without JavaScript; the poll swap runs inside `document.startViewTransition`
+where the browser has it; the home page is a gallery whose cards read a summary denormalised onto the
+`META` item by `store.put_inspection`; and an asset's history opens with the severity of every
+inspection plotted against the approval threshold. Every one of those is a layer over markup that
+already worked: no build step, no bundler, no Node in the image.
+
 Stage 6 resolved it without SSE. The container runs uvicorn behind the AWS Lambda Web Adapter, and
 Lambda freezes the execution environment the moment a response is returned, so neither a background
 task nor a long-lived event stream survives the upload request. Instead the upload was split in two:
@@ -453,10 +464,13 @@ decorativa a cierta. Y el diagrama omitía el reintento con ORB: ahora `inlier_r
 reintenta con el detector clásico y recién bajo 0.30 declara el activo desconocido, que es ACTION 2
 de las cuatro.
 
-Las tres imágenes de `docs/img/` se capturaron del endpoint público, no se dibujaron: una corrida
-real sobre `crack-real-closeup` que terminó en `score 0.6798 >= 0.4 -> human_approval`, con su
-aprobación resuelta en la cola para que el historial mostrara la cadena de baselines con el anterior
-`superseded_by`.
+Las tres imágenes de `docs/img/` se capturaron de la aplicación corriendo, no se dibujaron: una
+corrida real sobre `crack-real-closeup` que terminó en `score 0.6798 >= 0.4 -> human_approval`, con
+su aprobación resuelta en la cola para que el historial mostrara la cadena de baselines con el
+anterior `superseded_by`. `trace.png` y `history.png` se rehicieron con el front nuevo —el rail de
+cinco etapas, donde `crop_and_rescan` dice `not run · change_confirmed` en vez de fingir que sigue
+pendiente, y el gráfico de severidad de cada inspección contra el umbral de aprobación—; `demo.gif`
+sigue siendo la toma anterior hasta que se regrabe.
 
 Anti-drift extended: `eval/tests/test_published_numbers.py` now also parses the report's headline
 figures and scenario counts, so neither published page can drift from the artefact.

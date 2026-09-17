@@ -6,6 +6,8 @@
 
 {% macro figures(f) %}{% if f %}<div class='shots'><figure><img src='/images/{{ f.baseline_key }}' alt='baseline in memory'><figcaption>baseline &middot; {{ f.baseline_key }}</figcaption></figure><figure><div class='frame'><img src='/images/{{ f.capture_key }}' alt='capture under inspection'>{% if f.bbox %}<div class='box' hidden data-bbox='{{ f.bbox|tojson }}'>{% if f.tag.label or f.tag.delta %}<span class='tag'>{{ region_tag(f.tag) }}</span>{% endif %}</div>{% endif %}</div><figcaption>capture &middot; {{ f.capture_key }}{% if f.aligned %}<span class='note'>warped onto the baseline&rsquo;s perspective &mdash; the grey corners are outside what this photo covered</span>{% endif %}</figcaption></figure></div>{% endif %}{% endmacro %}
 
+{% macro compare(f) %}{% if f %}<div class='compare' style='--split:50%'>{{ figures(f) }}<input class='split' type='range' min='0' max='100' value='50' aria-label='Wipe between the baseline and the capture'></div>{% endif %}{% endmacro %}
+
 {% macro approve(run_id) %}<div class='acts'><form method='post' action='/queue/{{ run_id }}/approve'><button class='btn ok'>Approve write</button></form><form method='post' action='/queue/{{ run_id }}/reject'><button class='btn'>Reject</button></form></div>{% endmacro %}
 
 {% macro pills(items) %}{% for pill in items %}<span class='pill{{ ' on' if pill.on else '' }}'>{{ tip(pill.label, pill.tip) }}</span>{% endfor %}{% endmacro %}
@@ -13,3 +15,4 @@
 {% macro trace_link(run_id) %}{% if run_id %}<a href='/traces/{{ run_id }}'>{{ run_id }}</a>{% endif %}{% endmacro %}
 
 {% macro stages(rows, raw_url) %}{% if rows %}<details><summary>what it measured</summary><div class='stages'>{% for row in rows %}<div class='stage'><span class='q'>{{ row.question }}</span><span class='m'>{{ tip(row.metric, row.tip) }} <b>{{ row.value }}</b></span></div>{% endfor %}{% if raw_url %}<a class='raw' href='{{ raw_url }}'>every number, as raw json</a>{% endif %}</div></details>{% endif %}{% endmacro %}
+{% macro rail(steps) %}<div class='flow'>{% for step in steps %}{% if not loop.first %}<div class='arrow'>&rarr;</div>{% endif %}<div class='step {{ step.state }}{{ ' ' ~ step.tone if step.tone else '' }}{{ ' err' if step.failed else '' }}'><span class='name'>{{ step.name }}</span><span class='br'>{% if step.state == 'active' %}<span class='dot'></span>{% endif %}{{ step.outcome }}</span><span class='ms'>{% if step.ms %}{{ step.ms }} ms{% if step.tries > 1 %} &middot; {{ step.tries }} tries{% endif %}{% endif %}</span></div>{% endfor %}</div>{% endmacro %}

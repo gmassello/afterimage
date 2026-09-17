@@ -7,7 +7,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from services.agent import policy as policy_module
-from services.agent.loop import STAGE_OF
+from services.agent.loop import NEXT_TOOL, STAGE_OF
 from services.agent.policy import HUMAN_GATE_METRIC, SEVERITY_METRIC, Policy
 from services.memory import runs, store
 from services.observability import trace
@@ -65,6 +65,7 @@ _HEADLINE = {
 }
 
 _STAGES = tuple((stage, _QUESTION[tool], _HEADLINE[tool]) for tool, stage in STAGE_OF.items())
+_ORDER = tuple(STAGE_OF)
 
 _TIP = {
     "blur_variance": "How sharp the capture is. Low means the photo is too soft to score.",
@@ -259,11 +260,23 @@ def _stage_rows(metrics: dict) -> list[dict]:
     return rows
 
 
+def _asset_card(asset: dict) -> dict:
+    key = str(asset.get("last_capture_key") or "")
+    branch = asset.get("last_branch")
+    label = asset.get("last_severity_label") or branch
+    return {
+        "asset_id": asset["asset_id"],
+        "thumb": f"/images/{key}?w={THUMB_WIDTH}" if key else "",
+        "captured_at": str(asset.get("last_captured_at") or ""),
+        "pill": {"label": str(label), "tone": _TONE.get(str(branch))} if label else None,
+    }
+
+
 def index_page(assets: list[dict], error: str = "", asset_id: str = "") -> str:
     return _render(
         "index.html", "assets", "assets",
         narrow=True,
-        assets=[asset["asset_id"] for asset in assets],
+        assets=[_asset_card(asset) for asset in assets],
         error=error,
         asset_id=asset_id,
     )
@@ -284,6 +297,7 @@ def _inspection_entry(item: dict, entry: dict) -> dict:
     if label:
         entry["pills"].append({"label": str(label)})
     entry["bar"] = _severity_bar(metrics, _verdict_of(item))
+    entry["score"] = (metrics.get("severity") or {}).get("score")
     entry["stages"] = _stage_rows(metrics)
     entry["image_key"] = (item.get("image_keys") or {}).get("capture", "")
     return entry
@@ -297,6 +311,7 @@ def _timeline_entry(item: dict) -> dict:
         "trace_id": item.get("inspection_id", ""),
         "note": None,
         "bar": None,
+        "score": None,
         "stages": [],
     }
     entry = _baseline_entry(item, entry) if promoted else _inspection_entry(item, entry)
@@ -305,16 +320,41 @@ def _timeline_entry(item: dict) -> dict:
     return entry
 
 
+def _plot_y(value: float, top: float) -> str:
+    return f"{24.0 - _pct(value, top) * 0.2:.2f}"
+
+
+def _sparkline(entries: list[dict], threshold: float) -> dict | None:
+    scored = [entry for entry in reversed(entries) if entry["score"] is not None]
+    if len(scored) < 2:
+        return None
+    top = max(max(float(entry["score"]) for entry in scored), threshold) * 1.25
+    step = 100.0 / (len(scored) - 1)
+    return {
+        "mark": _plot_y(threshold, top),
+        "points": [
+            {
+                "x": f"{index * step:.2f}",
+                "y": _plot_y(float(entry["score"]), top),
+                "tone": (entry.get("bar") or {}).get("tone") or "",
+            }
+            for index, entry in enumerate(scored)
+        ],
+    }
+
+
 def asset_page(asset_id: str, items: list[dict]) -> str:
     ordered = sorted(
         (item for item in items if item["sk"] != store.META),
         key=lambda item: item.get("captured_at", ""),
         reverse=True,
     )
+    entries = [_timeline_entry(item) for item in ordered]
     return _render(
         "asset.html", asset_id, "assets",
         asset_id=asset_id,
-        entries=[_timeline_entry(item) for item in ordered],
+        entries=entries,
+        sparkline=_sparkline(entries, Policy.from_env().severity_score_approve),
     )
 
 
@@ -336,18 +376,25 @@ def _queue_entry(item: dict) -> dict:
             aligned=bool(warped),
         ),
         "bar": _severity_bar(metrics, _verdict_of(item)),
+        "score": _fmt(_severity_score(item)) if severity.get("score") is not None else "",
         "stages": _stage_rows(metrics),
         "raw_url": f"/traces/{item['run_id']}?format=json",
     }
 
 
+def _severity_score(item: dict) -> float:
+    score = ((item.get("metrics") or {}).get("severity") or {}).get("score")
+    return float(score) if score is not None else 0.0
+
+
 def queue_page(items: list[dict], assets_in_memory: int = 0) -> str:
     threshold = Policy.from_env().severity_score_approve
+    urgent = sorted(items, key=_severity_score, reverse=True)
     return _render(
         "queue.html", "approval queue", "queue",
         says=f"{len(items)} awaiting approval" if items else "nothing awaiting approval",
         threshold=f"{threshold:g}",
-        entries=[_queue_entry(item) for item in items],
+        entries=[_queue_entry(item) for item in urgent],
         assets_in_memory=assets_in_memory,
     )
 
@@ -438,26 +485,73 @@ def _not_taken(events: list[dict]) -> list[dict]:
     return ghosts
 
 
-def _path(events: list[dict], run_state: str) -> dict | None:
-    steps = [
-        {
-            "name": event["tool"],
-            "outcome": str(
-                event["policy"]["branch"] if event.get("policy")
-                else event.get("error", "no verdict")
-            ),
-            "ms": _fmt(event.get("duration_ms", 0.0)),
-            "failed": "error" in event,
-        }
-        for event in events if event["type"] == "tool_call"
-    ]
-    pending = run_state != trace.DONE
-    if not (steps or pending):
-        return None
+def _branch_of(event: dict) -> str | None:
+    return (event.get("policy") or {}).get("branch")
+
+
+def _calls_by_tool(events: list[dict]) -> dict[str, list[dict]]:
+    grouped: dict[str, list[dict]] = {}
+    for event in events:
+        if event["type"] == "tool_call" and event.get("tool") in STAGE_OF:
+            grouped.setdefault(event["tool"], []).append(event)
+    return grouped
+
+
+def _expected_tool(events: list[dict]) -> str | None:
+    expected: str | None = _ORDER[0]
+    for event in events:
+        if event["type"] != "tool_call" or event.get("tool") not in STAGE_OF:
+            continue
+        branch = _branch_of(event)
+        expected = NEXT_TOOL.get(branch) if branch else None
+    return expected
+
+
+def _ran_node(tool: str, attempts: list[dict]) -> dict:
+    event = attempts[-1]
+    branch = _branch_of(event)
     return {
-        "kicker": "the path this run took" if run_state == trace.DONE else "the path so far",
-        "steps": steps,
-        "pending": pending,
+        "name": tool,
+        "state": "done",
+        "outcome": str(branch or event.get("error") or "no verdict"),
+        "tone": _TONE.get(branch) if branch else None,
+        "ms": _fmt(sum(float(e.get("duration_ms", 0.0)) for e in attempts)),
+        "failed": "error" in event,
+        "tries": len(attempts),
+    }
+
+
+def _idle_node(tool: str, index: int, reach: int, last_branch: str | None) -> dict:
+    if index > reach:
+        state, outcome = "pending", "waiting"
+    elif index == reach:
+        state, outcome = "active", "working\u2026"
+    else:
+        state = "skipped"
+        outcome = f"not run \u00b7 {last_branch}" if last_branch else "not run"
+    return {"name": tool, "state": state, "outcome": outcome,
+            "tone": None, "ms": None, "failed": False, "tries": 0}
+
+
+def _path(events: list[dict], run_state: str) -> dict | None:
+    calls = _calls_by_tool(events)
+    done = run_state == trace.DONE
+    if done and not calls:
+        return None
+    expected = _expected_tool(events)
+    reach = len(_ORDER) if done or expected is None else _ORDER.index(expected)
+    nodes: list[dict] = []
+    last_branch: str | None = None
+    for index, tool in enumerate(_ORDER):
+        attempts = calls.get(tool)
+        if attempts:
+            nodes.append(_ran_node(tool, attempts))
+            last_branch = _branch_of(attempts[-1]) or last_branch
+        else:
+            nodes.append(_idle_node(tool, index, reach, last_branch))
+    return {
+        "kicker": "the path this run took" if done else "the path so far",
+        "steps": nodes,
         "not_taken": _not_taken(events),
     }
 

@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% import 'partials/components.html' as c %}
 {% block body %}
-<section class='col'><h1 class='kicker'>{{ asset_id }} &middot; everything memory holds about this asset</h1><div class='timeline'>
+<section class='col'><h1 class='kicker'>{{ asset_id }} &middot; everything memory holds about this asset</h1>
+{%- if sparkline %}<figure class='spark'><svg viewBox='0 0 100 24' preserveAspectRatio='none' role='img' aria-label='severity of every inspection, oldest first'><line class='mark' vector-effect='non-scaling-stroke' x1='0' y1='{{ sparkline.mark }}' x2='100' y2='{{ sparkline.mark }}'></line><polyline vector-effect='non-scaling-stroke' points='{% for p in sparkline.points %}{{ p.x }},{{ p.y }} {% endfor %}'></polyline>{% for p in sparkline.points %}<line vector-effect='non-scaling-stroke' class='{{ p.tone }}' x1='{{ p.x }}' y1='{{ p.y }}' x2='{{ p.x }}' y2='{{ p.y }}'></line>{% endfor %}</svg><figcaption>severity of every inspection, oldest first &middot; the dashed line is the approval threshold</figcaption></figure>{% endif -%}
+<div class='timeline'>
 {%- if entries -%}
 {%- for e in entries %}<div class='{{ 'tl promoted' if e.promoted else 'tl' }}'><div class='rail'><span class='node'></span></div><div class='entry'><div class='facts'><div class='top'>{{ e.captured_at|when }}{{ c.pills(e.pills) }}{{ c.trace_link(e.trace_id) }}</div>
 {%- if e.note %}<span class='hint'>{% if e.note.link %}superseded by {{ c.trace_link(e.note.link) }}{% else %}{{ e.note.text }}{% endif %}</span>{% endif -%}

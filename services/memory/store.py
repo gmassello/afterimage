@@ -51,9 +51,22 @@ def _plain(item: dict) -> dict:
 
 
 def put_asset(asset_id: str, **attrs) -> None:
-    _table().put_item(
-        Item=_stored({"pk": asset_key(asset_id), "sk": META, "asset_id": asset_id, **attrs})
+    values = _stored({"asset_id": asset_id, **attrs})
+    _table().update_item(
+        Key={"pk": asset_key(asset_id), "sk": META},
+        UpdateExpression="SET " + ", ".join(f"#{name} = :{name}" for name in values),
+        ExpressionAttributeNames={f"#{name}": name for name in values},
+        ExpressionAttributeValues={f":{name}": value for name, value in values.items()},
     )
+
+
+def _last_seen(captured_at: str, metrics: dict, verdict: dict | None) -> dict:
+    severity = metrics.get("severity") or {}
+    return {
+        "last_captured_at": captured_at,
+        "last_severity_label": str(severity.get("label") or ""),
+        "last_branch": str((verdict or {}).get("branch") or ""),
+    }
 
 
 def put_inspection(
@@ -77,6 +90,11 @@ def put_inspection(
             }
         )
     )
+    # ponytail: the asset summary is a denormalised copy written right after the inspection, so a
+    # crash between the two writes leaves the home card one inspection behind; a TransactWriteItems
+    # is the upgrade if that ever matters
+    put_asset(asset_id, last_capture_key=image_keys.get("capture", ""),
+              **_last_seen(captured_at, metrics, verdict))
 
 
 def promote_baseline(

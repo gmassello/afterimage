@@ -3,6 +3,7 @@ import json
 import pytest
 
 from services.memory import store
+from services.observability import trace
 from services.observability.tests.sample_run import EVENTS, STATE
 from services.ui import views
 
@@ -150,10 +151,37 @@ def test_the_nav_stays_clickable_on_the_page_it_points_at():
     assert "<span class='here'>trace</span>" in trace_page
 
 
-def test_the_asset_row_is_clickable_past_the_link_text():
+def test_the_asset_card_is_one_link_to_its_history():
     page = views.index_page([{"asset_id": "panel-a7-north"}])
-    assert "<td><a href='/assets/panel-a7-north'>" in page
-    assert ".table td > a::after" in CSS
+    assert "<a class='asset' href='/assets/panel-a7-north'>" in page
+    assert page.count("href='/assets/panel-a7-north'") == 1
+    assert "never inspected" in page
+
+
+def test_the_asset_card_shows_the_last_capture_and_the_branch_that_scored_it():
+    page = views.index_page([{
+        "asset_id": "panel-a7-north",
+        "last_capture_key": "assets/panel-a7-north/insp1/capture.png",
+        "last_captured_at": "2026-08-26T12:00:00+00:00",
+        "last_severity_label": "crack",
+        "last_branch": "human_approval",
+    }])
+    assert f"src='/images/assets/panel-a7-north/insp1/capture.png?w={views.THUMB_WIDTH}'" in page
+    assert "<span class='pill warn'>crack</span>" in page
+    assert "26 Aug 2026" in page
+
+
+def test_the_empty_gallery_invites_the_first_capture():
+    page = views.index_page([])
+    assert "<div class='empty'>" in page
+    assert "Nothing in memory yet." in page
+
+
+def test_the_dropzone_mirrors_the_limits_the_server_enforces():
+    assert "const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;" in JS
+    assert "'image larger than 6 MB'" in JS and "'not a decodable image'" in JS
+    assert "input.setCustomValidity(problem);" in JS
+    assert "<input class='input' id='capture' type='file'" in views.index_page([])
 
 
 def test_the_bar_takes_its_tone_from_the_branch():
@@ -287,3 +315,135 @@ def test_a_rejected_upload_renders_inside_the_page():
     assert "not a decodable image" in page
     assert "Pick the file again" in page
     assert "role='alert'" not in views.index_page([])
+
+
+def _call(tool, branch=None, **extra):
+    event = {"type": "tool_call", "ts": "2026-08-26T12:00:00.000+00:00",
+             "tool": tool, "duration_ms": 12.0, **extra}
+    if branch:
+        event["policy"] = {"input_metric": "m", "value": 1.0, "threshold": 0.5, "branch": branch}
+    return event
+
+
+RAILS = {
+    "stopped_early": (
+        [_call("assess_quality", "recapture")], trace.DONE,
+        ["done", "skipped", "skipped", "skipped", "skipped"],
+    ),
+    "mid_flight": (
+        [_call("assess_quality", "quality_ok")], trace.RUNNING,
+        ["done", "active", "pending", "pending", "pending"],
+    ),
+    "skipped_while_running": (
+        [_call("assess_quality", "quality_ok"), _call("align_to_baseline", "aligned"),
+         _call("diff_against_memory", "change_confirmed")], trace.RUNNING,
+        ["done", "done", "done", "skipped", "active"],
+    ),
+    "tool_error": (
+        [_call("assess_quality", error="boom")], trace.RUNNING,
+        ["done", "skipped", "skipped", "skipped", "skipped"],
+    ),
+}
+
+
+@pytest.mark.parametrize("case", list(RAILS))
+def test_the_rail_says_which_stages_never_ran_instead_of_promising_them(case):
+    events, run_state, expected = RAILS[case]
+    steps = views._path(events, run_state)["steps"]
+    assert [step["name"] for step in steps] == list(views._ORDER)
+    assert [step["state"] for step in steps] == expected
+
+
+def test_a_stage_the_branch_skipped_names_the_branch_that_skipped_it():
+    events, run_state, _ = RAILS["skipped_while_running"]
+    steps = views._path(events, run_state)["steps"]
+    assert steps[3]["outcome"] == "not run \u00b7 change_confirmed"
+    assert steps[0]["tone"] == "ok"
+
+
+def test_a_retried_tool_is_one_node_that_counts_its_tries():
+    steps = views._path(
+        [_call("assess_quality", "quality_ok"), _call("align_to_baseline", "retry_classic"),
+         _call("align_to_baseline", "aligned")],
+        trace.RUNNING,
+    )["steps"]
+    assert steps[1]["tries"] == 2
+    assert steps[1]["ms"] == "24"
+    assert steps[2]["state"] == "active"
+
+
+def test_a_run_that_failed_before_any_tool_draws_no_rail():
+    assert views._path([{"type": "run_finished", "status": "failed"}], trace.DONE) is None
+
+
+def test_the_rail_carries_the_stage_state_into_the_markup():
+    events, _, _ = RAILS["skipped_while_running"]
+    page = views.render_html({"run_id": "abcdef123456"}, events)
+    assert "<div class='step done ok'>" in page
+    assert "<div class='step skipped'>" in page
+    assert "<div class='step active'>" in page
+    assert "class='dot'" in page
+
+
+def test_the_comparator_falls_back_to_the_two_figures_without_javascript():
+    page = views.render_html(STATE, [
+        {"type": "run_started", "ts": "2026-08-26T12:00:00.000+00:00", "run_id": "abcdef123456",
+         "asset_id": "demo-asset", "capture_key": "a/c.png"},
+        _call("align_to_baseline", "aligned", args={"baseline_key": "a/b.png"}),
+    ])
+    assert "<div class='compare' style='--split:50%'>" in page
+    assert "alt='baseline in memory'" in page and "alt='capture under inspection'" in page
+    assert ".compare .split { display: none; }" in CSS
+    assert ".js .compare .shots > figure:first-child" in CSS
+
+
+def test_the_live_swap_keeps_working_where_view_transitions_are_missing():
+    assert "document.startViewTransition ? document.startViewTransition(swap) : swap();" in JS
+    assert "::view-transition-group(*) { animation-duration: var(--dur-live); }" in CSS
+    assert "--dur-live: 0ms" in CSS.split("prefers-reduced-motion")[1]
+
+
+def _queued(run_id, score):
+    return {"run_id": run_id, "asset_id": "panel-a7-north", "message": "",
+            "image_keys": {"baseline": "a/b.png", "capture": "a/c.png"},
+            "metrics": {"severity": {"label": "crack", "score": score},
+                        "diff": {"regions": [{"bbox": [1, 2, 3, 4], "mean_delta": 41.88}]}},
+            "verdict": {"input_metric": "score", "value": score, "threshold": 0.4,
+                        "branch": "human_approval"}}
+
+
+def test_the_queue_puts_the_worst_run_first():
+    page = views.queue_page([_queued("aaaaaaaaaaaa", 0.41), _queued("bbbbbbbbbbbb", 0.92)])
+    assert page.index("bbbbbbbbbbbb") < page.index("aaaaaaaaaaaa")
+    assert "<div class='big warn'><span class='n'>0.92</span>" in page
+
+
+def test_approving_asks_once_before_it_writes_to_memory():
+    assert "e.target.closest?.('.acts button')" in JS
+    assert "button.textContent = 'Confirm?';" in JS
+    assert "<form method='post' action='/queue/7f2ac91b04de/approve'>" in views.queue_page(
+        [_queued("7f2ac91b04de", 0.5)]
+    )
+
+
+def _history(*scores):
+    return views.asset_page("array-rooftop", [
+        {"sk": f"{store.INSPECTION}2026-09-0{index}#insp{index}",
+         "inspection_id": f"insp{index}", "captured_at": f"2026-09-0{index}T12:00:00+00:00",
+         "metrics": {"severity": {"label": "crack", "score": score}},
+         "verdict": {"input_metric": "score", "value": score, "threshold": 0.4,
+                     "branch": "human_approval" if score >= 0.4 else "auto_write"}}
+        for index, score in enumerate(scores, start=1)
+    ])
+
+
+def test_the_history_plots_every_inspection_oldest_first():
+    page = _history(0.2, 0.9)
+    assert "<figure class='spark'>" in page
+    assert "points='0.00,20.44 100.00,8.00 '" in page
+    assert "class='ok' x1='0.00'" in page and "class='warn' x1='100.00'" in page
+    assert "<line class='mark' vector-effect='non-scaling-stroke' x1='0' y1='16.89'" in page
+
+
+def test_one_inspection_is_not_a_trend():
+    assert "<figure class='spark'>" not in _history(0.2)

@@ -24,11 +24,57 @@ function placeBoxes() {
       box.style.width = (w / img.naturalWidth * 100) + '%';
       box.style.height = (h / img.naturalHeight * 100) + '%';
       box.hidden = false;
+      requestAnimationFrame(() => box.classList.add('enter'));
     };
     img.complete ? place() : img.addEventListener('load', place);
   });
 }
 placeBoxes();
+
+addEventListener('click', (e) => {
+  const button = e.target.closest?.('.acts button');
+  if (!button || button.dataset.armed) return;
+  e.preventDefault();
+  button.dataset.armed = button.textContent;
+  button.textContent = 'Confirm?';
+  setTimeout(() => {
+    if (!button.dataset.armed) return;
+    button.textContent = button.dataset.armed;
+    delete button.dataset.armed;
+  }, 4000);
+});
+
+const MAX_UPLOAD_BYTES = 6 * 1024 * 1024;
+const zone = document.querySelector('.dropzone');
+if (zone) {
+  const input = zone.querySelector('input[type=file]');
+  const preview = zone.querySelector('.drop-preview');
+  const accepted = input.accept.split(',');
+  const review = () => {
+    const file = input.files[0];
+    let problem = '';
+    if (file && file.size > MAX_UPLOAD_BYTES) problem = 'image larger than 6 MB';
+    else if (file && !accepted.includes(file.type)) problem = 'not a decodable image';
+    input.setCustomValidity(problem);
+    if (preview.src) URL.revokeObjectURL(preview.src);
+    preview.hidden = !file || !!problem;
+    if (!preview.hidden) preview.src = URL.createObjectURL(file);
+  };
+  input.addEventListener('change', review);
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('over');
+    input.files = e.dataTransfer.files;
+    review();
+  });
+}
+
+addEventListener('input', (e) => {
+  const slider = e.target.closest?.('.compare .split');
+  if (slider) slider.parentElement.style.setProperty('--split', slider.value + '%');
+}, true);
 
 const page = document.querySelector('.page');
 const says = document.querySelector('.runstate .says');
@@ -66,11 +112,14 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
     const shown = block();
     return shown.contains(document.activeElement) || !!shown.querySelector('details[open]');
   };
-  const flush = () => {
-    if (!pending || busy()) return;
+  const swap = () => {
     block().replaceWith(pending);
     pending = null;
     placeBoxes();
+  };
+  const flush = () => {
+    if (!pending || busy()) return;
+    document.startViewTransition ? document.startViewTransition(swap) : swap();
   };
   addEventListener('focusout', () => setTimeout(flush, 0));
   addEventListener('toggle', flush, true);

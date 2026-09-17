@@ -8,10 +8,7 @@
 </div>{% endif -%}
 </section>{% else %}<h1 class='kicker'>inspection in progress</h1>{% endif -%}
 
-{%- if path %}<section class='col'><div class='kicker'>{{ path.kicker }}</div><div class='flow'>
-{%- for step in path.steps %}{% if not loop.first %}<div class='arrow'>&rarr;</div>{% endif %}<div class='step{{ ' err' if step.failed else '' }}'><span class='name'>{{ step.name }}</span><span class='br'>{{ step.outcome }}</span><span class='ms'>{{ step.ms }} ms</span></div>{% endfor -%}
-{%- if path.pending %}{% if path.steps %}<div class='arrow'>&rarr;</div>{% endif %}<div class='pending'><span class='dot'></span>working&hellip;</div>{% endif -%}
-</div>
+{%- if path %}<section class='col'><div class='kicker'>{{ path.kicker }}</div>{{ c.rail(path.steps) }}
 {%- if path.not_taken %}<div class='col' style='padding-top:5.6px'><div class='kicker'>branches not taken</div><div class='grid'>
 {%- for g in path.not_taken %}<div class='ghost'><span class='t'>{{ g.tool }}</span><span class='r'>{{ g.metric }} {{ g.value }} not {% if g.above %}&ge;{% else %}&lt;{% endif %} {{ g.threshold }}</span></div>{% endfor -%}
 </div></div>{% endif -%}
@@ -27,7 +24,7 @@
 </div>{% endfor -%}
 </section>{% endif -%}
 
-{%- if comparison %}<section class='col'><div class='kicker'>what it compared</div>{{ c.figures(comparison) }}</section>{% endif -%}
+{%- if comparison %}<section class='col'><div class='kicker'>what it compared</div>{{ c.compare(comparison) }}</section>{% endif -%}
 
 {%- if cta %}<section class='cta'><div class='col tight'><span class='t'>Waiting on a human</span><span class='s'>{{ cta.message }} Nothing has been written to memory.</span></div>{{ c.approve(cta.run_id) }}</section>{% endif -%}
 </div>
