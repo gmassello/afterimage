@@ -14,13 +14,17 @@ above: the form, the poller, the rail, the comparator, the queue and the history
 ## Preconditions
 
 ```bash
-docker compose down && docker compose up --build -d      # LocalStack has no volume: this empties it
+docker compose build app && docker compose up -d app localstack
 docker compose exec -T app python -c \
   "from services.memory import store, images; store.ensure_table(); images.ensure_bucket()"
 ```
 
-Open `/app`; the gallery has to start empty. Every later state is built through the browser, not
-seeded behind it. `/` is the public landing and does not contain the upload form.
+Do not run `docker compose down` against a shared development stack: LocalStack has no volume, so
+removing its container deletes all local assets, histories, and runs. Use a dedicated disposable
+environment when an empty gallery is required. On a shared stack, keep existing data and use a
+unique asset prefix for each walkthrough; skip path A's empty-gallery assertion. Every test result is
+then created through the browser, not seeded behind it. `/` is the public landing and does not
+contain the upload form.
 
 **Chrome must be visible.** With the window occluded or minimised `document.hidden` is `true`, the
 poller backs off to five seconds and never fetches, so the rail never advances and half of this
@@ -166,6 +170,31 @@ must not create a replacement; a failed run already retried must resolve to the 
 | the browser's own preference | `curl -H 'Accept-Language: es-AR' localhost:8000` with no cookie | Spanish, without anyone clicking anything; `fr,en` falls to English |
 | the register switch | `technical` in the header, then open a trace | the prose swaps — `services/agent/policy.py` and the sha256 wording appear, the metric tips read in their technical form — while `inlier_ratio`, every number and the agent's own message are untouched. `plain` is what a first visitor gets, on its own cookie, independent of the language one |
 | console and server | `read_console_messages`; `docker compose logs app` | no errors, no 5xx, no tracebacks |
+
+## UX, UI, and accessibility checklist
+
+Run this checklist in visible Chrome with the viewport set to **320×700**, **390×780**, and
+**1440×731**. Record the actual dimensions reported by the browser. On every page, compare
+`document.documentElement.scrollWidth` with `clientWidth`; a vertical scrollbar may make
+`clientWidth` smaller than the requested viewport width.
+
+| Area | Check | Pass condition |
+|---|---|---|
+| Reflow | inspect `/`, `/app`, `/activity`, `/queue`, an asset, and a trace at each viewport | no page-level horizontal overflow; no content or action becomes unreachable |
+| Primary task | inspect the first screen of `/` and `/app` | at 1440×731 the landing CTA is fully visible; at 320×700 the Inspect button is fully visible in English and Spanish; the upload form has no horizontal overflow |
+| Navigation | use Tab and Shift+Tab through header links and forms | focus order follows the visual/task order; hidden horizontal navigation links scroll into view when focused |
+| Tabs | on `/`, focus a demo tab and press Left/Right, including at both ends | selection, `aria-selected`, roving `tabindex`, and the visible panel stay in sync |
+| Comparator | focus the trace range and use arrow keys | the wipe changes, the focused slider remains visible, and the paired images remain understandable |
+| Human approval | focus `Approve write`, activate once, then activate again with Enter | the first action arms confirmation, keeps focus, announces the next action, and does not write; the second resolves it |
+| Status | watch the trace while a run completes and check the queue after approval | progress, completion, and confirmation are available through a status/live region; the queue reflects the result |
+| Language and theme | inspect English and Spanish in light and dark themes | document language, visible labels, accessible control names, and contrast remain correct in all four combinations |
+| Contrast | sample normal/large text and control/focus boundaries in both themes | text is at least 4.5:1 (3:1 for large text); required non-text boundaries are at least 3:1 |
+| Touch targets | measure header links and buttons at 320 CSS px | each target is at least 24×24 CSS px, or demonstrably meets WCAG 2.2's spacing exception |
+| Semantics | inspect the accessibility tree on every view | one visible `h1`, named landmarks/controls, meaningful image alternatives, and no unlabeled state changes |
+
+For this pass, the browser run and measured findings are recorded in
+[`revision-ux-afterimage.md`](../revision-ux-afterimage.md). This checklist is manual; the
+`services/` suite does not automate browser interaction.
 
 ## Known failure modes
 

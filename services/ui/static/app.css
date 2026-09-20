@@ -52,6 +52,8 @@ nav.top a { color: var(--dim); padding: 2.8px 0; }
 nav.top .here { color: var(--color-accent); }
 nav.langs, nav.regs { display: flex; gap: 8.4px; font-family: var(--mono); font-size: 0.875rem; }
 nav.langs a, nav.regs a { color: var(--dim); padding: 2.8px 0; }
+nav.langs a { display: inline-flex; min-width: 24px; min-height: 24px;
+              align-items: center; justify-content: center; }
 nav.langs .here, nav.regs .here { color: var(--color-accent); }
 .runid, .runstate { font-family: var(--mono); font-size: 0.875rem; color: var(--dim); }
 .runstate { display: flex; gap: 4px; margin: 0; }
@@ -256,9 +258,11 @@ footer.bot { display: flex; gap: 16.8px; flex-wrap: wrap; font-family: var(--mon
 .sample .name { font-family: var(--font-heading); font-weight: 500; font-size: 0.9375rem; }
 .sample .ms { font-size: 0.8125rem; color: var(--dim); text-wrap: pretty; }
 
-.dropzone { position: relative; display: inline-flex; align-items: center; gap: 8.4px; }
+.dropzone { position: relative; display: inline-flex; max-width: 100%; min-width: 0;
+            flex-wrap: wrap; align-items: center; gap: 8.4px; }
 .dropzone.over .input { border-color: var(--color-accent); }
-.drop-hint { display: none; font-size: 0.875rem; color: var(--dim); }
+.drop-hint { display: none; max-width: 100%; font-size: 0.875rem; color: var(--dim);
+             overflow-wrap: anywhere; }
 .js .drop-hint { display: inline; }
 .js .dropzone.picked .drop-hint { display: none; }
 .drop-preview { width: 54px; height: 36px; object-fit: cover; border-radius: 4px;
@@ -341,12 +345,12 @@ header.top:has(~ main .landing-shell) { position: sticky; top: 0; z-index: 20;
   padding: 12px 0; background: color-mix(in srgb, var(--color-bg) 92%, transparent);
   backdrop-filter: blur(14px); }
 .landing-hero { display: grid; grid-template-columns: minmax(0, .9fr) minmax(520px, 1.1fr);
-  gap: 56px; align-items: center; min-height: min(680px, calc(100vh - 110px)); }
-.landing-hero-copy { display: flex; flex-direction: column; align-items: start; gap: 22px; }
+  gap: 56px; align-items: center; min-height: min(640px, calc(100vh - 180px)); }
+.landing-hero-copy { display: flex; flex-direction: column; align-items: start; gap: 16px; }
 .landing-eyebrow { margin: 0; font: 500 .75rem/1.2 var(--mono); color: var(--color-accent);
   letter-spacing: .16em; text-transform: uppercase; }
 .landing-hero h1 { max-width: 12ch; margin: 0;
-  font: 500 clamp(3rem, 6vw, 5.8rem)/.94 var(--font-heading); letter-spacing: -.065em;
+  font: 500 clamp(3rem, 6vw, 5rem)/.94 var(--font-heading); letter-spacing: -.065em;
   text-wrap: balance; }
 .landing-hero-lede { max-width: 54ch; margin: 0; color: var(--dim); font-size: 1.12rem;
   text-wrap: pretty; }
@@ -498,6 +502,8 @@ header.top:has(~ main .landing-shell) { position: sticky; top: 0; z-index: 20;
 
 @media (max-width: 620px) {
   .page { padding: 14px 16px 50px; }
+  .wrap, main, .live { gap: 20px; }
+  .panel { padding: 14px; }
   header.top { align-items: stretch; gap: 10px; }
   header.top > .row { width: 100%; flex-wrap: nowrap; gap: 10px; }
   header.top > .row:first-child { align-items: center; }
