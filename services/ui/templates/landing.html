@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block body %}
+<div class='landing-shell'>
+<section class='landing-hero' aria-labelledby='landing-title'>
+  <div class='landing-hero-copy'>
+    <p class='landing-eyebrow'>{{ t.landing_hero_kicker }}</p>
+    <h1 id='landing-title'>{{ t.landing_hero_title }}</h1>
+    <p class='landing-hero-lede'>{{ t.landing_hero_lede }}</p>
+    <div class='landing-actions'>
+      <a class='landing-button landing-button-primary' href='/app'>{{ t.landing_primary_cta }}</a>
+      <a class='landing-button' href='#how-it-works'>{{ t.landing_secondary_cta }}</a>
+    </div>
+  </div>
+
+  <div class='landing-demo' data-landing-demo>
+    <div class='landing-demo-head'>
+      <div>
+        <p class='landing-eyebrow'>{{ t.landing_demo_kicker }}</p>
+        <h2>{{ t.landing_demo_title }}</h2>
+      </div>
+      <span class='landing-demo-live' aria-hidden='true'></span>
+    </div>
+    <p class='landing-demo-hint'>{{ t.landing_demo_hint }}</p>
+    <div class='landing-scenario-tabs' role='tablist' aria-label='{{ t.landing_demo_scenario }}'>
+      {% for sample in samples %}
+      <button class='landing-scenario-tab' id='landing-tab-{{ loop.index }}' type='button'
+        role='tab' aria-selected='{{ "true" if loop.first else "false" }}'
+        aria-controls='landing-panel-{{ loop.index }}' tabindex='{{ "0" if loop.first else "-1" }}'
+        data-landing-tab='{{ loop.index }}'>
+        <span>0{{ loop.index }}</span>{{ sample.label }}
+      </button>
+      {% endfor %}
+    </div>
+
+    {% set stages = [t.landing_stage_quality, t.landing_stage_align, t.landing_stage_diff,
+                     t.landing_stage_rescan, t.landing_stage_severity] %}
+    {% for sample in samples %}
+    {% set scenario = loop.index %}
+    <section class='landing-scenario-panel' id='landing-panel-{{ scenario }}' role='tabpanel'
+      aria-labelledby='landing-tab-{{ scenario }}'{% if not loop.first %} hidden{% endif %}
+      data-landing-panel='{{ scenario }}'>
+      <div class='landing-capture'>
+        <img src='{{ sample.url }}' alt='' width='360' height='240'>
+        <div>
+          <span class='landing-capture-label'>{{ sample.label }}</span>
+          <p>{{ sample.note }}</p>
+        </div>
+      </div>
+      <ol class='landing-rail' aria-label='{{ t.landing_demo_result }}'>
+        {% for stage in stages %}
+        {% set step = loop.index %}
+        {% if scenario == 1 %}
+          {% set state = 'done' if step == 1 else 'skipped' %}
+        {% elif scenario == 2 %}
+          {% set state = 'bad' if step == 1 else 'skipped' %}
+        {% elif scenario == 3 %}
+          {% set state = 'warn' if step == 5 else ('skipped' if step == 4 else 'done') %}
+        {% else %}
+          {% set state = 'bad' if step == 2 else ('done' if step == 1 else 'skipped') %}
+        {% endif %}
+        <li class='landing-rail-step landing-rail-{{ state }}'>
+          <span class='landing-rail-index'>{{ step }}</span>
+          <span class='landing-rail-name'>{{ stage }}</span>
+          <span class='landing-rail-state'>{{ t.landing_state_done if state == 'done' else
+            (t.landing_state_waiting if state in ('warn', 'bad') else t.landing_state_skipped) }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+      <div class='landing-outcome' role='status'>
+        <span>{{ t.landing_demo_result }}</span>
+        <strong>{{ t['landing_scenario_' ~ scenario ~ '_outcome'] }}</strong>
+      </div>
+    </section>
+    {% endfor %}
+    <div class='landing-demo-controls' aria-label='{{ t.landing_demo_scenario }}'>
+      <button type='button' data-landing-action='previous'>{{ t.landing_demo_previous }}</button>
+      <button type='button' data-landing-action='pause'>{{ t.landing_demo_pause }}</button>
+      <button type='button' data-landing-action='replay'>{{ t.landing_demo_replay }}</button>
+      <button type='button' data-landing-action='next'>{{ t.landing_demo_next }}</button>
+    </div>
+  </div>
+</section>
+
+<section class='landing-metrics' aria-label='{{ t.landing_metrics_label }}'>
+  {% for metric in landing_metrics %}
+  <article>
+    <strong>{{ metric.value }}</strong>
+    <span>{{ metric.label }}</span>
+    <small>{{ metric.note }}</small>
+  </article>
+  {% endfor %}
+</section>
+
+<section class='landing-section' id='how-it-works' aria-labelledby='landing-flow-title'>
+  <div class='landing-section-heading'>
+    <p class='landing-eyebrow'>{{ t.landing_flow_kicker }}</p>
+    <h2 id='landing-flow-title'>{{ t.landing_flow_title }}</h2>
+    <p>{{ t.landing_flow_lede }}</p>
+  </div>
+  <div class='landing-flow'>
+    {% for number in range(1, 4) %}
+    <article class='landing-flow-card'>
+      <span class='landing-flow-number'>0{{ number }}</span>
+      <h3>{{ t['landing_flow_' ~ number ~ '_title'] }}</h3>
+      <p>{{ t['landing_flow_' ~ number ~ '_text'] }}</p>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class='landing-memory' id='memory' aria-labelledby='landing-memory-title'>
+  <div class='landing-memory-copy'>
+    <p class='landing-eyebrow'>{{ t.landing_memory_kicker }}</p>
+    <h2 id='landing-memory-title'>{{ t.landing_memory_title }}</h2>
+    <p>{{ t.landing_memory_lede }}</p>
+  </div>
+  <div class='landing-memory-visual' aria-hidden='true'>
+    <div class='landing-memory-card landing-memory-card-current'>
+      <span>{{ t.landing_memory_current }}</span><b>03</b>
+    </div>
+    <div class='landing-memory-card'><span>{{ t.landing_memory_history }}</span><b>02</b></div>
+    <div class='landing-memory-card'><span>{{ t.landing_memory_history }}</span><b>01</b></div>
+  </div>
+</section>
+
+<section class='landing-section landing-stack' id='system' aria-labelledby='landing-stack-title'>
+  <div class='landing-section-heading'>
+    <p class='landing-eyebrow'>{{ t.landing_stack_kicker }}</p>
+    <h2 id='landing-stack-title'>{{ t.landing_stack_title }}</h2>
+  </div>
+  <div class='landing-stack-grid'>
+    <div class='landing-stack-list'>
+      {% for item in t.landing_stack_items %}<span>{{ item }}</span>{% endfor %}
+    </div>
+    <div class='landing-limits'>
+      <h3>{{ t.landing_limits_title }}</h3>
+      <ul>{% for item in t.landing_limits_items %}<li>{{ item }}</li>{% endfor %}</ul>
+    </div>
+  </div>
+</section>
+
+<section class='landing-final' aria-labelledby='landing-final-title'>
+  <div>
+    <h2 id='landing-final-title'>{{ t.landing_final_title }}</h2>
+    <p>{{ t.landing_final_lede }}</p>
+  </div>
+  <a class='landing-button landing-button-primary' href='/app'>{{ t.landing_final_cta }}</a>
+</section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src='{{ landing_js_url }}'></script>
+{% endblock %}

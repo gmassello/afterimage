@@ -1,5 +1,10 @@
 # afterimage — master plan
 
+> **Historical build log.** Dates, metrics, routes, and architecture in this file describe the state
+> when each stage was planned or closed. Current behavior is documented in
+> [FUNCTIONAL.md](FUNCTIONAL.md), [ARCHITECTURE.md](ARCHITECTURE.md),
+> [BACKEND.md](BACKEND.md), and [FRONTEND.md](FRONTEND.md).
+
 Visual inspection agent with longitudinal memory for the OpenCV AI Competition 2026
 (Agentic Vision path). Submit on **24 or 25 October**; the 26th is a cushion, not a working day.
 

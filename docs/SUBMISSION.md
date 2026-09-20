@@ -1,5 +1,9 @@
 # Submission checklist — OpenCV AI Competition 2026
 
+> **Competition delivery record.** This preserves the submission evidence and measurements from its
+> stated dates. Use [FUNCTIONAL.md](FUNCTIONAL.md) and [ARCHITECTURE.md](ARCHITECTURE.md) for the
+> current system, and [EVALUATION.md](EVALUATION.md) for current published metrics.
+
 Track: **Agentic Vision path**. Deadline 26 Oct 23:59 PT (27 Oct 03:59 ART); submit 24–25 Oct.
 
 ## Try it first

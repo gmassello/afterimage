@@ -1,11 +1,17 @@
 import json
 import os
+import tempfile
 from pathlib import Path
 from typing import Any
+
+from botocore.exceptions import ClientError
 
 from services.memory import images
 
 PENDING = "pending.json"
+EVENTS = "events.json"
+STATE = "state.json"
+RETRY = "retry.json"
 
 # ponytail: unbounded per-process cache of append targets; entries are small JSON arrays
 _append_cache: dict[tuple[str, str], list] = {}
@@ -42,6 +48,38 @@ def write(run_dir: Path, name: str, data) -> None:
     path = Path(run_dir) / name
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2))
+
+
+def write_once(run_dir: Path, name: str, data) -> tuple[bool, Any]:
+    if _on_s3():
+        try:
+            images._s3().put_object(
+                Bucket=images.BUCKET,
+                Key=_key(run_dir, name),
+                Body=json.dumps(data, indent=2),
+                IfNoneMatch="*",
+            )
+        except ClientError as rejected:
+            code = rejected.response.get("Error", {}).get("Code")
+            if code not in ("PreconditionFailed", "ConditionalRequestConflict"):
+                raise
+            return False, read(run_dir, name)
+        return True, data
+    path = Path(run_dir) / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(dir=path.parent, prefix=f".{name}.")
+    try:
+        with os.fdopen(descriptor, "w") as output:
+            json.dump(data, output, indent=2)
+            output.flush()
+            os.fsync(output.fileno())
+        try:
+            os.link(temporary, path)
+        except FileExistsError:
+            return False, read(run_dir, name)
+        return True, data
+    finally:
+        Path(temporary).unlink(missing_ok=True)
 
 
 def append(run_dir: Path, name: str, item) -> None:
@@ -84,3 +122,58 @@ def pending(runs_dir: str | Path = "runs") -> list[dict]:
         if (payload := read(Path(runs_dir) / run_id, PENDING)) is not None
     ]
     return sorted(payloads, key=lambda payload: payload.get("captured_at", ""))
+
+
+
+def _run_ids(root: str | Path) -> list[str]:
+    if not _on_s3():
+        return [path.parent.name for path in Path(root).glob(f"*/{EVENTS}")]
+    paginator = images._s3().get_paginator("list_objects_v2")
+    return [
+        item["Key"].split("/")[1]
+        for page in paginator.paginate(Bucket=images.BUCKET, Prefix="runs/")
+        for item in page.get("Contents", [])
+        if item["Key"].endswith(f"/{EVENTS}")
+    ]
+
+
+def _summary(root: str | Path, run_id: str) -> dict | None:
+    run_dir = Path(root) / run_id
+    events = read(run_dir, EVENTS) or []
+    started = next((event for event in events if event.get("type") == "run_started"), None)
+    if started is None:
+        return None
+    finished = next(
+        (event for event in reversed(events) if event.get("type") == "run_finished"),
+        None,
+    )
+    state = read(run_dir, STATE) or {}
+    status = state.get("status") or (finished or {}).get("status")
+    if status is None:
+        status = "running" if len(events) > 1 else "unstarted"
+    return {
+        "run_id": run_id,
+        "asset_id": started.get("asset_id", ""),
+        "capture_key": started.get("capture_key", ""),
+        "captured_at": started.get("ts", ""),
+        "updated_at": events[-1].get("ts", ""),
+        "status": status,
+        "branch": state.get("branch") or (finished or {}).get("branch"),
+        "message": state.get("message") or (finished or {}).get("message") or "",
+        "retryable": status == "failed",
+    }
+
+
+def recent(root: str | Path = "runs", limit: int = 50, q: str = "",
+           status: str = "") -> list[dict]:
+    query = q.strip().lower()
+    wanted_status = status.strip().lower()
+    items = [item for run_id in _run_ids(root) if (item := _summary(root, run_id))]
+    if query:
+        items = [
+            item for item in items
+            if query in " ".join(str(value).lower() for value in item.values())
+        ]
+    if wanted_status:
+        items = [item for item in items if str(item["status"]).lower() == wanted_status]
+    return sorted(items, key=lambda item: item["updated_at"], reverse=True)[:limit]

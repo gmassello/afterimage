@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from services.api.app import app
 from services.conftest import localstack
-from services.memory import images, store
+from services.memory import images, runs, store
 from services.perception.tests.panels import solar_panel
 from services.ui import views
 
@@ -39,10 +39,10 @@ def test_health(client):
 
 
 @localstack
-def test_index_lists_assets(client):
+def test_dashboard_lists_assets(client):
     asset_id = unique("api-index")
     store.put_asset(asset_id)
-    response = client.get("/")
+    response = client.get("/app")
     assert response.status_code == 200
     assert asset_id in response.text
 
@@ -88,7 +88,11 @@ def test_upload_rejects_bad_input(client):
         files={"image": ("panel.png", b"not an image", "image/png")},
     )
     assert undecodable.status_code == 400
-    assert undecodable.json() == {"detail": "not a decodable image"}
+    assert undecodable.json() == {
+        "detail": "not a decodable image",
+        "code": "invalid_image",
+        "retryable": False,
+    }
 
 
 @localstack
@@ -237,3 +241,207 @@ def test_queue_entry_shows_the_compared_pair_and_the_changed_region():
     assert "/images/array-rooftop/7f2ac91b04de/aligned.png" in page
     assert "[412, 208, 96, 64]" in page
     assert "score 0.6543" in page
+
+
+@localstack
+def test_the_language_asked_for_is_kept_in_a_cookie(client):
+    response = client.get("/?lang=es")
+    assert response.status_code == 200
+    assert "<html lang='es'" in response.text
+    assert response.cookies["afterimage-lang"] == "es"
+
+
+@localstack
+def test_the_cookie_carries_the_language_to_a_url_that_cannot_ask(client):
+    client.get("/?lang=es")
+    assert "<html lang='es'" in client.get("/queue").text
+
+
+@localstack
+def test_the_browser_preference_decides_until_someone_chooses(client):
+    spanish = client.get("/", headers={"accept-language": "es-AR,es;q=0.9,en;q=0.8"})
+    assert "<html lang='es'" in spanish.text
+    assert "afterimage-lang" not in spanish.cookies
+    assert "<html lang='en'" in client.get("/", headers={"accept-language": "fr,en"}).text
+
+
+@localstack
+def test_a_language_nobody_ships_is_ignored(client):
+    response = client.get("/?lang=de")
+    assert "<html lang='en'" in response.text
+    assert "afterimage-lang" not in response.cookies
+
+
+@localstack
+def test_a_rejected_upload_explains_itself_in_the_language_of_the_page(client):
+    response = client.post(
+        "/inspections?lang=es",
+        data={"asset_id": unique("api-es")},
+        files={"image": ("note.txt", b"not an image", "text/plain")},
+        headers={"accept": "text/html"},
+    )
+    assert response.status_code == 400
+    assert "<html lang='es'" in response.text
+    assert "no es una imagen decodificable" in response.text
+
+
+def test_the_sample_captures_are_served_like_every_other_static_asset(client):
+    for stem, _ in views.SAMPLES:
+        name = next(n for n in views._assets() if n.startswith(stem + "."))
+        response = client.get(f"/static/{name}")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "image/png"
+        assert "immutable" in response.headers["cache-control"]
+
+
+@localstack
+def test_the_register_asked_for_is_kept_in_its_own_cookie(client):
+    response = client.get("/?register=tech")
+    assert response.status_code == 200
+    assert response.cookies["afterimage-register"] == "tech"
+    assert "runs the policy would not write unattended" in client.get("/queue").text
+
+
+@localstack
+def test_a_first_visitor_reads_the_plain_register(client):
+    page = client.get("/").text
+    assert "services/agent/policy.py" not in page
+    assert "<a href='?register=plain' class='here' aria-current='true'" in page
+
+
+@localstack
+def test_a_register_nobody_ships_is_ignored(client):
+    response = client.get("/?register=cryptic")
+    assert "afterimage-register" not in response.cookies
+    assert "<a href='?register=plain' class='here' aria-current='true'" in response.text
+
+
+@localstack
+def test_the_two_choices_are_remembered_apart(client):
+    client.get("/?lang=es")
+    client.get("/?register=tech")
+    page = client.get("/queue").text
+    assert "<html lang='es'" in page
+    assert "corridas que la política no escribiría sin supervisión" in page
+
+
+def test_root_is_the_public_landing_and_app_is_the_dashboard(client, monkeypatch):
+    monkeypatch.setattr(store, "list_assets", lambda: [])
+    landing = client.get("/")
+    dashboard = client.get("/app")
+    assert landing.status_code == 200
+    assert dashboard.status_code == 200
+    assert "href='/app'" in landing.text
+    assert "new inspection" in dashboard.text
+
+
+def _failed_run(root, run_id="abcdef123456"):
+    from services.observability import trace
+
+    run_dir = root / run_id
+    trace.emit(
+        run_dir,
+        "run_started",
+        run_id=run_id,
+        asset_id="panel-retry",
+        capture_key="assets/panel-retry/capture/capture.png",
+    )
+    trace.emit(
+        run_dir,
+        "run_finished",
+        status=trace.FAILED,
+        branch=None,
+        message="RuntimeError: unavailable",
+    )
+    return run_dir
+
+
+def test_activity_lists_recent_runs_and_applies_filters(client, tmp_path):
+    _failed_run(tmp_path)
+    page = client.get("/activity?q=panel-retry&status=failed")
+    assert page.status_code == 200
+    assert "abcdef123456" in page.text
+    assert "panel-retry" in page.text
+    assert "/runs/abcdef123456/retry" in page.text
+    assert "abcdef123456" not in client.get("/activity?status=completed").text
+
+
+def test_failed_run_retry_is_idempotent_and_preserves_the_original(client, tmp_path):
+    from services.observability import trace
+
+    original_dir = _failed_run(tmp_path)
+    original_events = trace.read_events(original_dir)
+
+    first = client.post("/runs/abcdef123456/retry")
+    second = client.post("/runs/abcdef123456/retry")
+    assert first.status_code == 200
+    assert first.json() == second.json()
+    payload = first.json()
+    assert payload == {
+        "retry_of": "abcdef123456",
+        "run_id": payload["run_id"],
+        "status": "unstarted",
+        "trace_url": f"/traces/{payload['run_id']}",
+        "execute_url": f"/runs/{payload['run_id']}/execute",
+    }
+    assert trace.read_events(original_dir) == original_events
+    retried = trace.read_events(tmp_path / payload["run_id"])
+    assert [event["type"] for event in retried] == ["run_started"]
+    assert retried[0]["retry_of"] == "abcdef123456"
+
+    browser = client.post(
+        "/runs/abcdef123456/retry",
+        headers={"accept": "text/html"},
+    )
+    assert browser.status_code == 303
+    assert browser.headers["location"] == payload["trace_url"]
+
+
+def test_retry_rejects_unknown_and_non_failed_runs_with_structured_errors(client, tmp_path):
+    from services.observability import trace
+
+    unknown = client.post("/runs/000000000000/retry")
+    assert unknown.status_code == 404
+    assert unknown.json() == {
+        "detail": "run not found",
+        "code": "run_not_found",
+        "retryable": False,
+    }
+
+    run_id = "111111111111"
+    trace.emit(
+        tmp_path / run_id,
+        "run_started",
+        run_id=run_id,
+        asset_id="panel-active",
+        capture_key="assets/panel-active/capture/capture.png",
+    )
+    conflict = client.post(f"/runs/{run_id}/retry")
+    assert conflict.status_code == 409
+    assert conflict.json() == {
+        "detail": "only a failed run can be retried",
+        "code": "run_not_failed",
+        "retryable": False,
+    }
+    html = client.post(f"/runs/{run_id}/retry", headers={"accept": "text/html"})
+    assert html.status_code == 409
+    assert html.headers["content-type"].startswith("text/html")
+    assert "run_not_failed" in html.text
+
+
+def test_unhandled_errors_have_html_and_json_contracts(tmp_path, monkeypatch):
+    monkeypatch.setenv("AFTERIMAGE_RUNS_DIR", str(tmp_path))
+    monkeypatch.setattr(runs, "recent", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
+    safe_client = TestClient(app, raise_server_exceptions=False)
+
+    json_error = safe_client.get("/activity")
+    assert json_error.status_code == 500
+    assert json_error.json() == {
+        "detail": "the request could not be completed",
+        "code": "internal_error",
+        "retryable": False,
+    }
+    html_error = safe_client.get("/activity", headers={"accept": "text/html"})
+    assert html_error.status_code == 500
+    assert html_error.headers["content-type"].startswith("text/html")
+    assert "internal_error" in html_error.text

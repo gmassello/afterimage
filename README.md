@@ -24,6 +24,10 @@
   <b><a href="docs/AI_DISCLOSURE.md">AI use</a></b>
 </p>
 
+Developer documentation: [functional guide](docs/FUNCTIONAL.md) ·
+[technology stack](docs/STACK.md) · [architecture](docs/ARCHITECTURE.md) ·
+[backend](docs/BACKEND.md) · [frontend](docs/FRONTEND.md)
+
 <p align="center">
   <sub>Response time is the median of seven warm requests to the Function URL, measured with <code>curl -o /dev/null -w '%{http_code} %{time_total}'</code> on 15 September 2026 (range 0.57–0.67 s). It is a warm figure: an EventBridge rule replays a synthetic <code>/health</code> every five minutes. Cold, the function itself takes <b>2.34 s</b> to start — the median of 211 cold starts in the fortnight of logs the group holds — on top of that same network time. An inspection takes <b>22.8 s</b> and bills <b>$0.0006</b> at list price. <a href="docs/TECHNICAL_REPORT.md#7-deployment-and-responsible-operation">Where each figure comes from</a>.</sub>
 </p>
@@ -59,6 +63,10 @@ Both live in [`services/perception/alignment.py`](services/perception/alignment.
 
 The loop is the product, not the development process: an unusable capture is sent back, an unrecognised asset is refused rather than guessed, and a severe finding waits for a human before anything is written.
 
+The public landing explains the problem, the decision loop, measured evidence, stack and limits before asking anyone to operate the system. The `/app` workspace includes four sample captures of the same panel, so a first visitor can drive the whole loop without a photo of their own; `/activity` makes the latest runs searchable by identity and outcome. Three switches sit beside each other in the header: language (English or Spanish), register (plain or technical) and theme. The plain register explains the number a decision turned on; it never replaces it, and metric names, identifiers and the message the agent itself wrote stay as the trace recorded them.
+
+A failed run remains immutable and can be retried from recent activity. The retry creates a new run over the same capture, repeated requests return that same replacement, and a write-once marker preserves the relationship. Browser failures render as normal themed pages; API clients receive stable `{detail, code, retryable}` JSON.
+
 ## Results
 
 29 scenarios — 11 synthetic, 18 on licensed photographs of real photovoltaic modules. **24 pass** every assertion: branch, defect class and required decision path. Reproduce with `make eval`; the test suite fails if these figures drift from `eval/results/latest/results.json`.
@@ -69,7 +77,7 @@ The loop is the product, not the development process: an unusable capture is sen
 | Branch accuracy | 0.8621 | 29 scenarios, macro F1 0.8624 |
 | Defect macro F1 | 0.8753 | precision 0.75 or better on every defect class |
 | Mean IoU | 0.7875 | 14 localised regions, 12 at IoU ≥ 0.5 |
-| Scenarios passed | 24 / 29 | 18 of them on real photographs |
+| Scenarios passed | 24 / 29 | 14 real-photograph and 10 synthetic scenarios |
 
 ### Where it fails
 
@@ -160,11 +168,14 @@ GOOGLE_API_KEY=... make deploy   # ECR + docker buildx arm64 + CloudFormation, i
 
 | Endpoint | What it serves |
 |---|---|
-| `/` | Asset list and capture upload |
+| `/` | Public landing: product, workflow, measured evidence, stack and limits |
+| `/app` | Asset list, capture upload and four sample captures that need no file of your own |
+| `/activity` | Search and status filtering over the latest 50 runs |
 | `/assets/{id}` | Inspection timeline and current baseline |
 | `/queue` | Human approval queue, with the compared pair |
 | `/traces/{run_id}` | Per-run trace, JSON or HTML; fills in live while the run works |
 | `/runs/{run_id}/execute` | Runs the agent loop for a trace the upload already opened |
+| `/runs/{run_id}/retry` | Idempotently opens the replacement for a terminal failed run |
 | `/health` | Health check |
 
 <details>
@@ -194,14 +205,16 @@ Eight weeks, one capability per week. Current stage: **the written record** — 
 | Week | What landed |
 |---|---|
 | 8 | The written record: technical report with both required diagrams, the degradation literature, measured limits, and a timed video script. Headline figures asserted against the eval artefact by the test suite. |
-| 7 | Evaluation: 23 declarative scenarios scored against the real loop. Verdicts owed — the severity heuristic holds; `coverage_ratio_min` cannot take one global default. |
+| 7 | Evaluation closed initially with 23 declarative scenarios; the current suite has 29. Verdicts owed — the severity heuristic holds; `coverage_ratio_min` cannot take one global default. |
 | 6 | The public endpoint: upload, live loop, approval queue and asset history, deployed by IaC through GitHub OIDC. |
 | 5 | Observability: one span per tool call persisted per run and served as JSON or a readable page. |
 | 4 | The agent: five perception tools over MCP, an LLM ordering the calls, and `policy.py` deciding every branch in code. |
 | 3 | Memory: one DynamoDB table returning an asset's whole history, images in S3, baselines superseded rather than overwritten. |
 | 2 | Perception: the five tools implemented and tested on synthetic fixtures, each returning the raw metrics the agent branches on. |
 
-Progress against the competition rubric is tracked in [docs/SUBMISSION.md](docs/SUBMISSION.md); the full brief and weekly plan live in [docs/BRIEF.md](docs/BRIEF.md).
+Progress against the competition rubric is preserved in [docs/SUBMISSION.md](docs/SUBMISSION.md).
+The original [brief](docs/BRIEF.md) and [build plan](docs/PLAN.md) are historical records; use the
+[architecture guide](docs/ARCHITECTURE.md) for the implemented system.
 
 </details>
 

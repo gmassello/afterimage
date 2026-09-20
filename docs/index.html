@@ -1077,7 +1077,7 @@ flowchart TB
     LOOP &lt;--&gt; DDB
     LOOP &lt;--&gt; S3B
     fn --&gt; LOGS
-    EB --&gt;|"a synthetic /health, to keep it warm"| URL
+    EB --&gt;|"a synthetic /health event"| fn
     CFN --&gt; fn
     ECRR --&gt;|"the image, tagged with the git SHA"| fn
       </pre>
@@ -1103,9 +1103,10 @@ make test      <span class="comment"># the suite, inside the arm64 container</sp
 make demo      <span class="comment"># the four branches, fired one by one</span>
 make dev       <span class="comment"># the stack up, trace endpoint on :8000</span></code></pre>
       <p style="margin-top:1.25rem">
-        Expect <strong>54 passing tests</strong> on <code>aarch64</code> with OpenCV 5.0.0. The tests
-        do not need photographs: they generate synthetic solar panels in code and paint the defect
-        they want to prove onto them, so every run is reproducible.
+        Expect the complete suite to pass on <code>aarch64</code> with OpenCV 5.0.0. The exact count
+        changes as coverage grows, so <code>make test</code> is the source of truth. Unit tests use
+        synthetic solar panels with controlled defects, while evaluation scenarios also include
+        committed photographs and remain reproducible offline.
       </p>
       <p>
         One thing worth checking, because it is the honest way to read a green suite: the tests that
@@ -1129,12 +1130,22 @@ make dev       <span class="comment"># the stack up, trace endpoint on :8000</sp
     <div class="sec-head"><span class="marker">13</span><h2>Where the project stands</h2></div>
     <div class="col">
       <p>
-        Week 8 of 9. The loop closes, explains itself, runs in public, has a score, and now has the
-        document that explains it end to end: the
+        The loop closes, explains itself, runs in public, has a score, and has the
+        competition report that explains it end to end: the
         <a href="https://github.com/gmassello/afterimage/blob/main/docs/TECHNICAL_REPORT.md">technical report</a>,
         which is where this manual sends you when you want the numbers rather than the plain-language
         version, and the <a href="https://youtu.be/zUFR96a33IM">five-minute walkthrough</a> if you
-        want neither. What remains is the submission itself.
+        want neither. The implementation is documented separately for maintainers.
+      </p>
+      <p>
+        Start with the
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/FUNCTIONAL.md">functional guide</a>,
+        then use the
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/STACK.md">technology stack</a>,
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/ARCHITECTURE.md">architecture</a>,
+        <a href="https://github.com/gmassello/afterimage/blob/main/docs/BACKEND.md">backend guide</a>,
+        and <a href="https://github.com/gmassello/afterimage/blob/main/docs/FRONTEND.md">frontend guide</a>
+        for the current system rather than the historical build plans.
       </p>
       <p>
         Three shorter documents answer the questions this manual deliberately does not:

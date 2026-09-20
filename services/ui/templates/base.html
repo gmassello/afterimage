@@ -1,4 +1,4 @@
-<!doctype html><html lang='en' data-theme='light'><head><meta charset='utf-8'>
+<!doctype html><html lang='{{ lang }}' data-theme='light'><head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
 <title>afterimage &mdash; {{ title }}</title>
 <meta name='description' content='A visual inspection agent that remembers: every branch it takes is decided in code, and the trace carries the number that decided it.'>
@@ -26,14 +26,17 @@ try {
 document.documentElement.classList.add('js');
 </script>
 </head><body>
+<a class='skip-link' href='#main-content'>{{ t.skip_to_content }}</a>
 <div class='page'
   {%- if run_state %} data-run-state='{{ run_state }}'{% endif %}
   {%- if execute_url %} data-execute-url='{{ execute_url }}'{% endif %}>
 <div class='{{ "wrap narrow" if narrow else "wrap" }}'>
 {% include 'partials/header.html' %}
 {% if says %}<p class='runstate'><span class='says' role='status' aria-live='polite'>{{ says }}</span>{% if run_state %}<span class='clock' aria-hidden='true'></span>{% endif %}</p>{% endif %}
-<main>{% block body %}{% endblock %}</main>
+<main id='main-content'>{% block body %}{% endblock %}</main>
 {% block tail %}{% endblock %}
 </div></div>
+<script type='application/json' id='i18n'>{{ {'dark': t.theme_dark, 'light': t.theme_light, 'confirm': t.js_confirm, 'arm': t.js_arm, 'tooLarge': t.js_too_large, 'notAnImage': t.js_not_an_image, 'sampleFailed': t.js_sample_failed, 'runStartFailed': t.js_run_start_failed, 'pollTimeout': t.js_poll_timeout}|tojson }}</script>
 <script src='{{ js_url }}'></script>
+{% block scripts %}{% endblock %}
 </body></html>

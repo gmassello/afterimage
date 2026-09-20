@@ -1,10 +1,26 @@
+const T = (() => {
+  const fallback = {
+    dark: 'Dark',
+    light: 'Light',
+    confirm: 'Confirm?',
+    arm: 'Click Confirm? again to {action}, or move away to cancel.',
+    tooLarge: 'image larger than 6 MB',
+    notAnImage: 'not a decodable image',
+    sampleFailed: 'the example could not be loaded \u2014 pick a file instead',
+    runStartFailed: 'the run could not be started',
+    pollTimeout: 'the run did not answer in time \u2014 open activity to check it',
+  };
+  try {
+    return { ...fallback, ...JSON.parse(document.getElementById('i18n').textContent) };
+  } catch (e) { return fallback; }
+})();
+
 const root = document.documentElement;
 const label = document.getElementById('theme-label');
 const toggle = document.getElementById('theme');
 const paint = (theme) => {
   root.dataset.theme = theme;
-  label.textContent = theme === 'dark' ? 'Light' : 'Dark';
-  toggle.setAttribute('aria-label', `Switch to the ${theme === 'dark' ? 'light' : 'dark'} theme`);
+  label.textContent = theme === 'dark' ? T.light : T.dark;
 };
 paint(root.dataset.theme);
 toggle.addEventListener('click', () => {
@@ -64,10 +80,10 @@ addEventListener('click', (e) => {
   if (!button || button.dataset.armed) return;
   e.preventDefault();
   button.dataset.armed = button.textContent;
-  button.textContent = 'Confirm?';
+  button.textContent = T.confirm;
   button.focus();
   const say = button.closest('.acts')?.querySelector('.say');
-  if (say) say.textContent = `Click Confirm? again to ${button.dataset.armed.toLowerCase()}, or move away to cancel.`;
+  if (say) say.textContent = T.arm.replace('{action}', button.dataset.armed.toLowerCase());
 });
 
 addEventListener('focusout', (e) => {
@@ -83,8 +99,8 @@ if (zone) {
   const review = () => {
     const file = input.files[0];
     let problem = '';
-    if (file && file.size > MAX_UPLOAD_BYTES) problem = 'image larger than 6 MB';
-    else if (file && file.type && !file.type.startsWith('image/')) problem = 'not a decodable image';
+    if (file && file.size > MAX_UPLOAD_BYTES) problem = T.tooLarge;
+    else if (file && file.type && !file.type.startsWith('image/')) problem = T.notAnImage;
     input.setCustomValidity(problem);
     if (preview.src) URL.revokeObjectURL(preview.src);
     preview.hidden = !file || !!problem;
@@ -100,6 +116,44 @@ if (zone) {
     input.files = e.dataTransfer.files;
     review();
   });
+  document.querySelectorAll('.sample[data-sample]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const id = document.getElementById('asset-id');
+      if (id && !id.value) id.value = button.dataset.asset;
+      try {
+        const picked = new DataTransfer();
+        const body = await (await fetch(button.dataset.sample)).blob();
+        picked.items.add(new File([body], button.dataset.name, { type: body.type }));
+        input.files = picked.files;
+        review();
+      } catch (e) {
+        input.setCustomValidity(T.sampleFailed);
+        input.reportValidity();
+      }
+    });
+  });
+}
+
+const assetFilters = document.querySelector('[data-asset-filters]');
+if (assetFilters) {
+  const search = assetFilters.querySelector('input[type=search]');
+  const result = assetFilters.querySelector('select');
+  const cards = [...document.querySelectorAll('.gallery .asset')];
+  const empty = document.querySelector('.asset-filter-empty');
+  const applyAssetFilters = () => {
+    const query = search.value.trim().toLowerCase();
+    let shown = 0;
+    cards.forEach((card) => {
+      const matchesQuery = !query || card.dataset.assetId.toLowerCase().includes(query)
+        || card.textContent.toLowerCase().includes(query);
+      const matchesResult = !result.value || card.dataset.assetResult === result.value;
+      card.hidden = !(matchesQuery && matchesResult);
+      if (!card.hidden) shown += 1;
+    });
+    empty.hidden = shown !== 0;
+  };
+  assetFilters.addEventListener('input', applyAssetFilters);
+  assetFilters.addEventListener('submit', (event) => event.preventDefault());
 }
 
 addEventListener('input', (e) => {
@@ -125,7 +179,7 @@ const stopClock = () => {
 if (page.dataset.runState === 'unstarted' && page.dataset.executeUrl) {
   fetch(page.dataset.executeUrl, { method: 'POST' }).catch(() => {
     stopClock();
-    say('the run could not be started — reload the page to retry');
+    say(T.runStartFailed);
   });
 }
 
@@ -168,7 +222,7 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
     if (!live || page.dataset.runState === 'done') return;
     if (++attempts >= cap) {
       stopClock();
-      say(`no answer after ${Math.round(cap * every / 60000)} minutes — reload the page to retry`);
+      say(T.pollTimeout);
       return;
     }
     setTimeout(poll, next);

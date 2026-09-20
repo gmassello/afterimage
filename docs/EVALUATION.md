@@ -112,7 +112,7 @@ onto an already bright photograph pushed `clipped_bright_ratio` to 0.3086, just 
 so the agent asked for a recapture and never reached severity. This is arguably correct behaviour —
 the image genuinely is clipped, and measuring a defect through blown highlights would be worse — but
 it is a real ordering effect: gates fire in sequence, and an early gate can mask a later finding.
-It is the single reason `hotspot` recall is 0.6667 rather than 1.0.
+It is the single reason `hotspot` recall is 0.75 rather than 1.0.
 
 **3. Severity underestimates a defect that covers a small area.** A delamination on a real
 photograph scored 0.3412, under the 0.40 approval threshold, so it was written automatically instead

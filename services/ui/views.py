@@ -12,6 +12,15 @@ from services.agent.policy import HUMAN_GATE_METRIC, SEVERITY_METRIC, Policy
 from services.memory import runs, store
 from services.observability import trace
 from services.observability.render import causal_line
+from services.ui.text import (
+    DEFAULT_LANG,
+    DEFAULT_REGISTER,
+    LANGS,
+    REGISTERS,
+    counted,
+    months,
+    strings,
+)
 
 HERE = Path(__file__).parent
 STATIC = HERE / "static"
@@ -22,6 +31,7 @@ MEDIA = {
     "js": "text/javascript",
     "svg": "image/svg+xml",
     "woff2": "font/woff2",
+    "png": "image/png",
 }
 
 _env = Environment(
@@ -31,28 +41,38 @@ _env = Environment(
     lstrip_blocks=True,
 )
 
-_NAV = (("/", "assets", "assets"), ("/queue", "approval queue", "queue"))
+_NAV = (
+    ("/app", "nav_assets", "assets"),
+    ("/activity", "nav_activity", "activity"),
+    ("/queue", "nav_queue", "queue"),
+)
+
+SAMPLE_ASSET = "demo-panel"
+SAMPLES = (
+    ("sample-baseline", "sample_1"),
+    ("sample-blurred", "sample_2"),
+    ("sample-defect", "sample_3"),
+    ("sample-foreign", "sample_4"),
+)
 
 
-def when(value) -> str:
+def when(value, lang: str = DEFAULT_LANG) -> str:
     try:
         moment = datetime.fromisoformat(str(value))
     except ValueError:
         return str(value)
     if moment.tzinfo is not None:
         moment = moment.astimezone(timezone.utc)
-    return moment.strftime("%-d %b %Y \u00b7 %H:%M UTC")
+    month = months(lang)[moment.month - 1]
+    return f"{moment.day} {month} {moment.year} \u00b7 {moment:%H:%M} UTC"
 
 
 _env.filters["when"] = when
 
-_QUESTION = {
-    "assess_quality": "Is this capture worth scoring at all?",
-    "align_to_baseline": "Is this the same asset as the one in memory?",
-    "diff_against_memory": "Has anything changed since the baseline — enough to be sure?",
-    "crop_and_rescan": "Is the changed region large enough to be real?",
-    "classify_severity": "What kind of defect, and can it be written unattended?",
-}
+
+def _tip(t: dict, name) -> str | None:
+    return t.get(f"tip_{name}") if name else None
+
 
 # ponytail: the headline metric per stage is a copy of what policy branched on; the real numbers
 # are in the run trace, but reading them costs one S3 GET per row against the item we already have
@@ -64,36 +84,8 @@ _HEADLINE = {
     "classify_severity": ("score",),
 }
 
-_STAGES = tuple((stage, _QUESTION[tool], _HEADLINE[tool]) for tool, stage in STAGE_OF.items())
+_STAGES = tuple((stage, f"q_{tool}", _HEADLINE[tool]) for tool, stage in STAGE_OF.items())
 _ORDER = tuple(STAGE_OF)
-
-_TIP = {
-    "blur_variance": "How sharp the capture is. Low means the photo is too soft to score.",
-    "inlier_ratio": "Share of matched keypoints that agree on one geometry. Low means this is "
-                    "not the asset memory holds.",
-    "mean_delta": "Average pixel difference against the baseline, inside the changed region.",
-    "area_ratio": "How much of the frame the changed region covers.",
-    "changed_ratio": "Share of the aligned frame whose pixels moved at all since the baseline.",
-    "score": "Severity of the change, 0 to 1. Above the threshold nothing is written without a "
-             "human.",
-    policy_module.RECAPTURE: "The capture was not good enough to score. The agent asked for "
-                             "another photo.",
-    policy_module.QUALITY_OK: "The capture was sharp and well exposed enough to score.",
-    policy_module.RETRY_CLASSIC: "Modern features failed to match, so the agent retried with the "
-                                 "classic detector.",
-    policy_module.UNRECOGNIZED_ASSET: "Too few matches to believe this is the same asset. The "
-                                      "agent refused rather than guess.",
-    policy_module.ALIGNED: "The capture was anchored to the stored baseline of the same asset.",
-    policy_module.NO_CHANGE: "Nothing changed enough since the baseline to be worth reporting.",
-    policy_module.CROP_AND_RESCAN: "The change was borderline, so the agent zoomed in and "
-                                   "measured again.",
-    policy_module.CHANGE_CONFIRMED: "The change survived a closer look and is real.",
-    policy_module.HUMAN_APPROVAL: "Severe enough that nothing is written to memory until a person "
-                                  "approves it.",
-    policy_module.AUTO_WRITE: "Mild enough for the agent to write to memory on its own.",
-    policy_module.FIRST_BASELINE: "The first capture of this asset. There was nothing to compare "
-                                  "it against.",
-}
 
 _TONE = {
     policy_module.QUALITY_OK: "ok",
@@ -127,29 +119,106 @@ def static_asset(name: str) -> tuple[bytes, str] | None:
     return _assets().get(name)
 
 
-def _static_url(suffix: str) -> str:
-    return f"/static/{next(name for name in _assets() if name.endswith(suffix))}"
+def _static_url(suffix: str, stem: str | None = None) -> str:
+    name = next(
+        name for name in _assets()
+        if name.endswith(suffix) and (stem is None or name.startswith(f"{stem}."))
+    )
+    return f"/static/{name}"
 
 
-def _nav(current: str) -> list[dict]:
+def _samples(t: dict) -> list[dict]:
+    return [
+        {
+            "url": f"/static/{next(n for n in _assets() if n.startswith(stem + '.'))}",
+            "name": f"{stem}.png",
+            "asset_id": SAMPLE_ASSET,
+            "label": t[f"{key}_label"],
+            "note": t[f"{key}_note"],
+        }
+        for stem, key in SAMPLES
+    ]
+
+
+def _nav(current: str, t: dict) -> list[dict]:
+    if current == "landing":
+        return [
+            {"href": "#how-it-works", "label": t["nav_how"], "here": False},
+            {"href": "#memory", "label": t["nav_memory"], "here": False},
+            {"href": "#system", "label": t["nav_system"], "here": False},
+            {"href": "/app", "label": t["nav_open_app"], "here": False},
+        ]
     links = [
-        {"href": href, "label": label, "here": key == current}
+        {"href": href, "label": t[label], "here": key == current}
         for href, label, key in _NAV
     ]
     if not any(key == current for _, _, key in _NAV):
-        links.append({"label": current})
+        links.append({"label": t.get(f"nav_{current}", current)})
     return links
 
 
-def _render(template: str, title: str, current: str, **context) -> str:
+def _render(template: str, title: str, current: str, lang: str, register: str,
+            **context) -> str:
+    t = strings(lang, register)
     return _env.get_template(template).render(
         title=title,
-        nav=_nav(current),
-        css_url=_static_url(".css"),
-        js_url=_static_url(".js"),
+        lang=lang,
+        langs=LANGS,
+        register=register,
+        registers=REGISTERS,
+        t=t,
+        nav=_nav(current, t),
+        css_url=_static_url(".css", "app"),
+        js_url=_static_url(".js", "app"),
         font_url=_static_url(".woff2"),
         icon_url=_static_url(".svg"),
         **context,
+    )
+
+
+def landing_page(metrics: list[dict] | None = None, lang: str = DEFAULT_LANG,
+                 register: str = DEFAULT_REGISTER) -> str:
+    t = strings(lang, register)
+    shown = metrics or [
+        {"value": "18 / 29", "label": t["landing_metric_real"],
+         "note": t["landing_metric_real_note"]},
+        {"value": "0.8621", "label": t["landing_metric_branch"],
+         "note": t["landing_metric_branch_note"]},
+        {"value": "0.8753", "label": t["landing_metric_defect"],
+         "note": t["landing_metric_defect_note"]},
+        {"value": "0.7875", "label": t["landing_metric_iou"],
+         "note": t["landing_metric_iou_note"]},
+    ]
+    return _render(
+        "landing.html", "visual inspection with memory", "landing", lang, register,
+        narrow=False,
+        landing_metrics=shown,
+        samples=_samples(t),
+        landing_js_url=_static_url(".js", "landing"),
+    )
+
+
+def activity_page(items: list[dict], q: str = "", status: str = "",
+                  lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER) -> str:
+    return _render(
+        "activity.html", strings(lang, register)["nav_activity"], "activity", lang, register,
+        items=items,
+        query=q,
+        selected_status=status,
+        status_options=("", "unstarted", "running", "completed", "failed", "awaiting_approval"),
+    )
+
+
+def error_page(status_code: int, code: str, detail: str, retryable: bool = False,
+               retry_url: str = "", lang: str = DEFAULT_LANG,
+               register: str = DEFAULT_REGISTER) -> str:
+    return _render(
+        "error.html", strings(lang, register)["error_title"], "error", lang, register,
+        status_code=status_code,
+        error_code=code,
+        detail=detail,
+        retryable=retryable,
+        retry_url=retry_url,
     )
 
 
@@ -184,7 +253,7 @@ def _bar(value: float, threshold: float | None, ends: list[dict], large: bool = 
     }
 
 
-def _decided_bar(verdict: dict, large: bool = False) -> dict:
+def _decided_bar(verdict: dict, t: dict, large: bool = False) -> dict:
     value, threshold, branch = verdict["value"], verdict.get("threshold"), verdict.get("branch")
     head = (
         f"{verdict['input_metric']} {_fmt(float(value))}" if threshold is None
@@ -194,7 +263,8 @@ def _decided_bar(verdict: dict, large: bool = False) -> dict:
     bar["ends"].append({"text": _fmt(bar["scale"])})
     bar["tone"] = _TONE.get(branch) if branch else None
     bar["causal"] = causal_line(verdict) if threshold is not None and branch else None
-    bar["causal_tip"] = f"{branch}: {_TIP[branch]}" if branch in _TIP else None
+    tip = _tip(t, branch)
+    bar["causal_tip"] = f"{branch}: {tip}" if tip else None
     return bar
 
 
@@ -235,28 +305,28 @@ def _verdict_of(item: dict) -> dict | None:
     return dict(recovered) if recovered else None
 
 
-def _severity_bar(metrics: dict, verdict: dict | None) -> dict | None:
+def _severity_bar(metrics: dict, verdict: dict | None, t: dict) -> dict | None:
     score = (metrics.get("severity") or {}).get("score")
     if score is None:
         return None
-    return _decided_bar(verdict or {"input_metric": SEVERITY_METRIC, "value": float(score)})
+    return _decided_bar(verdict or {"input_metric": SEVERITY_METRIC, "value": float(score)}, t)
 
 
-def _headline(payload: dict, keys: tuple[str, ...]) -> dict | None:
+def _headline(payload: dict, keys: tuple[str, ...], t: dict) -> dict | None:
     region = (payload.get("regions") or [{}])[0]
     for key in keys:
         for source in (payload, region):
             if source.get(key) is not None:
-                return {"metric": key, "tip": _TIP.get(key), "value": _fmt(source[key])}
+                return {"metric": key, "tip": _tip(t, key), "value": _fmt(source[key])}
     return None
 
 
-def _stage_rows(metrics: dict) -> list[dict]:
+def _stage_rows(metrics: dict, t: dict) -> list[dict]:
     rows = []
     for stage, question, keys in _STAGES:
-        found = _headline(metrics.get(stage) or {}, keys)
+        found = _headline(metrics.get(stage) or {}, keys, t)
         if found:
-            rows.append({"question": question, **found})
+            rows.append({"question": t[question], **found})
     return rows
 
 
@@ -269,42 +339,48 @@ def _asset_card(asset: dict) -> dict:
         "thumb": f"/images/{key}?w={THUMB_WIDTH}" if key else "",
         "captured_at": str(asset.get("last_captured_at") or ""),
         "pill": {"label": str(label), "tone": _TONE.get(str(branch))} if label else None,
+        "branch": str(branch or ""),
     }
 
 
-def index_page(assets: list[dict], error: str = "", asset_id: str = "") -> str:
+def index_page(assets: list[dict], error: str = "", asset_id: str = "",
+               lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER) -> str:
+    t = strings(lang, register)
     return _render(
-        "index.html", "assets", "assets",
+        "index.html", t["nav_assets"], "assets", lang, register,
         narrow=True,
         assets=[_asset_card(asset) for asset in assets],
+        asset_branches=sorted({str(asset.get("last_branch")) for asset in assets
+                               if asset.get("last_branch")}),
+        samples=_samples(t),
         error=error,
         asset_id=asset_id,
     )
 
 
-def _baseline_entry(item: dict, entry: dict) -> dict:
+def _baseline_entry(item: dict, entry: dict, t: dict) -> dict:
     superseded = item.get("superseded_by")
-    entry["pills"] = [{"label": "baseline", "on": True}]
+    entry["pills"] = [{"label": t["pill_baseline"], "on": True}]
     entry["current"] = not superseded
-    entry["note"] = {"link": superseded} if superseded else {"text": "current baseline"}
+    entry["note"] = {"link": superseded} if superseded else {"text": t["current_baseline"]}
     entry["image_key"] = item.get("image_key", "")
     return entry
 
 
-def _inspection_entry(item: dict, entry: dict) -> dict:
+def _inspection_entry(item: dict, entry: dict, t: dict) -> dict:
     metrics = item.get("metrics") or {}
     label = (metrics.get("severity") or {}).get("label")
-    entry["pills"] = [{"label": "inspection"}]
+    entry["pills"] = [{"label": t["pill_inspection"]}]
     if label:
         entry["pills"].append({"label": str(label)})
-    entry["bar"] = _severity_bar(metrics, _verdict_of(item))
+    entry["bar"] = _severity_bar(metrics, _verdict_of(item), t)
     entry["score"] = (metrics.get("severity") or {}).get("score")
-    entry["stages"] = _stage_rows(metrics)
+    entry["stages"] = _stage_rows(metrics, t)
     entry["image_key"] = (item.get("image_keys") or {}).get("capture", "")
     return entry
 
 
-def _timeline_entry(item: dict) -> dict:
+def _timeline_entry(item: dict, t: dict) -> dict:
     promoted = item["sk"].startswith(store.BASELINE)
     entry = {
         "promoted": promoted,
@@ -316,7 +392,7 @@ def _timeline_entry(item: dict) -> dict:
         "score": None,
         "stages": [],
     }
-    entry = _baseline_entry(item, entry) if promoted else _inspection_entry(item, entry)
+    entry = _baseline_entry(item, entry, t) if promoted else _inspection_entry(item, entry, t)
     key = entry["image_key"]
     entry["thumb"] = f"/images/{key}?w={THUMB_WIDTH}" if key else ""
     return entry
@@ -345,22 +421,23 @@ def _sparkline(entries: list[dict], threshold: float) -> dict | None:
     }
 
 
-def asset_page(asset_id: str, items: list[dict]) -> str:
+def asset_page(asset_id: str, items: list[dict], lang: str = DEFAULT_LANG,
+               register: str = DEFAULT_REGISTER) -> str:
     ordered = sorted(
         (item for item in items if item["sk"] != store.META),
         key=lambda item: item.get("captured_at", ""),
         reverse=True,
     )
-    entries = [_timeline_entry(item) for item in ordered]
+    entries = [_timeline_entry(item, strings(lang, register)) for item in ordered]
     return _render(
-        "asset.html", asset_id, "assets",
+        "asset.html", asset_id, "assets", lang, register,
         asset_id=asset_id,
         entries=entries,
         sparkline=_sparkline(entries, Policy.from_env().severity_score_approve),
     )
 
 
-def _queue_entry(item: dict) -> dict:
+def _queue_entry(item: dict, t: dict) -> dict:
     metrics = item.get("metrics") or {}
     diff, severity = metrics.get("diff") or {}, metrics.get("severity") or {}
     region = (diff.get("regions") or [{}])[0]
@@ -377,9 +454,9 @@ def _queue_entry(item: dict) -> dict:
             _tag(severity.get("label"), region.get("mean_delta")),
             aligned=bool(warped),
         ),
-        "bar": _severity_bar(metrics, _verdict_of(item)),
+        "bar": _severity_bar(metrics, _verdict_of(item), t),
         "score": _fmt(_severity_score(item)) if severity.get("score") is not None else "",
-        "stages": _stage_rows(metrics),
+        "stages": _stage_rows(metrics, t),
         "raw_url": f"/traces/{item['run_id']}?format=json",
     }
 
@@ -389,15 +466,18 @@ def _severity_score(item: dict) -> float:
     return float(score) if score is not None else 0.0
 
 
-def queue_page(items: list[dict], assets_in_memory: int = 0) -> str:
+def queue_page(items: list[dict], assets_in_memory: int = 0, lang: str = DEFAULT_LANG,
+               register: str = DEFAULT_REGISTER) -> str:
     threshold = Policy.from_env().severity_score_approve
     urgent = sorted(items, key=_severity_score, reverse=True)
+    t = strings(lang, register)
     return _render(
-        "queue.html", "approval queue", "queue",
-        says=f"{len(items)} awaiting approval" if items else "nothing awaiting approval",
+        "queue.html", t["nav_queue"], "queue", lang, register,
+        says=counted(t, "awaiting", len(items)) if items else t["queue_empty"],
         threshold=f"{threshold:g}",
-        entries=[_queue_entry(item) for item in urgent],
+        entries=[_queue_entry(item, t) for item in urgent],
         assets_in_memory=assets_in_memory,
+        in_memory=counted(t, "assets_in_memory", assets_in_memory),
     )
 
 
@@ -429,11 +509,11 @@ def _summary(state: dict, events: list[dict]) -> dict:
     return merged
 
 
-def _pills(summary: dict, calls: list[dict]) -> list[dict]:
+def _pills(summary: dict, calls: list[dict], t: dict) -> list[dict]:
     pills = []
     if summary.get("branch"):
         branch = str(summary["branch"])
-        pills.append({"label": branch, "on": True, "tip": _TIP.get(branch)})
+        pills.append({"label": branch, "on": True, "tip": _tip(t, branch)})
     if summary.get("status"):
         pills.append({"label": str(summary["status"])})
     detector = next(
@@ -444,30 +524,30 @@ def _pills(summary: dict, calls: list[dict]) -> list[dict]:
     return pills
 
 
-def _decider(decisions: list[dict]) -> dict | None:
+def _decider(decisions: list[dict], t: dict) -> dict | None:
     if not decisions:
         return None
     final = decisions[-1]
     return {
         "value": _fmt(final["value"]),
         "metric": final["input_metric"],
-        "metric_tip": _TIP.get(final["input_metric"]),
-        "bar": _decided_bar(final, large=True),
+        "metric_tip": _tip(t, final["input_metric"]),
+        "bar": _decided_bar(final, t, large=True),
     }
 
 
-def _hero(summary: dict, events: list[dict], decisions: list[dict]) -> dict:
+def _hero(summary: dict, events: list[dict], decisions: list[dict], t: dict) -> dict:
     calls = [e for e in events if e["type"] == "tool_call"]
     seconds = sum(float(e.get("duration_ms", 0.0)) for e in calls) / 1000.0
     return {
-        "asset_id": str(summary.get("asset_id") or "unknown asset"),
+        "asset_id": str(summary.get("asset_id") or t["unknown_asset"]),
         "captured_at": str(summary.get("captured_at") or ""),
-        "headline": str(summary.get("message") or summary.get("branch") or "Inspection trace"),
-        "calls": len(calls),
-        "thresholds": len(decisions),
+        "headline": str(summary.get("message") or summary.get("branch") or t["trace_headline"]),
+        "calls": counted(t, "calls", len(calls)),
+        "thresholds": counted(t, "thresholds", len(decisions)),
         "seconds": f"{seconds:.2f}",
-        "pills": _pills(summary, calls),
-        "decider": _decider(decisions),
+        "pills": _pills(summary, calls, t),
+        "decider": _decider(decisions, t),
     }
 
 
@@ -515,13 +595,13 @@ def _expected_tool(events: list[dict]) -> str | None:
     return expected
 
 
-def _ran_node(tool: str, attempts: list[dict]) -> dict:
+def _ran_node(tool: str, attempts: list[dict], t: dict) -> dict:
     event = attempts[-1]
     branch = _branch_of(event)
     return {
         "name": tool,
         "state": "done",
-        "outcome": str(branch or event.get("error") or "no verdict"),
+        "outcome": str(branch or event.get("error") or t["no_verdict"]),
         "tone": _TONE.get(branch) if branch else None,
         "ms": _fmt(sum(float(e.get("duration_ms", 0.0)) for e in attempts)),
         "failed": "error" in event,
@@ -529,19 +609,19 @@ def _ran_node(tool: str, attempts: list[dict]) -> dict:
     }
 
 
-def _idle_node(tool: str, index: int, reach: int, reason: str | None) -> dict:
+def _idle_node(tool: str, index: int, reach: int, reason: str | None, t: dict) -> dict:
     if index > reach:
-        state, outcome = "pending", "waiting"
+        state, outcome = "pending", t["state_waiting"]
     elif index == reach:
-        state, outcome = "active", "working\u2026"
+        state, outcome = "active", t["state_in_progress"]
     else:
         state = "skipped"
-        outcome = f"not run \u00b7 {reason}" if reason else "not run"
+        outcome = f"{t['state_not_run']} \u00b7 {reason}" if reason else t["state_not_run"]
     return {"name": tool, "state": state, "outcome": outcome,
             "tone": None, "ms": None, "failed": False, "tries": 0}
 
 
-def _path(events: list[dict], run_state: str) -> dict | None:
+def _path(events: list[dict], run_state: str, t: dict) -> dict | None:
     calls = _calls_by_tool(events)
     done = run_state == trace.DONE
     if done and not calls:
@@ -555,13 +635,13 @@ def _path(events: list[dict], run_state: str) -> dict | None:
     for index, tool in enumerate(_ORDER):
         attempts = calls.get(tool)
         if attempts:
-            nodes.append(_ran_node(tool, attempts))
+            nodes.append(_ran_node(tool, attempts, t))
             last_branch = _branch_of(attempts[-1]) or last_branch
         else:
             reason = finished.get("branch") if finished and index > last_ran else last_branch
-            nodes.append(_idle_node(tool, index, reach, reason))
+            nodes.append(_idle_node(tool, index, reach, reason, t))
     return {
-        "kicker": "the path this run took" if done else "the path so far",
+        "kicker": t["path_taken"] if done else t["path_so_far"],
         "steps": nodes,
         "not_taken": _not_taken(events),
     }
@@ -577,11 +657,11 @@ def _flatten(data: dict) -> list[dict]:
     return rows
 
 
-def _card(event: dict) -> dict:
+def _card(event: dict, t: dict) -> dict:
     policy = event.get("policy")
     bar = None
     if policy:
-        word = "max" if policy["value"] < policy["threshold"] else "min"
+        word = t["bar_max"] if policy["value"] < policy["threshold"] else t["bar_min"]
         ends: list[dict] = [
             {"text": f"{policy['input_metric']} {_fmt(policy['value'])}", "lit": True},
             {"text": f"{word} {_fmt(policy['threshold'])}"},
@@ -597,12 +677,12 @@ def _card(event: dict) -> dict:
     return {
         "name": event["tool"],
         "ms": _fmt(event.get("duration_ms", 0.0)),
-        "question": _QUESTION.get(event["tool"]),
+        "question": t.get(f"q_{event['tool']}"),
         "bar": bar,
         "facts": _flatten(facts),
         "error": event.get("error"),
         "verdict": policy["branch"] if policy else None,
-        "verdict_tip": _TIP.get(policy["branch"]) if policy else None,
+        "verdict_tip": _tip(t, policy["branch"]) if policy else None,
     }
 
 
@@ -629,11 +709,12 @@ def _region(events: list[dict]) -> tuple[list | None, dict]:
     return bbox, _tag(label, delta)
 
 
-def _says(events: list[dict], run_state: str, summary: dict) -> str:
+def _says(events: list[dict], run_state: str, summary: dict, t: dict) -> str:
     if run_state == trace.DONE:
-        return f"done \u00b7 {summary.get('branch') or summary.get('status') or 'finished'}"
+        ended = summary.get("branch") or summary.get("status") or t["state_finished"]
+        return f"{t['state_done']} \u00b7 {ended}"
     calls = sum(1 for event in events if event["type"] == "tool_call")
-    return f"working \u00b7 {calls} tool call{'' if calls == 1 else 's'}"
+    return f"{t['state_working']} \u00b7 {counted(t, 'calls', calls)}"
 
 
 def _cta(summary: dict) -> dict | None:
@@ -645,33 +726,35 @@ def _cta(summary: dict) -> dict | None:
     }
 
 
-def _chain_line(events: list[dict]) -> str:
+def _chain_line(events: list[dict], t: dict) -> str:
     broken = trace.broken_at(events)
     if broken is None:
-        return f"sha256 chain intact over {len(events)} events"
-    return f"sha256 chain broken at event {broken + 1} of {len(events)}"
+        return t["chain_intact"].format(n=len(events))
+    return t["chain_broken"].format(at=broken + 1, n=len(events))
 
 
-def render_html(state: dict, events: list[dict]) -> str:
+def render_html(state: dict, events: list[dict], lang: str = DEFAULT_LANG,
+                register: str = DEFAULT_REGISTER) -> str:
     summary = _summary(state, events)
     run_state = trace.run_state(events)
     run_id = str(summary.get("run_id") or "")
     baseline, capture, aligned = _image_refs(summary, events)
     bbox, tag = _region(events)
+    t = strings(lang, register)
     return _render(
-        "trace.html", "inspection trace", "trace",
+        "trace.html", t["title_trace"], "trace", lang, register,
         meta=f"run {run_id}" if run_id else "",
-        says=_says(events, run_state, summary),
+        says=_says(events, run_state, summary, t),
         run_state=run_state,
         execute_url=f"/runs/{run_id}/execute" if run_id else "",
-        hero=_hero(summary, events, _decisions(events)),
-        path=_path(events, run_state),
-        cards=[_card(e) for e in events if e["type"] == "tool_call"],
+        hero=_hero(summary, events, _decisions(events), t),
+        path=_path(events, run_state, t),
+        cards=[_card(e, t) for e in events if e["type"] == "tool_call"],
         comparison=_figures(baseline, capture, bbox, tag, aligned=aligned),
         cta=_cta(summary),
         footer={
             "run_id": run_id,
             "asset_id": str(summary.get("asset_id") or ""),
-            "chain": _chain_line(events),
+            "chain": _chain_line(events, t),
         },
     )

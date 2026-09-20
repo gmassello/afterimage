@@ -1,4 +1,5 @@
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 from services.conftest import localstack
 from services.memory import runs
@@ -39,3 +40,57 @@ def test_s3_backend(tmp_path, monkeypatch):
     images.ensure_bucket()
     monkeypatch.setenv("AFTERIMAGE_RUNS_S3", "1")
     exercise_backend(tmp_path / uuid.uuid4().hex[:12])
+
+
+def test_disk_marker_is_exclusive_and_returns_the_winner(tmp_path):
+    run_dir = tmp_path / "abcdef123456"
+
+    def claim(index):
+        return runs.write_once(run_dir, runs.RETRY, {"run_id": f"{index:012x}"})
+
+    with ThreadPoolExecutor(max_workers=8) as workers:
+        results = list(workers.map(claim, range(8)))
+    winners = [payload for created, payload in results if created]
+    assert len(winners) == 1
+    assert all(payload == winners[0] for _, payload in results)
+    assert runs.read(run_dir, runs.RETRY) == winners[0]
+
+
+def test_recent_runs_are_filtered_sorted_and_limited(tmp_path):
+    for index in range(55):
+        run_id = f"{index:012x}"
+        status = "failed" if index % 2 else "completed"
+        runs.write(tmp_path / run_id, runs.EVENTS, [
+            {
+                "type": "run_started",
+                "ts": f"2026-09-12T09:{index:02d}:00.000+00:00",
+                "run_id": run_id,
+                "asset_id": f"panel-{index}",
+                "capture_key": f"assets/panel-{index}/capture/capture.png",
+            },
+            {
+                "type": "run_finished",
+                "ts": f"2026-09-12T09:{index:02d}:01.000+00:00",
+                "status": status,
+                "branch": None,
+                "message": "",
+            },
+        ])
+    assert len(runs.recent(tmp_path)) == 50
+    failed = runs.recent(tmp_path, q="panel-53", status="failed")
+    assert [item["asset_id"] for item in failed] == ["panel-53"]
+    assert failed[0]["retryable"] is True
+    assert runs.recent(tmp_path, status="unknown") == []
+
+
+@localstack
+def test_s3_marker_is_conditional(tmp_path, monkeypatch):
+    from services.memory import images
+
+    images.ensure_bucket()
+    monkeypatch.setenv("AFTERIMAGE_RUNS_S3", "1")
+    run_dir = tmp_path / uuid.uuid4().hex[:12]
+    first = runs.write_once(run_dir, runs.RETRY, {"run_id": "111111111111"})
+    second = runs.write_once(run_dir, runs.RETRY, {"run_id": "222222222222"})
+    assert first == (True, {"run_id": "111111111111"})
+    assert second == (False, {"run_id": "111111111111"})

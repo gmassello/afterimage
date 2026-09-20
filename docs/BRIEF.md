@@ -1,5 +1,9 @@
 # Brief — OpenCV AI Competition 2026
 
+> **Historical planning document.** This records the proposal before implementation and includes
+> architecture and repository ideas that were later replaced. For the implemented system, use
+> [FUNCTIONAL.md](FUNCTIONAL.md), [STACK.md](STACK.md), and [ARCHITECTURE.md](ARCHITECTURE.md).
+
 > Working document for the build. It holds the competition rules, the project to build, the architecture, the weekly plan and the deliverables.
 > Keep it at the repo root as `CLAUDE.md` (or as `docs/BRIEF.md`, referenced from `CLAUDE.md`).
 

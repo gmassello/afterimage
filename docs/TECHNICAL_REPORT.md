@@ -1,5 +1,9 @@
 # afterimage — technical report
 
+> This report presents the competition case and its evidence. For maintainers, the current system
+> is split into the [functional](FUNCTIONAL.md), [stack](STACK.md),
+> [architecture](ARCHITECTURE.md), [backend](BACKEND.md), and [frontend](FRONTEND.md) guides.
+
 A visual inspection agent with longitudinal memory, built for the
 [OpenCV AI Competition 2026](https://opencv26.devpost.com/) (Agentic Vision path).
 
@@ -157,29 +161,38 @@ flowchart TB
     LOOP <--> DDB
     LOOP <--> S3B
     fn --> LOGS
-    EB -->|"synthetic GET /health, keeps it warm"| URL
+    EB -->|"synthetic GET /health event"| fn
     CFN --> fn
     ECRR -->|"image, tagged with the git short SHA"| fn
 ```
 
-One Lambda container image serves everything: the site, the upload, the approval queue, the asset
-history and the trace viewer, with the agent loop running inside the request. There is no separate
-inference service, no queue and no orchestrator — the loop is a function call, and the whole system
-is one deployable artefact.
+One Lambda container image serves everything: the public landing, inspection workspace, activity
+view, upload, approval queue, asset history and trace viewer, with the agent loop running inside the
+request. There is no separate inference service, no queue and no orchestrator — the loop is a
+function call, and the whole system is one deployable artefact.
 
 **API surface** (`services/api/app.py`):
 
 | Route | Purpose |
 |---|---|
-| `GET /` | assets and the upload form |
+| `GET /` | public product landing, evidence and limits |
+| `GET /app` | assets, upload form and bundled sample captures |
+| `GET /activity` | search and status filtering over the latest 50 runs |
 | `POST /inspections` | upload a capture, open its trace, redirect to it |
 | `POST /runs/{run_id}/execute` | run the agent loop for an opened trace |
+| `POST /runs/{run_id}/retry` | idempotently open a replacement for a terminal failed run |
 | `GET /assets/{asset_id}` | the longitudinal history of one asset |
 | `GET /queue` · `POST /queue/{run_id}/{approve\|reject}` | the human gate |
 | `GET /traces/{run_id}` | the per-run trace, JSON or a readable page |
 | `GET /static/{name}` | the stylesheet and the script, content-hashed and cached for a year |
 | `GET /images/{key}` | stored captures, aligned images and masks |
 | `GET /health` | liveness, and the target of the warmer |
+
+Expected failures use one contract across both audiences. A browser request receives a themed HTML
+page with the status, stable error code and an available recovery action; a non-HTML client receives
+`{"detail", "code", "retryable"}` JSON. A retry never mutates the failed trace: it opens a new
+`unstarted` run over the same asset and capture, records the relationship and returns that same run
+if the request is repeated.
 
 ## 5. The OpenCV 5 implementation
 
@@ -339,6 +352,11 @@ next to the run id, so editing a metric, a threshold or a branch after the fact 
 wrong to a careful reader — it names the event it happened in. Three tests in
 `services/observability/tests/test_trace.py` and one in `services/api/tests/test_traces.py` alter a
 written trace and assert the detection.
+
+Failed execution is recoverable without rewriting that record. Its trace remains terminal and a
+write-once marker points to the replacement opened by `POST /runs/{run_id}/retry`; repeated retry
+requests converge on the same replacement, so a double click or network replay does not duplicate
+an inspection.
 
 The limit, stated rather than hidden: this is a chain, not a signature. It catches an edit, a removal
 and a reordering; it does not catch a trace truncated at the end, and it does not stop anyone who

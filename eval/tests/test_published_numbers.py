@@ -10,6 +10,7 @@ README = Path("README.md")
 SITE = Path("docs/index.html")
 RESULTS = Path("eval/results/latest/results.json")
 SCRIPT = Path("video/script.tsv")
+LANDING_VIEW = Path("services/ui/views.py")
 
 DELIVERABLES = (PAGE, REPORT, README, SITE)
 SPELLED = (
@@ -101,6 +102,17 @@ def test_the_public_page_restates_the_same_figures(measured):
     assert _claim(site, r"precision (?:at least )?([\d.]+) on all four defect classes") == str(
         min(row["precision"] for row in defects.values())
     )
+
+
+def test_the_application_landing_restates_measured_figures(measured):
+    source = LANDING_VIEW.read_text()
+    for value in (
+        measured["branch"]["accuracy"],
+        measured["defect"]["macro"]["f1"],
+        measured["localisation"]["mean_iou"],
+    ):
+        assert f'"value": "{value}"' in source
+    assert f'"value": "{measured["real"]} / {measured["scenarios"]}"' in source
 
 
 def test_no_deliverable_cites_a_line_number():

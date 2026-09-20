@@ -1,8 +1,12 @@
 <header class='top'>
-<div class='row'><span class='brand'>afterimage</span><nav class='top' aria-label='views'>
+<div class='row'><a class='brand' href='/'>afterimage</a><nav class='top' aria-label='{{ t.views_label }}'>
 {%- for link in nav -%}
 {%- if link.href %}<a href='{{ link.href }}'{% if link.here %} class='here' aria-current='page'{% endif %}>{{ link.label }}</a>{% else %}<span class='here'>{{ link.label }}</span>{% endif -%}
 {%- endfor -%}
 </nav></div>
-<div class='row'><span class='runid'>{{ meta }}</span><a class='hint' href='https://github.com/gmassello/afterimage'>repo</a><button class='toggle' id='theme' type='button'><span aria-hidden='true'>&#9680;</span><span id='theme-label'>Dark</span></button></div>
+<div class='row'><span class='runid'>{{ meta }}</span><a class='hint' href='https://github.com/gmassello/afterimage'>repo</a><nav class='langs' aria-label='{{ t.lang_label }}'>
+{%- for code in langs %}<a href='?lang={{ code }}'{% if code == lang %} class='here' aria-current='true'{% endif %} hreflang='{{ code }}'>{{ code|upper }}</a>{% endfor -%}
+</nav><nav class='regs' aria-label='{{ t.register_label }}'>
+{%- for code in registers %}<a href='?register={{ code }}'{% if code == register %} class='here' aria-current='true'{% endif %}>{{ t[code ~ '_name'] }}</a>{% endfor -%}
+</nav><button class='toggle' id='theme' type='button'><span aria-hidden='true'>&#9680;</span><span id='theme-label'>{{ t.theme_dark }}</span></button></div>
 </header>

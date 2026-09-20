@@ -6,9 +6,12 @@ from services.memory import store
 from services.observability import trace
 from services.observability.tests.sample_run import EVENTS, STATE
 from services.ui import views
+from services.ui.text import strings
 
 CSS = (views.STATIC / "app.css").read_text()
 JS = (views.STATIC / "app.js").read_text()
+
+EN = strings("en")
 
 HOSTILE = "<script>alert(1)</script>"
 ESCAPED = "&lt;script&gt;alert(1)&lt;/script&gt;"
@@ -24,7 +27,13 @@ def test_render_html_contains_the_causal_values():
 
 def _hostile_pages() -> dict[str, str]:
     return {
+        "landing": views.landing_page(),
         "index": views.index_page([{"asset_id": HOSTILE}]),
+        "activity": views.activity_page([{
+            "run_id": "abcdef123456", "asset_id": HOSTILE, "captured_at": HOSTILE,
+            "status": HOSTILE, "branch": HOSTILE, "retryable": False,
+        }]),
+        "error": views.error_page(500, HOSTILE, HOSTILE),
         "asset": views.asset_page(HOSTILE, [{
             "sk": f"{store.INSPECTION}7f2ac91b04de", "inspection_id": HOSTILE,
             "captured_at": HOSTILE,
@@ -44,7 +53,7 @@ def _hostile_pages() -> dict[str, str]:
     }
 
 
-@pytest.mark.parametrize("name", ["index", "asset", "queue", "trace"])
+@pytest.mark.parametrize("name", ["index", "asset", "queue", "trace", "activity", "error"])
 def test_every_view_escapes_untrusted_strings(name):
     page = _hostile_pages()[name]
     assert HOSTILE not in page
@@ -69,12 +78,17 @@ def test_the_first_visit_follows_the_system_theme():
     assert "paint(root.dataset.theme);" in JS
 
 
+def test_trace_cards_shrink_to_the_mobile_container():
+    assert "@media (max-width: 620px) { .cards { grid-template-columns: minmax(0, 1fr); } }" in CSS
+
+
 def test_static_assets_are_content_addressed():
     names = list(views._assets())
     assert any(name.startswith("app.") and name.endswith(".css") for name in names)
     assert any(name.startswith("app.") and name.endswith(".js") for name in names)
+    pages = views.index_page([]) + views.landing_page()
     for name in names:
-        assert f"/static/{name}" in views.index_page([])
+        assert f"/static/{name}" in pages
         assert views.static_asset(name)[0]
     assert views.static_asset("app.css") is None
 
@@ -102,13 +116,13 @@ def test_the_human_gate_does_not_steal_the_deciding_number():
     assert "inlier_ratio 0.259 &lt; 0.5 -&gt; unrecognized_asset" in page
 
 
-def _timeline(item: dict) -> str:
+def _timeline(item: dict, register: str = "plain") -> str:
     return views.asset_page("array-rooftop", [{
         "sk": f"{store.INSPECTION}7f2ac91b04de",
         "captured_at": "2026-08-26T12:04:11+00:00",
         "metrics": {"severity": {"label": "crack", "score": 0.6543}},
         **item,
-    }])
+    }], register=register)
 
 
 def test_a_persisted_verdict_is_what_the_timeline_scores_against():
@@ -145,7 +159,7 @@ def test_an_inspection_with_neither_shows_the_score_without_a_threshold(tmp_path
 
 def test_the_nav_stays_clickable_on_the_page_it_points_at():
     page = views.asset_page("array-rooftop", [])
-    assert "<a href='/' class='here' aria-current='page'>assets</a>" in page
+    assert "<a href='/app' class='here' aria-current='page'>assets</a>" in page
     assert "<a href='/queue'>approval queue</a>" in page
     trace_page = views.render_html(STATE, EVENTS)
     assert "<span class='here'>trace</span>" in trace_page
@@ -153,7 +167,7 @@ def test_the_nav_stays_clickable_on_the_page_it_points_at():
 
 def test_the_asset_card_is_one_link_to_its_history():
     page = views.index_page([{"asset_id": "panel-a7-north"}])
-    assert "<a class='asset' href='/assets/panel-a7-north'>" in page
+    assert "<a class='asset' href='/assets/panel-a7-north'" in page
     assert page.count("href='/assets/panel-a7-north'") == 1
     assert "no inspection summary yet" in page
 
@@ -203,9 +217,9 @@ def test_the_dropzone_mirrors_the_limits_the_server_enforces():
 def test_the_bar_takes_its_tone_from_the_branch():
     approval = {"input_metric": "score", "value": 0.65, "threshold": 0.4,
                 "branch": "human_approval"}
-    assert views._decided_bar(approval)["tone"] == "warn"
-    assert views._decided_bar({**approval, "branch": "auto_write"})["tone"] == "ok"
-    assert views._decided_bar({**approval, "branch": "unrecognized_asset"})["tone"] == "bad"
+    assert views._decided_bar(approval, EN)["tone"] == "warn"
+    assert views._decided_bar({**approval, "branch": "auto_write"}, EN)["tone"] == "ok"
+    assert views._decided_bar({**approval, "branch": "unrecognized_asset"}, EN)["tone"] == "bad"
     for tone in ("ok", "warn", "bad"):
         assert f".bar.{tone} {{" in CSS
 
@@ -225,15 +239,17 @@ def test_the_timeline_explains_the_stages_instead_of_dumping_json():
 
 
 def test_the_vocabulary_carries_its_own_definition():
-    page = _timeline({"inspection_id": "7f2ac91b04de", "verdict": {
+    item = {"inspection_id": "7f2ac91b04de", "verdict": {
         "input_metric": "score", "value": 0.6543, "threshold": 0.25,
         "branch": "human_approval"}, "metrics": {
         "severity": {"label": "crack", "score": 0.6543},
-        "alignment": {"inlier_ratio": 0.9988}}})
+        "alignment": {"inlier_ratio": 0.9988}}}
+    page = _timeline(item, register="tech")
     assert "data-tip='human_approval: Severe enough" in page
     assert "class='tip' data-tip='Share of matched keypoints" in page
+    assert "class='tip' data-tip='How much of this photo lines up" in _timeline(item)
     assert "data-tip" not in page.split("class='ends'")[0]
-    assert "tabindex" not in page
+    assert "tabindex='0'" in page
 
 
 def test_the_warped_capture_says_so_in_the_caption_and_the_alt():
@@ -241,13 +257,13 @@ def test_the_warped_capture_says_so_in_the_caption_and_the_alt():
         "run_id": "7f2ac91b04de", "asset_id": "panel-a7-north", "message": "",
         "image_keys": {"baseline": "a/b.png", "aligned": "a/al.png", "capture": "a/c.png"},
         "metrics": {},
-    }])
+    }], register="tech")
     assert "warped onto the baseline" in queued
     raw = views.queue_page([{
         "run_id": "7f2ac91b04de", "asset_id": "panel-a7-north", "message": "",
         "image_keys": {"baseline": "a/b.png", "capture": "a/c.png"},
         "metrics": {},
-    }])
+    }], register="tech")
     assert "warped onto the baseline" not in raw
 
 
@@ -259,12 +275,14 @@ def test_the_empty_queue_says_how_much_memory_holds():
 
 
 def test_the_upload_form_states_what_it_accepts():
-    page = views.index_page([])
-    assert "image/jpeg,image/png,image/webp,image/tiff,image/bmp" in page
-    assert "image/*" not in page
-    assert "up to 6&nbsp;MB" in page
-    assert "lowercase letters, digits and hyphens" in page
-    assert "title=" not in page
+    for register, rule in (("tech", "lowercase letters, digits and hyphens"),
+                           ("plain", "Lowercase letters, numbers and hyphens")):
+        page = views.index_page([], register=register)
+        assert "image/jpeg,image/png,image/webp,image/tiff,image/bmp" in page
+        assert "image/*" not in page
+        assert "up to 6&nbsp;MB" in page
+        assert rule in page
+        assert "title=" not in page
 
 
 def test_both_upload_fields_carry_a_label():
@@ -281,12 +299,38 @@ def test_a_rejected_upload_keeps_the_asset_id_already_typed():
     assert "value=''" in views.index_page([])
 
 
-@pytest.mark.parametrize("name", ["index", "asset", "queue", "trace"])
+@pytest.mark.parametrize("name", ["landing", "index", "asset", "queue", "trace", "activity", "error"])
 def test_every_view_opens_with_one_heading_inside_a_main_landmark(name):
     page = _hostile_pages()[name]
-    assert page.count("<main>") == 1
+    assert page.count("<main id='main-content'>") == 1
     assert page.count("<h1") == 1
-    assert page.index("<main>") < page.index("<h1")
+    assert page.index("<main id='main-content'>") < page.index("<h1")
+
+
+def test_the_application_filters_assets_without_an_api_round_trip():
+    page = views.index_page([{
+        "asset_id": "panel-a7", "last_branch": "human_approval",
+    }])
+    assert "data-asset-filters" in page
+    assert "data-asset-id='panel-a7'" in page
+    assert "data-asset-result='human_approval'" in page
+    assert "applyAssetFilters" in JS
+
+
+def test_activity_exposes_failed_runs_and_retry_only_when_allowed():
+    page = views.activity_page([{
+        "run_id": "abcdef123456", "asset_id": "panel-a7",
+        "captured_at": "2026-09-19T12:00:00+00:00", "status": "failed",
+        "branch": "", "retryable": True,
+    }])
+    assert "action='/runs/abcdef123456/retry'" in page
+    assert "href='/traces/abcdef123456'" in page
+
+
+def test_error_page_keeps_actions_inside_the_application():
+    page = views.error_page(409, "already_started", "run already started")
+    assert "409" in page and "already_started" in page
+    assert "href='/app'" in page and "href='/activity'" in page
 
 
 def test_the_poller_defers_the_swap_while_the_block_is_in_use():
@@ -365,7 +409,7 @@ RAILS = {
 @pytest.mark.parametrize("case", list(RAILS))
 def test_the_rail_says_which_stages_never_ran_instead_of_promising_them(case):
     events, run_state, expected = RAILS[case]
-    steps = views._path(events, run_state)["steps"]
+    steps = views._path(events, run_state, EN)["steps"]
     assert [step["name"] for step in steps] == list(views._ORDER)
     assert [step["state"] for step in steps] == expected
 
@@ -382,7 +426,7 @@ def test_a_first_baseline_blames_the_missing_baseline_not_the_capture_quality():
          "branch": "first_baseline"},
         _call("assess_quality", "quality_ok"),
         _finished("first_baseline"),
-    ], trace.DONE)["steps"]
+    ], trace.DONE, EN)["steps"]
     assert steps[0]["outcome"] == "quality_ok"
     assert [step["outcome"] for step in steps[1:]] == ["not run \u00b7 first_baseline"] * 4
 
@@ -393,14 +437,14 @@ def test_a_run_that_died_without_a_branch_does_not_blame_the_stage_before_it():
         _call("align_to_baseline", "aligned"),
         _call("diff_against_memory", error="boom"),
         _finished(None),
-    ], trace.DONE)["steps"]
+    ], trace.DONE, EN)["steps"]
     assert steps[2]["failed"] is True
     assert [step["outcome"] for step in steps[3:]] == ["not run", "not run"]
 
 
 def test_a_stage_the_branch_skipped_names_the_branch_that_skipped_it():
     events, run_state, _ = RAILS["skipped_while_running"]
-    steps = views._path(events, run_state)["steps"]
+    steps = views._path(events, run_state, EN)["steps"]
     assert steps[3]["outcome"] == "not run \u00b7 change_confirmed"
     assert steps[0]["tone"] == "ok"
 
@@ -410,6 +454,7 @@ def test_a_retried_tool_is_one_node_that_counts_its_tries():
         [_call("assess_quality", "quality_ok"), _call("align_to_baseline", "retry_classic"),
          _call("align_to_baseline", "aligned")],
         trace.RUNNING,
+        EN,
     )["steps"]
     assert steps[1]["tries"] == 2
     assert steps[1]["ms"] == "24"
@@ -417,7 +462,7 @@ def test_a_retried_tool_is_one_node_that_counts_its_tries():
 
 
 def test_a_run_that_failed_before_any_tool_draws_no_rail():
-    assert views._path([{"type": "run_finished", "status": "failed"}], trace.DONE) is None
+    assert views._path([{"type": "run_finished", "status": "failed"}], trace.DONE, EN) is None
 
 
 def test_the_rail_carries_the_stage_state_into_the_markup():
@@ -465,14 +510,14 @@ def test_the_queue_puts_the_worst_run_first():
 
 def test_approving_asks_once_before_it_writes_to_memory():
     assert "e.target.closest?.('.acts button')" in JS
-    assert "button.textContent = 'Confirm?';" in JS
+    assert "button.textContent = T.confirm;" in JS
     page = views.queue_page([_queued("7f2ac91b04de", 0.5)])
     assert "<form method='post' action='/queue/7f2ac91b04de/approve'>" in page
     assert "<span class='say' role='status' aria-live='polite'></span>" in page
 
 
 def test_the_armed_confirmation_waits_for_the_operator_instead_of_a_timer():
-    armed = JS.split("button.textContent = 'Confirm?';")[1]
+    armed = JS.split("button.textContent = T.confirm;")[1]
     assert "setTimeout" not in armed.split("addEventListener('focusout'")[0]
     assert "button.focus();" in armed
     assert "if (button && button.dataset.armed) disarm(button);" in JS
@@ -502,7 +547,7 @@ def test_one_inspection_is_not_a_trend():
 
 
 def test_a_failed_tool_call_leaves_the_rest_of_the_rail_pending():
-    steps = views._path([_call("assess_quality", error="boom")], trace.RUNNING)["steps"]
+    steps = views._path([_call("assess_quality", error="boom")], trace.RUNNING, EN)["steps"]
     assert steps[0]["failed"] is True
     assert steps[1]["outcome"] == "waiting"
 

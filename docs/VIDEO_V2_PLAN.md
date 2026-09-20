@@ -1,5 +1,8 @@
 # Video v2 — cold open, revised script, face always in the box
 
+> **Historical production record.** This file describes a completed edit and is not a source of
+> current product behavior. See [FUNCTIONAL.md](FUNCTIONAL.md) for the current product guide.
+
 Agreed 5 September, shot and cut 6 September. **Done** — `video/out/demo.mp4`, 4:53.6.
 
 | Step | State |
@@ -27,4 +30,3 @@ shipping:
   shared map location, because the capture was not scoped to the browser window. Found by sweeping
   the file for scene changes, cut out of the original. That sweep is now a documented step, and so is
   the window-capture rule.
-

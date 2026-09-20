@@ -1,5 +1,9 @@
 # Video script — 5 minutes
 
+> **Historical production artifact.** This is the script of a recorded competition video, not a
+> current product specification. See [FUNCTIONAL.md](FUNCTIONAL.md) and
+> [EVALUATION.md](EVALUATION.md) for current behavior and results.
+
 For the OpenCV AI Competition 2026 submission. Structure follows `docs/BRIEF.md` §7.
 
 **Hard requirements:** at most 5 minutes, the author's face must appear, public or unlisted, and it

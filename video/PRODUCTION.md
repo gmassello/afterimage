@@ -1,5 +1,9 @@
 # Video production — afterimage
 
+> **Historical production runbook.** This documents the published competition video workflow. For
+> the current product, start with [`docs/FUNCTIONAL.md`](../docs/FUNCTIONAL.md) and
+> [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md).
+
 A 14-second cold open with no voice, then your voice in Spanish end to end, English burned-in
 subtitles, and your face in a box in the corner **for the whole video** — the big frame is always
 showing the product or the documentation.

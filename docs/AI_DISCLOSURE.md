@@ -5,8 +5,9 @@ what a model does **inside the product**, and what assistance was used **to buil
 
 ## 1. In the product
 
-A large language model (Gemini, reached over MCP) chooses the order of the tool calls and their
-arguments during a run. That is the agentic part, and it is deliberately fenced:
+A large language model (Gemini, reached over MCP) selects the next allowed tool call and its
+arguments during a run. The loop enforces the stage order. That is the agentic part, and it is
+deliberately fenced:
 
 - **It cannot move a threshold.** Every branch verdict is computed in code by
   `services/agent/policy.py`, which is the only place a metric is compared to a constant.
