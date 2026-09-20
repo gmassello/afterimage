@@ -6,6 +6,7 @@ if (landingDemo) {
   const panels = [...landingDemo.querySelectorAll('[data-landing-panel]')];
   const controls = [...landingDemo.querySelectorAll('[data-landing-action]')];
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const stepDelay = 1200;
   let timers = [];
 
   const stopPlayback = () => {
@@ -23,12 +24,12 @@ if (landingDemo) {
     if (reducedMotion.matches) return;
     landingDemo.classList.add('landing-demo-playing');
     steps.forEach((step, index) => {
-      timers.push(setTimeout(() => step.classList.add('landing-step-visible'), 240 * (index + 1)));
+      timers.push(setTimeout(() => step.classList.add('landing-step-visible'), stepDelay * (index + 1)));
     });
     timers.push(setTimeout(() => {
       outcome.classList.add('landing-step-visible');
       landingDemo.classList.remove('landing-demo-playing');
-    }, 240 * (steps.length + 1)));
+    }, stepDelay * (steps.length + 1)));
   };
 
   const selectScenario = (tab, focus = false) => {
