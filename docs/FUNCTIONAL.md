@@ -33,7 +33,8 @@ was the reference at each point in time.
 
 1. Open the public landing page at `/` to understand the product, evidence, and limits.
 2. Enter the inspection workspace at `/app` and provide an asset ID.
-3. Upload a capture or choose one of the included sample images.
+3. Upload a capture or choose one of the included sample images. The samples write to a demo asset
+   of your own, so each visitor walks the four branches over their own memory.
 4. Confirm the image and start the inspection.
 5. Follow the live trace while the loop assesses quality, alignment, change, and severity.
 6. Act on the terminal result. Severe findings appear in the approval queue; accepted findings

@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from decimal import Decimal
 from functools import lru_cache
 
@@ -12,6 +13,8 @@ TABLE = os.environ.get("AFTERIMAGE_TABLE", "afterimage")
 META = "META"
 INSPECTION = "INSPECTION#"
 BASELINE = "BASELINE#"
+
+RETENTION_DAYS = 180
 
 
 def asset_key(asset_id: str) -> str:
@@ -51,8 +54,23 @@ def _plain(item: dict) -> dict:
     return json.loads(json.dumps(item, default=float))
 
 
+def _expires_at() -> int:
+    return int(time.time()) + RETENTION_DAYS * 24 * 3600
+
+
+def _all_pages(operation, **kwargs) -> list[dict]:
+    items: list[dict] = []
+    while True:
+        page = operation(**kwargs)
+        items.extend(page["Items"])
+        start = page.get("LastEvaluatedKey")
+        if start is None:
+            return items
+        kwargs["ExclusiveStartKey"] = start
+
+
 def _merge_meta(asset_id: str, attrs: dict, condition: ConditionBase | None = None) -> bool:
-    values = _stored(attrs)
+    values = _stored({**attrs, "ttl": _expires_at()})
     update = {
         "Key": {"pk": asset_key(asset_id), "sk": META},
         "UpdateExpression": "SET " + ", ".join(f"#{name} = :{name}" for name in values),
@@ -103,6 +121,7 @@ def put_inspection(
             {
                 "pk": asset_key(asset_id),
                 "sk": f"{INSPECTION}{captured_at}#{inspection_id}",
+                "ttl": _expires_at(),
                 "inspection_id": inspection_id,
                 "captured_at": captured_at,
                 "metrics": metrics,
@@ -127,6 +146,7 @@ def promote_baseline(
     item = {
         "pk": asset_key(asset_id),
         "sk": f"{BASELINE}{captured_at}",
+        "ttl": _expires_at(),
         "inspection_id": inspection_id,
         "captured_at": captured_at,
         "image_key": image_key,
@@ -159,15 +179,16 @@ def current_baseline(asset_id: str) -> dict | None:
 
 
 def list_assets() -> list[dict]:
-    # ponytail: full table scan; fine at demo scale, add an index if assets pass a few thousand
-    items = _table().scan(FilterExpression=Attr("sk").eq(META))["Items"]
+    # ponytail: the scan reads every item of the table to keep the META ones; a GSI on sk is the
+    # upgrade when the table passes a few thousand items
+    items = _all_pages(_table().scan, FilterExpression=Attr("sk").eq(META))
     return sorted((_plain(item) for item in items), key=lambda item: item["asset_id"])
 
 
 def history(asset_id: str) -> list[dict]:
-    # ponytail: single page, paginate when one asset passes 1 MB of history
-    items = _table().query(
+    items = _all_pages(
+        _table().query,
         KeyConditionExpression=Key("pk").eq(asset_key(asset_id)),
         ScanIndexForward=False,
-    )["Items"]
+    )
     return [_plain(item) for item in items]

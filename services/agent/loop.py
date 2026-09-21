@@ -15,7 +15,7 @@ from services.agent import policy as policy_module
 from services.agent.llm import GeminiLLM
 from services.agent.policy import Policy
 from services.agent.scripted import PolicyFollowingLLM
-from services.memory import runs, store
+from services.memory import images, runs, store
 from services.observability import trace
 from services.perception import alignment
 
@@ -115,12 +115,13 @@ async def resume(run_id: str, runs_dir: str | Path = "runs", **kwargs) -> RunRes
             runs_dir=runs_dir, started=started, **kwargs,
         )
     except Exception as error:
-        _close_as_failed(Path(runs_dir) / run_id, error)
+        close_as_failed(Path(runs_dir) / run_id, error)
         raise
 
 
-def _close_as_failed(run_dir: Path, error: BaseException) -> None:
-    message = f"{type(error).__name__}: {error}"
+def close_as_failed(run_dir: Path, message: str | BaseException) -> None:
+    if isinstance(message, BaseException):
+        message = f"{type(message).__name__}: {message}"
     trace.emit(run_dir, "run_finished", status=trace.FAILED, branch=None, message=message)
     state = runs.read(run_dir, "state.json") or {}
     state.update(status=trace.FAILED, branch=None, message=message)
@@ -199,6 +200,8 @@ async def run(
         return finish("completed", branch, message)
 
     baseline = store.current_baseline(asset_id)
+    if baseline is not None and not images.exists(baseline["image_key"]):
+        return finish("failed", None, f"the baseline image is gone: {baseline['image_key']}")
     params = StdioServerParameters(
         command=sys.executable,
         args=["-m", "services.mcp_server.server"],

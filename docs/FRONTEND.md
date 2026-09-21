@@ -49,7 +49,8 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
   without opening a run.
 - The selected image is previewed before upload; approve and reject actions use a two-step
   confirmation before submission.
-- After the upload redirect, the trace page starts the run with a separate POST request.
+- After the upload redirect, the trace page starts the run with a separate POST request. Without
+  JavaScript the same request is a `<noscript>` form the operator submits.
 - A terminal failed activity row offers retry. The browser follows the redirect to the replacement
   trace; repeated submissions resolve to that same replacement run.
 - Active traces poll every 1.5 seconds; the approval queue polls every 5 seconds.
@@ -58,8 +59,8 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
 - Region overlays use the recorded bounding box and the rendered image dimensions.
 - View transitions and animated counters are optional enhancements.
 
-Without JavaScript, navigation, history, approval forms, language selection, and ordinary file
-upload remain server functions. The landing, application, activity filters, error recovery, and
+Without JavaScript, navigation, history, approval forms, language selection, ordinary file
+upload, and starting the uploaded run remain server functions. The landing, application, activity filters, error recovery, and
 failed-run retry are ordinary links or forms. Sample selection, live polling, and enhanced previews
 require JavaScript.
 

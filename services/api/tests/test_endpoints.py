@@ -1,6 +1,7 @@
 import json
 import re
 import uuid
+from datetime import datetime, timedelta, timezone
 
 import cv2
 import pytest
@@ -445,3 +446,59 @@ def test_unhandled_errors_have_html_and_json_contracts(tmp_path, monkeypatch):
     assert html_error.status_code == 500
     assert html_error.headers["content-type"].startswith("text/html")
     assert "internal_error" in html_error.text
+
+
+@localstack
+def test_a_browser_without_javascript_starts_the_run_from_the_trace_page(client):
+    asset_id = unique("api-noscript")
+    created = client.post(
+        "/inspections",
+        data={"asset_id": asset_id},
+        files={"image": ("panel.png", png_bytes(PANEL), "image/png")},
+    )
+    trace_path = created.headers["location"]
+    run_id = trace_path.rsplit("/", 1)[-1]
+    page = client.get(trace_path, headers={"accept": "text/html"})
+    assert f"<noscript><form method='post' action='/runs/{run_id}/execute'>" in page.text
+
+    started = client.post(f"/runs/{run_id}/execute", headers={"accept": "text/html"})
+    assert started.status_code == 303
+    assert started.headers["location"] == trace_path
+    assert client.get(trace_path).json()["events"][-1]["type"] == "run_finished"
+
+
+def test_an_interrupted_run_is_closed_and_retried_once_it_goes_stale(client, tmp_path, monkeypatch):
+    from services.observability import trace
+
+    run_id = "cccccccccccc"
+    aged = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat(timespec="milliseconds")
+    run_dir = tmp_path / run_id
+    with monkeypatch.context() as clock:
+        clock.setattr(trace, "now", lambda: aged)
+        trace.emit(
+            run_dir, "run_started", run_id=run_id, asset_id="panel-stuck",
+            capture_key="assets/panel-stuck/capture/capture.png",
+        )
+        trace.emit(run_dir, "tool_call", tool="assess_quality", args={}, duration_ms=1.0)
+
+    assert f"/runs/{run_id}/retry" in client.get("/activity?q=panel-stuck").text
+    response = client.post(f"/runs/{run_id}/retry")
+    assert response.status_code == 200
+    assert response.json()["retry_of"] == run_id
+
+    events = trace.read_events(run_dir)
+    assert events[-1]["type"] == "run_finished"
+    assert events[-1]["status"] == "failed"
+    assert trace.broken_at(events) is None
+
+
+@localstack
+def test_the_demo_samples_write_to_one_asset_per_visitor(client):
+    first = client.get("/app")
+    suffix = first.cookies["demo"]
+    assert re.fullmatch(r"[a-z0-9]{6}", suffix)
+    assert f"data-asset='{views.SAMPLE_ASSET}-{suffix}'" in first.text
+    assert f"data-asset='{views.SAMPLE_ASSET}-{suffix}'" in client.get("/app").text
+
+    stranger = TestClient(app, follow_redirects=False).get("/app")
+    assert stranger.cookies["demo"] != suffix

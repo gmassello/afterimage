@@ -46,3 +46,9 @@ def test_iou_of_identical_boxes_is_one_and_disjoint_is_zero():
     assert metrics.iou((0, 0, 10, 10), (0, 0, 10, 10)) == 1.0
     assert metrics.iou((0, 0, 10, 10), (50, 50, 10, 10)) == 0.0
     assert metrics.iou((0, 0, 10, 10), (5, 0, 10, 10)) == 0.3333
+
+
+def test_macro_skips_a_class_that_was_only_ever_predicted():
+    report = metrics.per_class([("a", "a"), ("a", "b")])
+    assert report["b"]["support"] == 0
+    assert metrics.macro(report) == {"precision": 1.0, "recall": 0.5, "f1": 0.6667}

@@ -21,7 +21,7 @@ lint:
 	$(COMPOSE) run --rm --no-deps app ruff check services/ eval/
 
 typecheck:
-	$(COMPOSE) run --rm --no-deps app mypy services/
+	$(COMPOSE) run --rm --no-deps app mypy services/ eval/
 
 demo: weights
 	$(COMPOSE) run --rm --build app python -m services.agent.demo; status=$$?; $(COMPOSE) down; exit $$status

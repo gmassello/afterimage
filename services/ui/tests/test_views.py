@@ -573,3 +573,23 @@ def test_the_deciding_number_counts_up_only_when_it_changes():
     assert "if (shown === counted) return;" in JS
     assert "document.querySelector('.hero .big .n')" in JS
     assert "parseFloat(getComputedStyle(root).getPropertyValue('--dur-live'))" in JS
+
+
+def test_the_landing_renders_its_copy_instead_of_empty_slots():
+    page = views.landing_page()
+    keys = (
+        "landing_hero_title",
+        "landing_demo_kicker",
+        "landing_demo_title",
+        "landing_demo_hint",
+        "landing_scenario_1_outcome",
+        "landing_scenario_4_outcome",
+    )
+    for key in keys:
+        assert EN[key].split(".")[0] in page, key
+
+
+def test_a_renamed_copy_key_is_a_render_error_instead_of_a_blank():
+    template = views._env.from_string("{{ t.landing_hero_titel }}")
+    with pytest.raises(RuntimeError, match="landing_hero_titel"):
+        template.render(t=EN)

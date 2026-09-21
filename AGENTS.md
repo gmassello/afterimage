@@ -45,7 +45,7 @@ The supported workflow uses Docker Compose and `make`:
 - `make build` builds the application container.
 - `make test` runs all `pytest` suites in the container, enforces 90% service coverage, and stops Docker Compose afterward.
 - `make lint` checks `services/` and `eval/` with Ruff.
-- `make typecheck` runs mypy over `services/`.
+- `make typecheck` runs mypy over `services/` and `eval/`.
 - `make verify-runtime` confirms the required OpenCV 5 runtime.
 - `make demo` runs the scripted driver through the four action branches. To use Gemini, set `GOOGLE_API_KEY` and run `docker compose run --rm app python -m services.agent.demo --live`.
 - `make eval` scores the 29 reproducible scenarios and updates `eval/results/latest/`; additional options can be passed through `ARGS`.
@@ -76,7 +76,7 @@ Environment variables are `AFTERIMAGE_TABLE`, `AFTERIMAGE_BUCKET`, `AFTERIMAGE_W
 
 ## Coding Style & Naming Conventions
 
-Use Python 3.12, four-space indentation, descriptive `snake_case` names for functions and modules, and `PascalCase` for classes. Ruff enforces import ordering and selected `E`, `F`, and `I` rules with a 100-character line limit. Keep modules focused on one responsibility, reuse shared logic, and do not hide exceptions. Avoid comments or docstrings that merely restate the code.
+Use Python 3.12, four-space indentation, descriptive `snake_case` names for functions and modules, and `PascalCase` for classes. Ruff enforces import ordering and the selected `E`, `F`, and `I` rules; the 100-character limit in `pyproject.toml` is the formatter's, not an enforced lint. Keep modules focused on one responsibility, reuse shared logic, and do not hide exceptions. Avoid comments or docstrings that merely restate the code.
 
 ## Testing Guidelines
 
@@ -84,7 +84,7 @@ Tests use `pytest`; files and test functions follow `test_*.py`. Add focused reg
 
 ## Required Gates
 
-- `eval/tests/test_published_numbers.py` validates figures in `README.md`, `docs/EVALUATION.md`, `docs/TECHNICAL_REPORT.md`, and `video/script.tsv` against `eval/results/latest/results.json`. After changing a threshold or perception metric, rerun `make eval` and update every published number.
+- `eval/tests/test_published_numbers.py` validates figures in `README.md`, `docs/EVALUATION.md`, `docs/TECHNICAL_REPORT.md`, and `video/script.tsv` against `eval/results/latest/results.json`. The `eval` job in CI scores the dataset again and `eval/compare_results.py` fails when the committed artefact no longer matches a fresh run. After changing a threshold or perception metric, rerun `make eval` and update every published number.
 - `services/perception/tests/test_import_safety.py` imports every non-test module under `services/` with a bare environment. No module may require configuration, weights, or AWS at import time; use cached client factories.
 - `docs/` and `README.md` are part of the deliverable. Changes to the loop, a threshold, or an endpoint usually require updates to `docs/TECHNICAL_REPORT.md` and the README flowchart.
 

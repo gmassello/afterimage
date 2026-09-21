@@ -8,6 +8,8 @@
 </div>{% endif -%}
 </section>{% else %}<h1 class='kicker'>{{ t.in_progress }}</h1>{% endif -%}
 
+{%- if run_state == 'unstarted' and execute_url %}<noscript><form method='post' action='{{ execute_url }}'><button class='btn sm' type='submit'>{{ t.trace_start_run }}</button></form></noscript>{% endif -%}
+
 {%- if path %}<section class='col'><div class='kicker'>{{ path.kicker }}</div>{{ c.rail(path.steps) }}
 {%- if path.not_taken %}<div class='col' style='padding-top:5.6px'><div class='kicker'>{{ t.not_taken_kicker }}</div><div class='grid'>
 {%- for g in path.not_taken %}<div class='ghost'><span class='t'>{{ g.tool }}</span><span class='r'>{{ g.metric }} {{ g.value }} {{ t.ghost_not }} {% if g.above %}&ge;{% else %}&lt;{% endif %} {{ g.threshold }}</span></div>{% endfor -%}

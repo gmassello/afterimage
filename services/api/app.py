@@ -16,6 +16,7 @@ from services.observability.render import load_run
 from services.observability.trace import RUN_ID_PATTERN, broken_at
 from services.ui.text import DEFAULT_LANG, DEFAULT_REGISTER, LANGS, REGISTERS, strings
 from services.ui.views import (
+    SAMPLE_ASSET,
     THUMB_WIDTH,
     activity_page,
     asset_page,
@@ -28,6 +29,9 @@ from services.ui.views import (
 )
 
 ASSET_ID_PATTERN = re.compile(r"^[a-z0-9-]{1,64}$")
+DEMO_COOKIE = "demo"
+DEMO_SUFFIX_PATTERN = re.compile(r"^[a-z0-9]{6}$")
+INTERRUPTED = "the run was interrupted before it finished"
 LANG_COOKIE = "afterimage-lang"
 REGISTER_COOKIE = "afterimage-register"
 CHOICE_MAX_AGE = 365 * 24 * 3600
@@ -141,9 +145,20 @@ def landing(lang: str = Depends(language), reading: str = Depends(register)):
     return HTMLResponse(landing_page(lang=lang, register=reading))
 
 
+def demo_suffix(request: Request) -> str:
+    saved = request.cookies.get(DEMO_COOKIE, "")
+    return saved if DEMO_SUFFIX_PATTERN.fullmatch(saved) else uuid.uuid4().hex[:6]
+
+
 @app.get("/app")
-def index(lang: str = Depends(language), reading: str = Depends(register)):
-    return HTMLResponse(index_page(store.list_assets(), lang=lang, register=reading))
+def index(request: Request, lang: str = Depends(language), reading: str = Depends(register)):
+    suffix = demo_suffix(request)
+    answer = HTMLResponse(index_page(
+        store.list_assets(), lang=lang, register=reading,
+        sample_asset=f"{SAMPLE_ASSET}-{suffix}",
+    ))
+    answer.set_cookie(DEMO_COOKIE, suffix, max_age=CHOICE_MAX_AGE, samesite="lax")
+    return answer
 
 
 @app.get("/activity")
@@ -196,6 +211,7 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
                 asset_id=asset_id,
                 lang=lang,
                 register=reading,
+                sample_asset=f"{SAMPLE_ASSET}-{demo_suffix(request)}",
             ),
             status_code=rejected.status_code,
         )
@@ -206,7 +222,7 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
 
 
 @app.post("/runs/{run_id}/execute")
-async def execute_run(run_id: str):
+async def execute_run(run_id: str, request: Request):
     if not RUN_ID_PATTERN.fullmatch(run_id):
         raise ApiError(404, "run not found", "run_not_found")
     try:
@@ -215,6 +231,8 @@ async def execute_run(run_id: str):
         raise ApiError(404, "run not found", "run_not_found")
     except loop.AlreadyStarted:
         raise ApiError(409, "run already started", "run_already_started")
+    if wants_html(request):
+        return RedirectResponse(f"/traces/{run_id}", status_code=303)
     return {"run_id": result.run_id, "status": result.status, "branch": result.branch}
 
 
@@ -242,6 +260,9 @@ def retry_run(run_id: str, request: Request):
     )
     if started is None:
         raise ApiError(404, "run not found", "run_not_found")
+    if finished is None and runs.stale(events):
+        loop.close_as_failed(original_dir, INTERRUPTED)
+        finished = {"status": trace.FAILED}
     if finished is None or finished.get("status") != trace.FAILED:
         raise ApiError(409, "only a failed run can be retried", "run_not_failed")
 

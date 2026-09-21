@@ -39,7 +39,7 @@ def _download(name: str, expected_sha1: str) -> None:
 
     target.parent.mkdir(parents=True, exist_ok=True)
     print(f"{name}: downloading")
-    with urllib.request.urlopen(f"{BASE_URL}/{name}") as response:
+    with urllib.request.urlopen(f"{BASE_URL}/{name}", timeout=30) as response:
         payload = response.read()
 
     digest = hashlib.sha1(payload).hexdigest()

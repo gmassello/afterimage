@@ -127,12 +127,12 @@ def _static_url(suffix: str, stem: str | None = None) -> str:
     return f"/static/{name}"
 
 
-def _samples(t: dict) -> list[dict]:
+def _samples(t: dict, asset_id: str = SAMPLE_ASSET) -> list[dict]:
     return [
         {
             "url": f"/static/{next(n for n in _assets() if n.startswith(stem + '.'))}",
             "name": f"{stem}.png",
-            "asset_id": SAMPLE_ASSET,
+            "asset_id": asset_id,
             "label": t[f"{key}_label"],
             "note": t[f"{key}_note"],
         }
@@ -344,7 +344,8 @@ def _asset_card(asset: dict) -> dict:
 
 
 def index_page(assets: list[dict], error: str = "", asset_id: str = "",
-               lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER) -> str:
+               lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER,
+               sample_asset: str = SAMPLE_ASSET) -> str:
     t = strings(lang, register)
     return _render(
         "index.html", t["nav_assets"], "assets", lang, register,
@@ -352,7 +353,7 @@ def index_page(assets: list[dict], error: str = "", asset_id: str = "",
         assets=[_asset_card(asset) for asset in assets],
         asset_branches=sorted({str(asset.get("last_branch")) for asset in assets
                                if asset.get("last_branch")}),
-        samples=_samples(t),
+        samples=_samples(t, sample_asset),
         error=error,
         asset_id=asset_id,
     )

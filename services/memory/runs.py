@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,8 @@ PENDING = "pending.json"
 EVENTS = "events.json"
 STATE = "state.json"
 RETRY = "retry.json"
+
+STALE_AFTER_SECONDS = 900
 
 # ponytail: unbounded per-process cache of append targets; entries are small JSON arrays
 _append_cache: dict[tuple[str, str], list] = {}
@@ -127,6 +130,14 @@ def _run_ids(root: str | Path, name: str = EVENTS) -> list[str]:
     ]
 
 
+def stale(events: list[dict], now: datetime | None = None) -> bool:
+    if not events or any(event.get("type") == "run_finished" for event in events):
+        return False
+    last = datetime.fromisoformat(events[-1]["ts"])
+    moment = now or datetime.now(timezone.utc)
+    return moment - last > timedelta(seconds=STALE_AFTER_SECONDS)
+
+
 def _summary(root: str | Path, run_id: str) -> dict | None:
     run_dir = Path(root) / run_id
     events = read(run_dir, EVENTS) or []
@@ -150,7 +161,7 @@ def _summary(root: str | Path, run_id: str) -> dict | None:
         "status": status,
         "branch": state.get("branch") or (finished or {}).get("branch"),
         "message": state.get("message") or (finished or {}).get("message") or "",
-        "retryable": status == "failed",
+        "retryable": status == "failed" or (status == "running" and stale(events)),
     }
 
 

@@ -1,5 +1,6 @@
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from services.conftest import localstack
@@ -123,3 +124,34 @@ def test_the_s3_queue_pages_through_every_listing_page(monkeypatch):
         "aaaaaaaaaaaa",
         "bbbbbbbbbbbb",
     ]
+
+
+def _interrupted(minutes_ago, finished=False):
+    moment = (datetime.now(timezone.utc) - timedelta(minutes=minutes_ago)).isoformat(
+        timespec="milliseconds"
+    )
+    events = [
+        {"type": "run_started", "ts": moment, "run_id": "aaaaaaaaaaaa",
+         "asset_id": "panel-stuck", "capture_key": "assets/panel-stuck/capture/capture.png"},
+        {"type": "tool_call", "ts": moment, "tool": "assess_quality"},
+    ]
+    if finished:
+        events.append({"type": "run_finished", "ts": moment, "status": "failed",
+                       "branch": None, "message": "RuntimeError: unavailable"})
+    return events
+
+
+def test_a_run_goes_stale_only_when_it_is_old_and_unfinished():
+    assert runs.stale(_interrupted(30)) is True
+    assert runs.stale(_interrupted(1)) is False
+    assert runs.stale(_interrupted(30, finished=True)) is False
+    assert runs.stale([]) is False
+
+
+def test_an_interrupted_run_is_retryable_while_it_still_reads_as_running(tmp_path):
+    runs.write(tmp_path / "aaaaaaaaaaaa", runs.EVENTS, _interrupted(30))
+    runs.write(tmp_path / "bbbbbbbbbbbb", runs.EVENTS, _interrupted(1))
+    items = {item["run_id"]: item for item in runs.recent(tmp_path)}
+    assert items["aaaaaaaaaaaa"]["status"] == "running"
+    assert items["aaaaaaaaaaaa"]["retryable"] is True
+    assert items["bbbbbbbbbbbb"]["retryable"] is False

@@ -119,17 +119,19 @@ approving promotes the defect capture to baseline and the same file then reads `
 Run M before K: after K the baseline is the faint-spot capture, and the plain panel would then read
 as a change.
 
-### Asset `demo-panel` — the sample captures, driven from the workspace
+### Asset `demo-panel-<suffix>` — the sample captures, driven from the workspace
 
 Nothing is uploaded by hand here: both rows go through the sample strip under the drop zone, which
-is the only entry route a first visitor has.
+is the only entry route a first visitor has. The strip writes a demo asset of this browser's own,
+named after the `demo` cookie, so the walkthrough starts from an empty memory on every fresh
+browser profile.
 
 | | Path | Sample | Assertion |
 |---|---|---|---|
-| **O** | the strip fills the form | 1 then 2 | clicking a sample writes `demo-panel` into an empty asset id, lands the file in the real input and renders the preview from a blob URL — the same `review()` a drop goes through. Sample 1 ends `first_baseline`; sample 2 then reads **`blur_variance 3.6589 < 100.0 -> recapture`**, the same figure C gets from `1-blurred.png`, which is what proves the committed copy has not drifted from `video/img/` |
+| **O** | the strip fills the form | 1 then 2 | clicking a sample writes this browser's `demo-panel-<suffix>` into an empty asset id, lands the file in the real input and renders the preview from a blob URL — the same `review()` a drop goes through. Sample 1 ends `first_baseline`; sample 2 then reads **`blur_variance 3.6589 < 100.0 -> recapture`**, the same figure C gets from `1-blurred.png`, which is what proves the committed copy has not drifted from `video/img/` |
 | **P** | a sample the baseline will not recognise | 4 | `retry_classic` → `unrecognized_asset` against the baseline sample 1 left. The synthetic panel is a different image entirely, so this is the refusal reached without typing an id or opening a file picker |
 
-Run O before P, and both before N. They leave `demo-panel` in the gallery with a thumbnail, which
+Run O before P, and both before N. They leave the demo asset in the gallery with a thumbnail, which
 is what `/app` is meant to look like when someone arrives.
 
 ### Asset `e2e-ghost` — a new asset whose very first capture is unusable

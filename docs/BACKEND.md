@@ -26,8 +26,8 @@ subprocess exposes five tools and receives storage keys rather than image arrays
 | `GET /activity?q=&status=` | Renders at most 50 recent runs, newest first, after optional free-text and exact-status filters. |
 | `GET /assets/{asset_id}` | Renders the chronological history and current baseline. |
 | `POST /inspections` | Validates the asset ID and image, stores the capture, starts a trace, and redirects with 303. |
-| `POST /runs/{run_id}/execute` | Claims and executes the opened run; returns 404 for unknown runs and 409 when already claimed. |
-| `POST /runs/{run_id}/retry` | For a terminal failed run, idempotently opens its replacement. HTML receives a 303; JSON receives the new run contract. |
+| `POST /runs/{run_id}/execute` | Claims and executes the opened run; returns 404 for unknown runs and 409 when already claimed. HTML receives a 303 back to the trace, so the run also starts without JavaScript. |
+| `POST /runs/{run_id}/retry` | For a terminal failed run, idempotently opens its replacement. A run interrupted before it finished is closed as failed after 15 minutes of silence and then retried the same way. HTML receives a 303; JSON receives the new run contract. |
 | `GET /queue` | Renders pending findings ordered for human review. |
 | `POST /queue/{run_id}/{verdict}` | Accepts `approve` or `reject` and resolves a pending finding. |
 | `GET /traces/{run_id}` | Returns JSON by default or HTML when requested; `?format=json` forces JSON. |
@@ -98,7 +98,7 @@ the last policy verdict.
 `services/memory/store.py` stores asset metadata, inspections, and baselines in one table. A history
 is one partition query; the gallery uses a table scan over denormalized `META` summaries. Conditional
 updates prevent an older inspection from replacing newer summary fields. Inspection and summary
-writes are not transactional, and current list/query operations do not paginate all possible pages.
+writes are not transactional. List and query operations page through every result.
 
 ### Images
 
@@ -139,7 +139,7 @@ being silently discarded. If execution raises unexpectedly, `resume` appends a f
 HTTP 500 while preserving the failed run for inspection.
 
 Operational limitations include a public unauthenticated endpoint, a long synchronous execution
-request, no distributed run lock, no full pagination, non-transactional summary writes, and bounded
+request, no distributed run lock, non-transactional summary writes, and bounded
 integrity guarantees. Deployment controls and retention are described in [SECURITY.md](SECURITY.md).
 
 ## Test map

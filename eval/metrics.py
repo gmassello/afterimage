@@ -35,10 +35,11 @@ def per_class(pairs) -> dict[str, dict[str, float]]:
 
 
 def macro(report: dict[str, dict[str, float]]) -> dict[str, float]:
-    if not report:
+    rows = [row for row in report.values() if row["support"]]
+    if not rows:
         return {"precision": 0.0, "recall": 0.0, "f1": 0.0}
     return {
-        metric: round(sum(row[metric] for row in report.values()) / len(report), 4)
+        metric: round(sum(row[metric] for row in rows) / len(rows), 4)
         for metric in ("precision", "recall", "f1")
     }
 

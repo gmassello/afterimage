@@ -76,9 +76,10 @@ _EN = {
                          "baseline, measures the change and stops when a person must decide.",
     "landing_primary_cta": "Open the application",
     "landing_secondary_cta": "See how it works",
-    "landing_demo_kicker": "RECONSTRUCTIBLE DECISION",
-    "landing_demo_title": "Every answer carries the number that triggered it.",
-    "landing_demo_hint": "Choose a capture and replay the path without writing anything to memory.",
+    "landing_demo_kicker": "HOW THE LOOP BRANCHES",
+    "landing_demo_title": "Four captures, four different answers.",
+    "landing_demo_hint": "An illustration of the path each capture takes. Run one in the "
+                         "app to see the measured numbers behind it.",
     "landing_demo_result": "result",
     "landing_demo_scenario": "demo capture",
     "landing_demo_previous": "Previous",
@@ -210,6 +211,7 @@ _EN = {
                          "one shows the number that triggered it.",
     "decider_kicker": "the number that decided it",
     "in_progress": "inspection in progress",
+    "trace_start_run": "start the inspection",
     "not_taken_kicker_tech": "branches not taken",
     "not_taken_kicker_plain": "what it ruled out",
     "ghost_not": "not",
@@ -379,9 +381,10 @@ _ES = {
                          "mide el cambio y se detiene cuando tiene que decidir una persona.",
     "landing_primary_cta": "Abrir la aplicación",
     "landing_secondary_cta": "Ver cómo funciona",
-    "landing_demo_kicker": "DECISIÓN RECONSTRUIBLE",
-    "landing_demo_title": "Cada respuesta conserva el número que la disparó.",
-    "landing_demo_hint": "Elegí una captura y repetí el recorrido sin escribir nada en memoria.",
+    "landing_demo_kicker": "CÓMO SE RAMIFICA EL CICLO",
+    "landing_demo_title": "Cuatro capturas, cuatro respuestas distintas.",
+    "landing_demo_hint": "Una ilustración del recorrido de cada captura. Corré una en la aplicación "
+                         "para ver los números medidos que hay detrás.",
     "landing_demo_result": "resultado",
     "landing_demo_scenario": "captura de demo",
     "landing_demo_previous": "Anterior",
@@ -515,6 +518,7 @@ _ES = {
                          "cada uno muestra el número que lo disparó.",
     "decider_kicker": "el número que lo decidió",
     "in_progress": "inspección en curso",
+    "trace_start_run": "iniciar la inspección",
     "not_taken_kicker_tech": "ramas no tomadas",
     "not_taken_kicker_plain": "qué descartó",
     "ghost_not": "no",
@@ -636,12 +640,17 @@ _ES = {
 TEXT = {"en": _EN, "es": _ES}
 
 
+class Copy(dict):
+    def __missing__(self, key):
+        raise RuntimeError(f"no copy for {key!r}")
+
+
 @lru_cache(maxsize=len(LANGS) * len(REGISTERS))
-def strings(lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER) -> dict:
+def strings(lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER) -> Copy:
     table = _EN | TEXT.get(lang, {})
     kind = register if register in REGISTERS else DEFAULT_REGISTER
-    voiced = {key: value for key, value in table.items()
-              if not key.endswith(("_tech", "_plain"))}
+    voiced = Copy((key, value) for key, value in table.items()
+                  if not key.endswith(("_tech", "_plain")))
     voiced.update({key.rsplit("_", 1)[0]: value for key, value in table.items()
                    if key.endswith(f"_{kind}")})
     return voiced

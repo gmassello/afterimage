@@ -239,3 +239,15 @@ def test_a_second_tool_error_fails_the_run_with_the_tool_message(tmp_path):
     assert finished["type"] == "run_finished"
     assert finished["message"]
     assert "no submit" not in finished["message"]
+
+
+@localstack
+def test_a_baseline_image_that_expired_fails_the_run_naming_the_key(tmp_path):
+    asset = unique("loop-gone-baseline")
+    baseline_key = seed_asset(asset, PANEL)
+    images._s3().delete_object(Bucket=images.BUCKET, Key=baseline_key)
+    capture_key = upload_capture(asset, PANEL)
+    result = run_loop(asset, capture_key, ScriptedLLM([]), tmp_path)
+    assert result.status == "failed"
+    assert result.branch is None
+    assert baseline_key in trace.read_events(result.run_dir)[-1]["message"]

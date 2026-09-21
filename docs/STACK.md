@@ -32,7 +32,8 @@ are served directly by FastAPI with content-hashed URLs.
 | Operational data | CloudWatch Logs with configured retention and an EventBridge health request every five minutes. |
 
 The production function is configured with 2,048 MB of memory and a 900-second timeout. S3 objects
-expire after 180 days. The DynamoDB table uses on-demand billing. These values must be verified in
+expire after 180 days, and DynamoDB items carry a `ttl` set to the same horizon. The DynamoDB
+table uses on-demand billing. These values must be verified in
 `infra/template.yaml` before being quoted elsewhere.
 
 ## Build and delivery

@@ -4,6 +4,7 @@ from functools import lru_cache
 import boto3
 import cv2
 import numpy as np
+from botocore.exceptions import ClientError
 
 BUCKET = os.environ.get("AFTERIMAGE_BUCKET", "afterimage")
 
@@ -71,6 +72,16 @@ def get_png(key: str) -> bytes:
         return _s3().get_object(Bucket=BUCKET, Key=key)["Body"].read()
     except _s3().exceptions.NoSuchKey:
         raise ValueError(f"s3://{BUCKET}/{key} does not exist")
+
+
+def exists(key: str) -> bool:
+    try:
+        _s3().head_object(Bucket=BUCKET, Key=key)
+    except ClientError as rejected:
+        if rejected.response["Error"]["Code"] in ("404", "NoSuchKey"):
+            return False
+        raise
+    return True
 
 
 def get_image(key: str) -> np.ndarray:

@@ -26,3 +26,12 @@ jobs:
         run: make typecheck
       - name: Suite and coverage floor
         run: make test
+
+  eval:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Score the evaluation dataset
+        run: make eval ARGS="--out eval/results/ci"
+      - name: The published numbers match a fresh run
+        run: python3 eval/compare_results.py eval/results/latest eval/results/ci
