@@ -5,9 +5,7 @@ import pytest
 from services.memory import images, store
 from services.perception.alignment import CLASSIC, align_to_baseline
 from services.perception.diffing import crop_region, diff_against_memory
-from services.perception.quality import assess_quality
-from services.perception.severity import CRACK, classify_severity
-from services.perception.tests.panels import (
+from services.perception.panels import (
     cell_bbox,
     centre,
     contains,
@@ -15,6 +13,8 @@ from services.perception.tests.panels import (
     solar_panel,
     with_crack,
 )
+from services.perception.quality import assess_quality
+from services.perception.severity import CRACK, classify_severity
 
 ASSET = "panel-a7"
 CRACK_CELL = (2, 4)

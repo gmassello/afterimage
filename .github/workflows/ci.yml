@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
+      - name: Cached ALIKED + LightGlue weights
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: weights-${{ hashFiles('services/perception/weights.py') }}
       - name: ALIKED + LightGlue weights
         run: make weights
       - name: Build the arm64 OpenCV 5 image
@@ -31,6 +36,11 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
+      - name: Cached ALIKED + LightGlue weights
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: weights-${{ hashFiles('services/perception/weights.py') }}
       - name: Score the evaluation dataset
         run: make eval ARGS="--out eval/results/ci"
       - name: The published numbers match a fresh run

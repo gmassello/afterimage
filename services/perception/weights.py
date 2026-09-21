@@ -9,7 +9,12 @@ WEIGHTS = {
     LIGHTGLUE_FILE: "02723aa521990e57fe33d90b67977590c460e351",
 }
 
-BASE_URL = "https://raw.githubusercontent.com/YangGuanyuhan/lightglue_opencv_project/main/model"
+# ponytail: single third-party origin, pinned to a commit so it cannot be rewritten under us; the
+# sha1 check below still gates the bytes, but nothing mirrors them if that repository disappears
+BASE_URL = (
+    "https://raw.githubusercontent.com/YangGuanyuhan/lightglue_opencv_project/"
+    "78c4fa54ad3bd4638ccf2b58af9f152e7f85a5f2/model"
+)
 
 
 def weights_dir() -> Path:

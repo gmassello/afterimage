@@ -10,7 +10,7 @@ from services.memory import images, store
 from services.observability import trace
 from services.observability.render import render_text
 from services.perception import alignment
-from services.perception.tests.panels import (
+from services.perception.panels import (
     blurred,
     foreign_panel,
     shifted,

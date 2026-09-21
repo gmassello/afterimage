@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from services.perception.alignment import CLASSIC, NEURAL, align_to_baseline
-from services.perception.tests.panels import shifted, solar_panel
+from services.perception.panels import shifted, solar_panel
 from services.perception.weights import neural_weights_available
 
 # inlier_ratio is not comparable across detectors: on the same pair ORB scores 0.41 and

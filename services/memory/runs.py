@@ -13,6 +13,7 @@ PENDING = "pending.json"
 EVENTS = "events.json"
 STATE = "state.json"
 RETRY = "retry.json"
+VERDICT = "verdict.json"
 
 STALE_AFTER_SECONDS = 900
 SCAN_LIMIT = 200

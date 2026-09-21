@@ -376,7 +376,7 @@ shown in the video, where an OpenCV number stopped the loop and a person restart
 |---|---|
 | Compute | One Lambda container image, `arm64` Graviton, 2048 MB, 900 s timeout, behind a Function URL. A full inspection peaks at 1,891 MB of that 2,048 |
 | Latency | Cold start **2.34 s** at p50 (p90 2.53 s, worst 9.01 s); warm and server-side, **4 ms** at p50, 24 ms at p90, 2.13 s at p99; a full inspection **22.8 s** at p50, 39.0 s at worst |
-| Reproducibility | Exact pins in `requirements.txt`; image tagged with the git short SHA; `make weights` sha1-verifies the two ONNX files |
+| Reproducibility | Exact pins in `requirements.txt`, the whole installed tree frozen in `requirements.lock` and installed with `--no-deps`; the Lambda adapter pinned by image digest; image tagged with the git short SHA; `make weights` sha1-verifies the two ONNX files |
 | Infrastructure as code | `infra/template.yaml` (SAM) and `infra/github-oidc.yaml`; `make deploy` and the GitHub Actions workflow run the same `deploy.sh` |
 | Deploy credentials | **None stored.** GitHub Actions federates over OIDC; the trust policy pins `sub` to the immutable numeric owner and repo IDs, not to names that can be transferred |
 | Blast radius | The deploy role carries no managed policy: its inline grant reaches only this stack's ECR repository, CloudFormation stack, function, table, bucket, log group and warmer rule. It may create roles only under `afterimage-*` and only with the stack's permissions boundary attached, and `iam:PassRole` only to Lambda |
@@ -545,6 +545,10 @@ Written as they were measured, not assembled at the end.
 - 29 scenarios is a small sample — one scenario moves accuracy by 3.4 points.
 - Tests and the default demo drive the loop with a scripted policy-following model; `--live` runs the
   same loop against Gemini. Branch verdicts are computed in code either way.
+- The two ONNX files come from a single third-party repository, pinned to a commit and sha1-verified.
+  Integrity is covered; availability is not. Nothing mirrors those bytes — OpenCV's own DNN test data
+  points at the same URL — so if that repository disappears, `make weights` and every target that
+  depends on it fail until a new source is found.
 
 ## 10. Reproducing this
 

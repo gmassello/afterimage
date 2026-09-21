@@ -31,7 +31,7 @@ what was tested without reading Python.
 
 | Source | Scenarios | Base images |
 |---|---:|---|
-| Synthetic | 11 | `services/perception/tests/panels.py`, the same generator the unit tests use |
+| Synthetic | 11 | `services/perception/panels.py`, the same generator the unit tests use |
 | Real photographs | **18** | 18 Wikimedia Commons photos of photovoltaic modules, committed under `eval/dataset/base/` |
 
 Every photo's author and licence is listed in `eval/dataset/SOURCES.md`. They are committed rather

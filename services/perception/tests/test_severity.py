@@ -1,14 +1,14 @@
 import pytest
 
 from services.perception.diffing import crop_region
-from services.perception.severity import CRACK, DELAMINATION, HOTSPOT, SOILING, classify_severity
-from services.perception.tests.panels import (
+from services.perception.panels import (
     cell_bbox,
     with_crack,
     with_delamination,
     with_hotspot,
     with_soiling,
 )
+from services.perception.severity import CRACK, DELAMINATION, HOTSPOT, SOILING, classify_severity
 
 CASES = [
     (with_crack, (2, 4), CRACK),

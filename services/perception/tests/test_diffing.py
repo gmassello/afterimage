@@ -1,6 +1,6 @@
 from services.perception.alignment import CLASSIC, align_to_baseline
 from services.perception.diffing import crop_and_rescan, diff_against_memory
-from services.perception.tests.panels import (
+from services.perception.panels import (
     cell_bbox,
     centre,
     contains,

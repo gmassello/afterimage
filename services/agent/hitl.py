@@ -11,6 +11,10 @@ PROMOTED = "promoted"
 HISTORICAL = "historical"
 
 
+class AlreadyResolved(Exception):
+    pass
+
+
 def commit(
     asset_id: str,
     inspection_id: str,
@@ -38,6 +42,9 @@ def resolve(run_dir: Path, approved: bool, actor: str | None = None) -> dict:
     payload = runs.read(run_dir, runs.PENDING)
     if payload is None:
         raise FileNotFoundError(run_dir / runs.PENDING)
+    claimed, _ = runs.write_once(run_dir, runs.VERDICT, {"approved": approved, "actor": actor})
+    if not claimed:
+        raise AlreadyResolved(run_dir / runs.VERDICT)
     extra = {"actor": actor} if actor else {}
     if approved:
         extra["baseline"] = PROMOTED if commit(

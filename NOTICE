@@ -9,11 +9,12 @@ the LightGlue matcher for ALIKED descriptors, published by cvg/LightGlue under
 the Apache License 2.0.
 
 Both are fetched by `make weights` from the ONNX exports at
-https://github.com/YangGuanyuhan/lightglue_opencv_project, which declares no
-license of its own; the licenses above are the ones of the original models it
-re-exports. OpenCV pins the same two files and the same two sha1 digests for its
-own DNN test data, in opencv_extra/testdata/dnn/download_models.py on the 5.x
-branch. They are copied into the deployed image at /opt/models.
+https://github.com/YangGuanyuhan/lightglue_opencv_project, pinned to commit
+78c4fa54ad3bd4638ccf2b58af9f152e7f85a5f2, which declares no license of its own;
+the licenses above are the ones of the original models it re-exports. OpenCV
+lists the same two files and the same two sha1 digests for its own DNN test
+data, in opencv_extra/testdata/dnn/download_models.py on the 5.x branch, and
+points at this same repository rather than hosting the bytes itself. They are copied into the deployed image at /opt/models.
 
 services/ui/static/inter.woff2 is the latin subset of the Inter variable font,
 served from the same origin so no request leaves for a font CDN. It is licensed

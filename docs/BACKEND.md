@@ -29,7 +29,7 @@ subprocess exposes five tools and receives storage keys rather than image arrays
 | `POST /runs/{run_id}/execute` | Claims and executes the opened run; returns 404 for unknown runs and 409 when already claimed. HTML receives a 303 back to the trace, so the run also starts without JavaScript. |
 | `POST /runs/{run_id}/retry` | For a terminal failed run, idempotently opens its replacement. A run interrupted before it finished is closed as failed after 15 minutes of silence and then retried the same way. HTML receives a 303; JSON receives the new run contract. |
 | `GET /queue` | Renders pending findings ordered for human review. |
-| `POST /queue/{run_id}/{verdict}` | Accepts `approve` or `reject` and resolves a pending finding. |
+| `POST /queue/{run_id}/{verdict}` | Accepts `approve` or `reject` and resolves a pending finding. The verdict is claimed write-once, so a second one returns 409 instead of committing twice. |
 | `GET /traces/{run_id}` | Returns JSON by default or HTML when requested; `?format=json` forces JSON. |
 | `GET /static/{name}` | Serves known content-hashed static assets with immutable caching. |
 | `GET /images/{key:path}` | Serves stored PNG data or a fixed 180-pixel thumbnail. |
@@ -44,7 +44,8 @@ Expected HTTP failures share one representation selected by `Accept`. Requests a
 `{"detail": string, "code": string, "retryable": boolean}`, where `retryable` is always `false`
 today because the retry lives on the activity row, not on the error itself. Application codes
 include `invalid_asset_id`, `image_required`, `upload_too_large`, `invalid_image`, `asset_not_found`, `run_not_found`,
-`run_already_started`, `run_not_failed`, `approval_not_found`, `trace_not_found`,
+`run_already_started`, `run_not_failed`, `approval_not_found`, `approval_already_resolved`,
+`trace_not_found`,
 `static_asset_not_found`, `invalid_image_width`, `image_not_found`, and `internal_error`. Browser
 upload validation is the deliberate exception: it re-renders `/app` with the asset ID and an inline
 error because browsers cannot repopulate the rejected file input.

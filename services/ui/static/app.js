@@ -177,10 +177,13 @@ const stopClock = () => {
 };
 
 if (page.dataset.runState === 'unstarted' && page.dataset.executeUrl) {
-  fetch(page.dataset.executeUrl, { method: 'POST' }).catch(() => {
+  const failed = () => {
     stopClock();
     say(T.runStartFailed);
-  });
+  };
+  fetch(page.dataset.executeUrl, { method: 'POST' })
+    .then((res) => { if (!res.ok && res.status !== 409) failed(); })
+    .catch(failed);
 }
 
 if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {

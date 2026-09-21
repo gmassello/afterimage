@@ -11,7 +11,7 @@ from services.agent.scripted import PolicyFollowingLLM, ScriptedLLM, seed_baseli
 from services.memory import images, store
 from services.observability import trace
 from services.perception import alignment, weights
-from services.perception.tests.panels import (
+from services.perception.panels import (
     blurred,
     shifted,
     solar_panel,

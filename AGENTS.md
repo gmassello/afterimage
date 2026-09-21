@@ -29,7 +29,9 @@ Historical and delivery records include `docs/BRIEF.md`, `docs/PLAN.md`, `docs/S
 - Use OpenCV 5 only. Verify every OpenCV API against https://docs.opencv.org/5.x/ before using it. OpenCV 5 replaced `Features2D` with `Features`, removed the C API, and moved ML/G-API to contrib.
 - Design for CPU/Graviton (`arm64`). The OpenCV 5 DNN engine has no GPU support.
 - Keep the agentic loop in the product, not in the development process. Every agent decision must be reconstructible from a trace, including the numeric value that triggered it.
-- Pin dependencies to exact versions in `requirements.txt`.
+- Pin dependencies to exact versions in `requirements.txt`. The image installs `requirements.lock`
+  with `--no-deps`, so after changing a direct dependency regenerate it with
+  `docker compose run --rm --no-deps app pip freeze > requirements.lock`.
 - Keep all repository output in English: code, docs, commits, and CI. The only exception is UI copy in `services/ui/text.py`, which must be bilingual English/Spanish. English is both the default and the per-key fallback. Plain and technical registers use `_plain` and `_tech` key suffixes resolved by `strings(lang, register)` before templates receive the copy. Plain is the default. Add register variants only when prose genuinely differs; button labels, units, and metric names do not need variants.
 
 ## Project Structure & Module Organization

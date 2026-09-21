@@ -3,7 +3,7 @@ from pathlib import Path
 
 import cv2
 
-from services.perception.tests import panels
+from services.perception import panels
 
 DATASET = Path(__file__).parent / "dataset"
 MAX_SIDE = 800

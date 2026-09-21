@@ -4,7 +4,7 @@ from pathlib import Path
 import cv2
 
 from eval import scenarios
-from services.perception.tests import panels
+from services.perception import panels
 
 OUT = Path(__file__).parent / "img"
 SAMPLES = Path(__file__).parents[1] / "services" / "ui" / "static"

@@ -59,7 +59,7 @@ The four synthetic ones are generated in the container, because there is no `cv2
 ```bash
 docker compose exec -T app python -c "
 import cv2, os
-from services.perception.tests.panels import solar_panel, with_faint_spot, foreign_panel, shifted
+from services.perception.panels import solar_panel, with_faint_spot, foreign_panel, shifted
 os.makedirs('/tmp/e2e', exist_ok=True)
 panel = solar_panel(seed=0)
 for name, image in {

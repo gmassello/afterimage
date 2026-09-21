@@ -1,5 +1,5 @@
+from services.perception.panels import blurred, overexposed, partial_frame
 from services.perception.quality import assess_quality
-from services.perception.tests.panels import blurred, overexposed, partial_frame
 
 
 def test_blur_lowers_the_variance(panel):

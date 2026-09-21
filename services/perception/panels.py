@@ -9,7 +9,7 @@ HOTSPOT_RADIUS_FRACTION = 1 / 3
 def solar_panel(seed: int = 0, rows: int = ROWS, cols: int = COLS, cell: int = CELL) -> np.ndarray:
     rng = np.random.default_rng(seed)
     height, width = rows * cell + 2 * BORDER, cols * cell + 2 * BORDER
-    panel = np.full((height, width, 3), 90, np.uint8)
+    panel: np.ndarray = np.full((height, width, 3), 90, np.uint8)
     for row in range(rows):
         for col in range(cols):
             y, x = BORDER + row * cell, BORDER + col * cell
@@ -88,7 +88,7 @@ def with_faint_spot(panel: np.ndarray, row: int, col: int, delta: int = 22) -> n
 
 def with_soiling(panel: np.ndarray) -> np.ndarray:
     height, width = panel.shape[:2]
-    dust = np.zeros((height, width), np.uint8)
+    dust: np.ndarray = np.zeros((height, width), np.uint8)
     cv2.ellipse(dust, (width // 2, height // 2), (width // 3, height // 4), 20, 0, 360, 70, -1)
     dust = cv2.GaussianBlur(dust, (61, 61), 0)
     return np.clip(panel.astype(np.int16) + dust[:, :, None], 0, 255).astype(np.uint8)

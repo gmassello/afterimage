@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from services.api.app import app
 from services.conftest import localstack
 from services.memory import images, runs, store
-from services.perception.tests.panels import solar_panel
+from services.perception.panels import solar_panel
 from services.ui import views
 
 PANEL = solar_panel(seed=0)
@@ -137,6 +137,26 @@ def test_the_polled_queue_lists_the_runs_prefix_once_per_window(client, monkeypa
     client.get("/queue")
     client.get("/queue")
     assert len(listings) == 1
+
+
+@localstack
+def test_a_verdict_that_lost_the_race_is_refused(client, tmp_path):
+    from services.agent import hitl
+
+    run_id = uuid.uuid4().hex[:12]
+    payload = {
+        "run_id": run_id,
+        "asset_id": unique("api-race"),
+        "captured_at": "2026-08-26T00:00:00+00:00",
+        "metrics": {"quality": {"blur_variance": 300.0}},
+        "image_keys": {"capture": f"assets/panel/{run_id}/capture.png"},
+    }
+    hitl.request_approval(tmp_path / run_id, payload)
+    assert client.post(f"/queue/{run_id}/reject").status_code == 303
+    hitl.request_approval(tmp_path / run_id, payload)
+    refused = client.post(f"/queue/{run_id}/reject")
+    assert refused.status_code == 409
+    assert refused.json()["code"] == "approval_already_resolved"
 
 
 @localstack

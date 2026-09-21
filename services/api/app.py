@@ -333,6 +333,8 @@ def resolve_pending(request: Request, run_id: str, verdict: str):
         )
     except FileNotFoundError:
         raise ApiError(404, "nothing pending for this run", "approval_not_found")
+    except hitl.AlreadyResolved:
+        raise ApiError(409, "this run already has a verdict", "approval_already_resolved")
     _pending_in_memory.cache_clear()
     return RedirectResponse("/queue", status_code=303)
 

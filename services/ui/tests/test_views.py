@@ -334,6 +334,11 @@ def test_error_page_keeps_actions_inside_the_application():
     assert "href='/app'" in page and "href='/activity'" in page
 
 
+def test_a_rejected_start_stops_the_clock_instead_of_spinning():
+    assert "if (!res.ok && res.status !== 409) failed();" in JS
+    assert "say(T.runStartFailed);" in JS
+
+
 def test_the_poller_defers_the_swap_while_the_block_is_in_use():
     assert "shown.contains(document.activeElement)" in JS
     assert "shown.querySelector('details[open]')" in JS

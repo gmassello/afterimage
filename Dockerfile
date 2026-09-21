@@ -6,12 +6,12 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY requirements.txt requirements.lock ./
 RUN python3.12 -m venv /opt/venv \
-    && /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+    && /opt/venv/bin/pip install --no-cache-dir --no-deps -r requirements.lock
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1 /lambda-adapter /opt/extensions/lambda-adapter
+COPY --from=public.ecr.aws/awsguru/aws-lambda-adapter:0.9.1@sha256:46d6625e68cbbdd2efab4a20245977664513f13ffef47915b000d431adcea0b4 /lambda-adapter /opt/extensions/lambda-adapter
 
 ENV AFTERIMAGE_WEIGHTS_DIR=/opt/models
 COPY models/ /opt/models/

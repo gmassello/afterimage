@@ -1,7 +1,8 @@
 # Technology stack
 
 This document is the canonical inventory of the technologies used by Afterimage. Exact Python
-package versions are owned by `requirements.txt`; deployment settings are owned by
+package versions are owned by `requirements.txt` for the direct dependencies and by
+`requirements.lock` for the whole installed tree; deployment settings are owned by
 `infra/template.yaml` and the container files.
 
 ## Application stack
