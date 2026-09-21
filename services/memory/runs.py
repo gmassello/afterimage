@@ -106,34 +106,24 @@ def delete(run_dir: Path, name: str) -> None:
 
 
 def pending(runs_dir: str | Path = "runs") -> list[dict]:
-    if _on_s3():
-        # ponytail: single list page (1000 keys); paginate if the queue outgrows it
-        listing = images._s3().list_objects_v2(Bucket=images.BUCKET, Prefix="runs/")
-        run_ids = [
-            o["Key"].split("/")[1]
-            for o in listing.get("Contents", [])
-            if o["Key"].endswith(f"/{PENDING}")
-        ]
-    else:
-        run_ids = [p.parent.name for p in Path(runs_dir).glob(f"*/{PENDING}")]
     payloads = [
         payload
-        for run_id in run_ids
+        for run_id in _run_ids(runs_dir, PENDING)
         if (payload := read(Path(runs_dir) / run_id, PENDING)) is not None
     ]
     return sorted(payloads, key=lambda payload: payload.get("captured_at", ""))
 
 
 
-def _run_ids(root: str | Path) -> list[str]:
+def _run_ids(root: str | Path, name: str = EVENTS) -> list[str]:
     if not _on_s3():
-        return [path.parent.name for path in Path(root).glob(f"*/{EVENTS}")]
+        return [path.parent.name for path in Path(root).glob(f"*/{name}")]
     paginator = images._s3().get_paginator("list_objects_v2")
     return [
         item["Key"].split("/")[1]
         for page in paginator.paginate(Bucket=images.BUCKET, Prefix="runs/")
         for item in page.get("Contents", [])
-        if item["Key"].endswith(f"/{EVENTS}")
+        if item["Key"].endswith(f"/{name}")
     ]
 
 

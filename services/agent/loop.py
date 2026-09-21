@@ -254,6 +254,7 @@ async def run(
 
         expected_tool = "assess_quality"
         expected_branch: str | None = None
+        tool_errors = 0
         history: list[dict] = [{
             "role": "user",
             "text": (
@@ -293,6 +294,9 @@ async def run(
                         continue
                     metrics, span = await call(tool_call.name, tool_call.args)
                     if "error" in metrics:
+                        tool_errors += 1
+                        if tool_errors > 1:
+                            return finish("failed", None, metrics["error"])
                         responses.append((tool_call.name, metrics))
                         continue
                     stage = STAGE_OF[tool_call.name]

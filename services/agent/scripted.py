@@ -12,6 +12,16 @@ class ScriptedLLM:
         return self.turns.pop(0)
 
 
+def _last_verdict(history):
+    for entry in reversed(history):
+        if entry["role"] != "tool":
+            continue
+        for name, payload in reversed(entry["responses"]):
+            if "policy" in payload:
+                return name, payload
+    return None
+
+
 class PolicyFollowingLLM:
     def __init__(self, capture_key, baseline_key, detector):
         self.capture_key = capture_key
@@ -21,12 +31,10 @@ class PolicyFollowingLLM:
         self.valid_mask_key = None
 
     def generate(self, system, history, tools):
-        last_tool_entry = next(
-            (entry for entry in reversed(history) if entry["role"] == "tool"), None
-        )
-        if last_tool_entry is None:
+        latest = _last_verdict(history)
+        if latest is None:
             return Turn(calls=(ToolCall("assess_quality", {"image_key": self.capture_key}),))
-        name, payload = last_tool_entry["responses"][-1]
+        name, payload = latest
         verdict = payload["policy"]
         branch = verdict["branch"]
         if name == "align_to_baseline":

@@ -220,3 +220,22 @@ def test_never_submitting_fails_the_run(tmp_path):
     result = run_loop(asset, capture_key, llm, tmp_path, max_turns=3)
     assert result.status == "failed"
     assert result.branch is None
+
+
+@localstack
+def test_a_second_tool_error_fails_the_run_with_the_tool_message(tmp_path):
+    asset = unique("loop-tool-error")
+    seed_asset(asset, PANEL)
+    missing = f"assets/{asset}/insp1/missing.png"
+    llm = ScriptedLLM([
+        Turn(calls=(ToolCall("assess_quality", {"image_key": missing}),)),
+        Turn(calls=(ToolCall("assess_quality", {"image_key": missing}),)),
+    ])
+    result = run_loop(asset, missing, llm, tmp_path)
+    assert result.status == "failed"
+    assert result.branch is None
+    assert not llm.turns
+    finished = trace.read_events(result.run_dir)[-1]
+    assert finished["type"] == "run_finished"
+    assert finished["message"]
+    assert "no submit" not in finished["message"]

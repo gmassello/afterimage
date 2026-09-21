@@ -82,6 +82,33 @@ def run_scenario(scenario: dict, runs_dir: Path) -> dict:
     return record
 
 
+def _failed_record(scenario: dict, error: Exception) -> dict:
+    expected = scenario["expect"]
+    record = {
+        "id": scenario["id"],
+        "source": "real" if "file" in scenario["base"] else "synthetic",
+        "run_id": "",
+        "status": "crashed",
+        "expected_branch": expected["branch"],
+        "branch": None,
+        "branch_ok": False,
+        "expected_defect": expected.get("defect", NO_DEFECT),
+        "score_defect": scenario.get("score_defect", True),
+        "defect": NO_DEFECT,
+        "path": [],
+        "expected_in_path": list(expected.get("path_contains", [])),
+        "truth_bbox": None,
+        "located_bbox": None,
+        "iou": None,
+        "quality": {},
+        "deciding_number": f"{type(error).__name__}: {error}",
+        "decisions": [],
+    }
+    record["defect_ok"] = not record["score_defect"] or record["defect"] == record["expected_defect"]
+    record["passed"] = False
+    return record
+
+
 def summarise(records: list[dict]) -> dict:
     branch_pairs = [(r["expected_branch"], r["branch"] or "failed") for r in records]
     defect_pairs = [(r["expected_defect"], r["defect"]) for r in records if r["score_defect"]]
@@ -180,16 +207,23 @@ def main() -> None:
 
     records = []
     for index, scenario in enumerate(scenarios, 1):
-        record = run_scenario(scenario, out / "runs")
+        try:
+            record = run_scenario(scenario, out / "runs")
+        except Exception as error:
+            record = _failed_record(scenario, error)
         records.append(record)
         mark = "ok  " if record["passed"] else "FAIL"
-        print(f"[{index:>2}/{len(scenarios)}] {mark} {record['id']:<38} {record['branch']}")
+        detail = record["deciding_number"] if record["status"] == "crashed" else record["branch"]
+        print(f"[{index:>2}/{len(scenarios)}] {mark} {record['id']:<38} {detail}")
 
     summary = summarise(records)
     summary["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     (out / "results.json").write_text(json.dumps({"summary": summary, "scenarios": records}, indent=2) + "\n")
     (out / "summary.md").write_text(render_summary(records, summary))
     print(f"\n{summary['passed']}/{summary['scenarios']} passed — wrote {out}/results.json and summary.md")
+    crashed = [record["id"] for record in records if record["status"] == "crashed"]
+    if crashed:
+        raise SystemExit(f"{len(crashed)} scenario(s) crashed: {', '.join(crashed)}")
 
 
 if __name__ == "__main__":

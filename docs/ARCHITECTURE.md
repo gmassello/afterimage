@@ -144,7 +144,7 @@ requests and the long inspection request. There is no external queue or independ
 - HTTP failures have stable machine-readable codes. Content negotiation renders the same failure as
   HTML for browsers or `{detail, code, retryable}` JSON for API clients.
 - Inspection and `META` summary updates are not a DynamoDB transaction.
-- Asset scans, history queries, and the approval listing do not implement full pagination.
+- Asset scans and history queries do not implement full pagination.
 - In-process image and asset caches are not bounded.
 
 See [BACKEND.md](BACKEND.md) for contracts and failure behavior, [FRONTEND.md](FRONTEND.md) for the

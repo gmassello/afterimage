@@ -1,5 +1,6 @@
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 
 from services.conftest import localstack
 from services.memory import runs
@@ -94,3 +95,31 @@ def test_s3_marker_is_conditional(tmp_path, monkeypatch):
     second = runs.write_once(run_dir, runs.RETRY, {"run_id": "222222222222"})
     assert first == (True, {"run_id": "111111111111"})
     assert second == (False, {"run_id": "111111111111"})
+
+
+def test_the_s3_queue_pages_through_every_listing_page(monkeypatch):
+    from services.memory import images
+
+    pages = [
+        {"Contents": [
+            {"Key": "runs/aaaaaaaaaaaa/pending.json"},
+            {"Key": "runs/aaaaaaaaaaaa/events.json"},
+        ]},
+        {"Contents": [{"Key": "runs/bbbbbbbbbbbb/pending.json"}]},
+    ]
+
+    class FakeS3:
+        def get_paginator(self, operation):
+            assert operation == "list_objects_v2"
+            return self
+
+        def paginate(self, **kwargs):
+            return iter(pages)
+
+    monkeypatch.setenv("AFTERIMAGE_RUNS_S3", "1")
+    monkeypatch.setattr(images, "_s3", FakeS3)
+    monkeypatch.setattr(runs, "read", lambda run_dir, name: {"run_id": Path(run_dir).name})
+    assert [payload["run_id"] for payload in runs.pending("runs")] == [
+        "aaaaaaaaaaaa",
+        "bbbbbbbbbbbb",
+    ]
