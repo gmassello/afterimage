@@ -94,6 +94,7 @@ _EN = {
     "landing_state_done": "done",
     "landing_state_skipped": "skipped",
     "landing_state_waiting": "waiting",
+    "landing_state_stopped": "stopped here",
     "landing_metrics_label": "Measured on the reproducible evaluation set",
     "landing_metric_real": "real photographs",
     "landing_metric_real_note": "most scenarios use licensed field imagery",
@@ -145,7 +146,6 @@ _EN = {
     "error_code": "error code",
     "error_back_app": "Back to the application",
     "error_activity": "Open activity",
-    "error_retry": "Retry safely",
 
     "help_summary": "New here? Start with this",
     "help_what": "This is an inspection agent with a memory. You send it a photo of something "
@@ -260,7 +260,8 @@ _EN = {
     "bar_max": "max",
     "bar_min": "min",
     "chain_intact_tech": "sha256 chain intact over {n} events",
-    "chain_intact_plain": "the {n} steps of this run are sealed: none was edited afterwards",
+    "chain_intact_plain": "the {n} steps of this run close over each other: none was edited on "
+                          "its own",
     "chain_broken_tech": "sha256 chain broken at event {at} of {n}",
     "chain_broken_plain": "step {at} of {n} was changed after it was written",
 
@@ -312,6 +313,7 @@ _EN = {
     "js_sample_failed": "the example could not be loaded — pick a file instead",
     "js_run_start_failed": "the run could not be started",
     "js_poll_timeout": "the run did not answer in time — open activity to check it",
+    "js_queue_timeout": "the queue stopped refreshing — reload the page to see it up to date",
 
     "err_asset_id_tech": "asset_id must match [a-z0-9-]{1,64}",
     "err_asset_id_plain": "the name can only use lowercase letters, numbers and hyphens, up to 64 "
@@ -399,6 +401,7 @@ _ES = {
     "landing_state_done": "listo",
     "landing_state_skipped": "omitido",
     "landing_state_waiting": "esperando",
+    "landing_state_stopped": "se detuvo acá",
     "landing_metrics_label": "Medido sobre la evaluación reproducible",
     "landing_metric_real": "fotografías reales",
     "landing_metric_real_note": "la mayoría de los escenarios usa imágenes de campo con licencia",
@@ -450,7 +453,6 @@ _ES = {
     "error_code": "código de error",
     "error_back_app": "Volver a la aplicación",
     "error_activity": "Abrir actividad",
-    "error_retry": "Reintentar de forma segura",
 
     "help_summary": "¿Primera vez? Empezá por acá",
     "help_what": "Esto es un agente de inspección con memoria. Le mandás una foto de "
@@ -567,7 +569,8 @@ _ES = {
     "bar_max": "máx",
     "bar_min": "mín",
     "chain_intact_tech": "cadena sha256 intacta sobre {n} eventos",
-    "chain_intact_plain": "los {n} pasos de esta corrida están sellados: ninguno se editó después",
+    "chain_intact_plain": "los {n} pasos de esta corrida cierran entre sí: ninguno se editó por "
+                          "separado",
     "chain_broken_tech": "cadena sha256 rota en el evento {at} de {n}",
     "chain_broken_plain": "el paso {at} de {n} se cambió después de escribirse",
 
@@ -630,6 +633,7 @@ _ES = {
     "js_sample_failed": "no se pudo cargar el ejemplo — elegí un archivo",
     "js_run_start_failed": "no se pudo iniciar la corrida",
     "js_poll_timeout": "la corrida no respondió a tiempo — abrí actividad para revisarla",
+    "js_queue_timeout": "la cola dejó de actualizarse — recargá la página para verla al día",
 
     "err_asset_id_tech": "el id del activo tiene que coincidir con [a-z0-9-]{1,64}",
     "err_asset_id_plain": "el nombre solo admite minúsculas, números y guiones, hasta 64 "

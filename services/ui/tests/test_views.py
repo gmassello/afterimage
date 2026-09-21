@@ -1,8 +1,9 @@
 import json
+import re
 
 import pytest
 
-from services.memory import store
+from services.memory import runs, store
 from services.observability import trace
 from services.observability.tests.sample_run import EVENTS, STATE
 from services.ui import views
@@ -593,3 +594,59 @@ def test_a_renamed_copy_key_is_a_render_error_instead_of_a_blank():
     template = views._env.from_string("{{ t.landing_hero_titel }}")
     with pytest.raises(RuntimeError, match="landing_hero_titel"):
         template.render(t=EN)
+
+
+def _landing_rails():
+    panels = views.landing_page().split("landing-scenario-panel")[1:]
+    assert len(panels) == 4
+    return panels, [re.findall(r"landing-rail-(done|warn|bad|skipped)", p) for p in panels]
+
+
+def test_the_landing_rail_paints_the_tone_the_application_uses():
+    _, states = _landing_rails()
+    assert states[0] == ["done", "skipped", "skipped", "skipped", "skipped"]
+    assert states[1] == ["warn", "skipped", "skipped", "skipped", "skipped"]
+    assert states[2] == ["done", "done", "done", "skipped", "warn"]
+    assert states[3] == ["done", "bad", "skipped", "skipped", "skipped"]
+    assert views._TONE["recapture"] == states[1][0]
+    assert views._TONE["human_approval"] == states[2][4]
+    assert views._TONE["unrecognized_asset"] == states[3][1]
+
+
+def test_the_landing_rail_says_stopped_where_the_run_ended():
+    panels, _ = _landing_rails()
+    assert EN["landing_state_stopped"] in panels[1]
+    assert EN["landing_state_waiting"] not in panels[1]
+    assert EN["landing_state_waiting"] in panels[2]
+    assert EN["landing_state_stopped"] in panels[3]
+
+
+def test_the_demo_tabs_are_allowed_to_wrap():
+    rule = CSS.split(".landing-scenario-tab {")[1].split("}")[0]
+    assert "white-space: nowrap" not in rule
+    assert "text-overflow: ellipsis" not in rule
+
+
+def test_the_error_page_offers_no_unreachable_retry():
+    page = views.error_page(409, "already_started", "run already started")
+    assert "<form" not in page.split("error-actions")[1].split("</section>")[0]
+
+
+def test_each_polled_block_carries_its_own_timeout_message():
+    assert "block().dataset.pollTimeout" in JS
+    assert f"data-poll-timeout='{EN['js_poll_timeout']}'" in views.render_html(STATE, EVENTS)
+    assert f"data-poll-timeout='{EN['js_queue_timeout']}'" in views.queue_page([])
+
+
+def test_a_trace_without_a_verdict_is_not_cached_as_one(tmp_path):
+    run_dir = tmp_path / "abcdef123456"
+    started = {"type": "run_started", "ts": "2026-09-19T12:00:00.000+00:00", "run_id": "abcdef123456"}
+    decided = {
+        "type": "decision", "ts": "2026-09-19T12:00:01.000+00:00",
+        "input_metric": views.SEVERITY_METRIC, "value": 0.7,
+        "threshold": 0.4, "branch": "human_approval",
+    }
+    runs.write(run_dir, runs.EVENTS, [started])
+    assert views._verdict_from_trace(str(run_dir)) is None
+    runs.write(run_dir, runs.EVENTS, [started, decided])
+    assert views._verdict_from_trace(str(run_dir))["value"] == 0.7

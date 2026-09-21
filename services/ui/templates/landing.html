@@ -51,18 +51,21 @@
         {% set step = loop.index %}
         {% if scenario == 1 %}
           {% set state = 'done' if step == 1 else 'skipped' %}
+          {% set mark = state %}
         {% elif scenario == 2 %}
-          {% set state = 'bad' if step == 1 else 'skipped' %}
+          {% set state = 'warn' if step == 1 else 'skipped' %}
+          {% set mark = 'stopped' if step == 1 else 'skipped' %}
         {% elif scenario == 3 %}
           {% set state = 'warn' if step == 5 else ('skipped' if step == 4 else 'done') %}
+          {% set mark = 'waiting' if step == 5 else ('skipped' if step == 4 else 'done') %}
         {% else %}
           {% set state = 'bad' if step == 2 else ('done' if step == 1 else 'skipped') %}
+          {% set mark = 'stopped' if step == 2 else ('done' if step == 1 else 'skipped') %}
         {% endif %}
         <li class='landing-rail-step landing-rail-{{ state }}'>
           <span class='landing-rail-index'>{{ step }}</span>
           <span class='landing-rail-name'>{{ stage }}</span>
-          <span class='landing-rail-state'>{{ t.landing_state_done if state == 'done' else
-            (t.landing_state_waiting if state in ('warn', 'bad') else t.landing_state_skipped) }}</span>
+          <span class='landing-rail-state'>{{ t['landing_state_' ~ mark] }}</span>
         </li>
         {% endfor %}
       </ol>

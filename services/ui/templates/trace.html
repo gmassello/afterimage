@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% import 'partials/components.html' as c with context %}
 {% block body %}
-<div class='live' data-poll='1500'>
+<div class='live' data-poll='1500' data-poll-timeout='{{ t.js_poll_timeout }}'>
 {%- if hero %}<section class='hero'><div class='col'><div class='kicker'>{{ hero.asset_id }} &middot; {{ t.hero_inspected }} {{ hero.captured_at|when(lang) }}</div><h1>{{ hero.headline }}</h1><p class='lede'>{{ hero.calls }}, {{ hero.thresholds }}, {{ hero.seconds }} s. {{ t.hero_policy }}</p><div class='pills'>{{ c.pills(hero.pills) }}</div></div>
 {%- if hero.decider %}<div class='panel'><div class='kicker'>{{ t.decider_kicker }}</div><div class='big'><span class='n'>{{ hero.decider.value }}</span><span class='u'>{{ hero.decider.metric }}</span></div>{{ c.bar(hero.decider.bar) }}
 {%- if hero.decider.metric_tip %}<p class='hint says-what'>{{ hero.decider.metric_tip }}</p>{% endif -%}

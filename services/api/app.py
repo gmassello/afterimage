@@ -44,28 +44,21 @@ app = FastAPI(title="afterimage")
 
 
 class ApiError(HTTPException):
-    def __init__(self, status_code: int, detail: str, code: str,
-                 retryable: bool = False, retry_url: str = ""):
+    def __init__(self, status_code: int, detail: str, code: str):
         super().__init__(status_code=status_code, detail=detail)
         self.code = code
-        self.retryable = retryable
-        self.retry_url = retry_url
 
 
 @app.exception_handler(StarletteHTTPException)
 async def http_error(request: Request, rejected: StarletteHTTPException):
     code = getattr(rejected, "code", f"http_{rejected.status_code}")
-    retryable = getattr(rejected, "retryable", False)
-    retry_url = getattr(rejected, "retry_url", "")
-    payload = {"detail": str(rejected.detail), "code": code, "retryable": retryable}
+    payload = {"detail": str(rejected.detail), "code": code, "retryable": False}
     if wants_html(request):
         return HTMLResponse(
             error_page(
                 rejected.status_code,
                 code,
                 str(rejected.detail),
-                retryable=retryable,
-                retry_url=retry_url,
                 lang=language(request),
                 register=register(request),
             ),

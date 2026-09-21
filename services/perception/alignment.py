@@ -117,6 +117,9 @@ def align_to_baseline(
         [[0, 0], [image_width, 0], [image_width, image_height], [0, image_height]], np.float32
     ).reshape(-1, 1, 2)
     covered = np.zeros((height, width), np.uint8)
+    # ponytail: the quadrilateral is not checked for degeneracy, so a warped homography that still
+    # clears inlier_ratio can mask the wrong region; a mean_reprojection_error threshold in Policy
+    # is the upgrade, and it needs a `make eval` run to pick its value
     cv2.fillConvexPoly(
         covered, cv2.perspectiveTransform(corners, homography).astype(np.int32), 255
     )

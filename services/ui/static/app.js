@@ -222,7 +222,7 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
     if (!live || page.dataset.runState === 'done') return;
     if (++attempts >= cap) {
       stopClock();
-      say(T.pollTimeout);
+      say(block().dataset.pollTimeout || T.pollTimeout);
       return;
     }
     setTimeout(poll, next);

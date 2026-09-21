@@ -209,16 +209,13 @@ def activity_page(items: list[dict], q: str = "", status: str = "",
     )
 
 
-def error_page(status_code: int, code: str, detail: str, retryable: bool = False,
-               retry_url: str = "", lang: str = DEFAULT_LANG,
+def error_page(status_code: int, code: str, detail: str, lang: str = DEFAULT_LANG,
                register: str = DEFAULT_REGISTER) -> str:
     return _render(
         "error.html", strings(lang, register)["error_title"], "error", lang, register,
         status_code=status_code,
         error_code=code,
         detail=detail,
-        retryable=retryable,
-        retry_url=retry_url,
     )
 
 
@@ -288,12 +285,20 @@ def _figures(baseline_key: str, capture_key: str, bbox=None, tag: dict | None = 
     }
 
 
-# ponytail: per-process cache keyed by run directory, so a run is read once per container;
+# ponytail: unbounded per-process cache keyed by run directory, so a run is read once per container;
 # a finished trace never changes, and the key carries the runs root so tests do not collide
-@lru_cache(maxsize=128)
+_verdicts: dict[str, dict] = {}
+
+
 def _verdict_from_trace(run_dir: str) -> dict | None:
+    cached = _verdicts.get(run_dir)
+    if cached is not None:
+        return cached
     decisions = _decisions(trace.read_events(Path(run_dir)))
-    return next((d for d in reversed(decisions) if d["input_metric"] == SEVERITY_METRIC), None)
+    found = next((d for d in reversed(decisions) if d["input_metric"] == SEVERITY_METRIC), None)
+    if found is not None:
+        _verdicts[run_dir] = found
+    return found
 
 
 def _verdict_of(item: dict) -> dict | None:

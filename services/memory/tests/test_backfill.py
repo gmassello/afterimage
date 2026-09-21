@@ -65,3 +65,10 @@ def test_a_dry_run_reports_without_writing():
 
     assert ("panel-dry", FIRST) in backfill.summaries(dry_run=True)
     assert "last_captured_at" not in _meta("panel-dry")
+
+
+def test_an_inspection_without_a_timestamp_is_skipped():
+    dated = {"sk": f"{store.INSPECTION}{FIRST}#insp-1", "captured_at": FIRST}
+    undated = {"sk": f"{store.INSPECTION}#insp-0"}
+    assert backfill._newest_inspection([undated, dated]) == dated
+    assert backfill._newest_inspection([undated]) is None

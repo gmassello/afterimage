@@ -41,8 +41,9 @@ upload request.
 
 Expected HTTP failures share one representation selected by `Accept`. Requests accepting
 `text/html` receive the server-rendered error page with the original status. Other clients receive
-`{"detail": string, "code": string, "retryable": boolean}`. Application codes include
-`invalid_asset_id`, `image_required`, `upload_too_large`, `invalid_image`, `asset_not_found`, `run_not_found`,
+`{"detail": string, "code": string, "retryable": boolean}`, where `retryable` is always `false`
+today because the retry lives on the activity row, not on the error itself. Application codes
+include `invalid_asset_id`, `image_required`, `upload_too_large`, `invalid_image`, `asset_not_found`, `run_not_found`,
 `run_already_started`, `run_not_failed`, `approval_not_found`, `trace_not_found`,
 `static_asset_not_found`, `invalid_image_width`, `image_not_found`, and `internal_error`. Browser
 upload validation is the deliberate exception: it re-renders `/app` with the asset ID and an inline

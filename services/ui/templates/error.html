@@ -1,4 +1,4 @@
 {% extends 'base.html' %}
 {% block body %}
-<section class='error-page panel'><div class='error-number' aria-hidden='true'>{{ status_code }}</div><div class='col'><h1>{{ t.error_title }}</h1><p class='lede'>{{ detail }}</p><p class='mono hint'>{{ t.error_code }} · {{ error_code }}</p><div class='error-actions'><a class='btn ok' href='/app'>{{ t.error_back_app }}</a><a class='btn' href='/activity'>{{ t.error_activity }}</a>{% if retryable and retry_url %}<form method='post' action='{{ retry_url }}'><button class='btn warn' type='submit'>{{ t.error_retry }}</button></form>{% endif %}</div></div></section>
+<section class='error-page panel'><div class='error-number' aria-hidden='true'>{{ status_code }}</div><div class='col'><h1>{{ t.error_title }}</h1><p class='lede'>{{ detail }}</p><p class='mono hint'>{{ t.error_code }} · {{ error_code }}</p><div class='error-actions'><a class='btn ok' href='/app'>{{ t.error_back_app }}</a><a class='btn' href='/activity'>{{ t.error_activity }}</a></div></div></section>
 {% endblock %}

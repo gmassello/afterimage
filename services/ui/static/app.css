@@ -373,7 +373,7 @@ header.top:has(~ main .landing-shell) { position: sticky; top: 0; z-index: 20;
   gap: 1px; padding: 3px; border-radius: 9px; background: var(--color-bg); }
 .landing-scenario-tab { min-width: 0; padding: 8px; border: 0; border-radius: 6px;
   background: transparent; color: var(--dim); font: 500 .72rem/1.25 var(--font-body);
-  text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  text-align: left; cursor: pointer; }
 .landing-scenario-tab span { display: block; margin-bottom: 2px; font-family: var(--mono);
   color: var(--color-accent); }
 .landing-scenario-tab[aria-selected='true'] { color: var(--color-text); background: var(--color-surface);

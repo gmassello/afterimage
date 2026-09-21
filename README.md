@@ -59,7 +59,7 @@ Both live in [`services/perception/alignment.py`](services/perception/alignment.
 - Anchors each capture to the stored baseline of the same asset with OpenCV 5 `Features` (ALIKED + LightGlue), or refuses the asset when alignment fails.
 - Diffs against memory and zooms in on its own when a region is uncertain, rather than reporting a maybe.
 - Escalates a severe finding to a human approval queue before anything is written to memory.
-- Emits every decision as a trace event carrying the metric, the threshold and the branch it produced, hash-chained to the event before it — `GET /traces/{run_id}` names the event where an edit broke the chain.
+- Emits every decision as a trace event carrying the metric, the threshold and the branch it produced, hash-chained to the event before it — `GET /traces/{run_id}` names the event where an edit broke the chain. The chain proves no step was edited on its own, not that the file as a whole was not rewritten; see [docs/SECURITY.md](docs/SECURITY.md).
 
 The loop is the product, not the development process: an unusable capture is sent back, an unrecognised asset is refused rather than guessed, and a severe finding waits for a human before anything is written.
 

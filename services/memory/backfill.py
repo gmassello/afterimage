@@ -4,10 +4,13 @@ from services.memory import store
 
 
 def _newest_inspection(items: list[dict]) -> dict | None:
-    inspections = [item for item in items if item["sk"].startswith(store.INSPECTION)]
+    inspections = [
+        item for item in items
+        if item["sk"].startswith(store.INSPECTION) and item.get("captured_at")
+    ]
     if not inspections:
         return None
-    return max(inspections, key=lambda item: item.get("captured_at", ""))
+    return max(inspections, key=lambda item: item["captured_at"])
 
 
 def summaries(dry_run: bool = False) -> list[tuple[str, str]]:

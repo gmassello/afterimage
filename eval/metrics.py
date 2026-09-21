@@ -9,7 +9,7 @@ def confusion(pairs) -> dict[tuple[str, str], int]:
     return matrix
 
 
-def _ratio(numerator: int, denominator: int) -> float:
+def _ratio(numerator: float, denominator: float) -> float:
     return round(numerator / denominator, 4) if denominator else 0.0
 
 
