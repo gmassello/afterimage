@@ -74,7 +74,7 @@ below.
 | `hotspot` | 4 | 0.75 | 0.75 | 0.75 |
 | `soiling` | 2 | 1.0 | 0.5 | 0.6667 |
 
-The two `faint-spot` scenarios are excluded from this table (`"score_defect": false` in the
+The three `faint-spot` scenarios are excluded from this table (`"score_defect": false` in the
 manifest). They inject a marginal darkening to exercise the zoom branch, not a member of the
 taxonomy; scoring them against a class the fixture does not represent would inflate the numbers.
 

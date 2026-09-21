@@ -1,14 +1,12 @@
-import os
+import uuid
 
-import boto3
 import cv2
 import numpy as np
 import pytest
 
+from services.conftest import localstack
+from services.memory import images
 from services.perception.quality import laplacian_variance
-from services.perception.s3_smoke import blur_metric_from_s3
-
-BUCKET = "afterimage-test"
 
 
 def make_checkerboard() -> np.ndarray:
@@ -17,17 +15,12 @@ def make_checkerboard() -> np.ndarray:
     return cv2.cvtColor(board, cv2.COLOR_GRAY2BGR)
 
 
-@pytest.mark.skipif("AWS_ENDPOINT_URL" not in os.environ, reason="requires LocalStack")
+@localstack
 def test_s3_roundtrip_returns_opencv_metric():
     image = make_checkerboard()
-    ok, encoded = cv2.imencode(".png", image)
-    assert ok
+    key = images.put_image(f"panel-smoke-{uuid.uuid4().hex[:8]}", uuid.uuid4().hex[:12], "capture", image)
 
-    s3 = boto3.client("s3")
-    s3.create_bucket(Bucket=BUCKET)
-    s3.put_object(Bucket=BUCKET, Key="checkerboard.png", Body=encoded.tobytes())
-
-    metric = blur_metric_from_s3(BUCKET, "checkerboard.png")
+    metric = laplacian_variance(images.get_image(key))
 
     assert metric == pytest.approx(laplacian_variance(image))
     assert metric > 0

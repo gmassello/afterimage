@@ -14,6 +14,7 @@ services:
     build: .
     platform: linux/arm64
     volumes:
+      - ./services:/app/services
       - ./eval:/app/eval
       - ./docs:/app/docs:ro
       - ./README.md:/app/README.md:ro

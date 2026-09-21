@@ -57,6 +57,13 @@ def test_headline_figures_match_the_artefact(published, measured):
     )
 
 
+def test_the_page_counts_the_scenarios_it_leaves_out_of_the_defect_table(published, measured):
+    scored = sum(row["support"] for row in measured["defect"]["per_class"].values())
+    assert _claim(published, r"The (\w+) `faint-spot` scenarios are excluded") == SPELLED[
+        measured["scenarios"] - scored
+    ]
+
+
 def test_the_report_restates_the_same_figures(measured):
     report = REPORT.read_text()
     assert _claim(report, r"Branch accuracy \| \*\*([\d.]+)\*\*") == str(measured["branch"]["accuracy"])

@@ -12,7 +12,7 @@ build: weights
 	$(COMPOSE) build app
 
 test: weights
-	$(COMPOSE) run --rm --build app python -m pytest services/ eval/ -v --cov=services --cov-report=term-missing --cov-fail-under=90; status=$$?; $(COMPOSE) down; exit $$status
+	$(COMPOSE) run --rm --build app python -m pytest services/ eval/ -v --cov=services --cov=eval --cov-report=term-missing --cov-fail-under=90; status=$$?; $(COMPOSE) down; exit $$status
 
 verify-runtime:
 	$(COMPOSE) run --rm app python -m pytest services/perception/tests/test_opencv5.py -v -s; status=$$?; $(COMPOSE) down; exit $$status

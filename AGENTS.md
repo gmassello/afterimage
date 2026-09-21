@@ -82,7 +82,7 @@ Use Python 3.12, four-space indentation, descriptive `snake_case` names for func
 
 ## Testing Guidelines
 
-Tests use `pytest`; files and test functions follow `test_*.py`. Add focused regression tests beside the affected module. Preserve deterministic, offline evaluation data and update published metrics only through `make eval`. Coverage must remain at or above 90% for `services/`.
+Tests use `pytest`; files and test functions follow `test_*.py`. Add focused regression tests beside the affected module. Preserve deterministic, offline evaluation data and update published metrics only through `make eval`. Coverage must remain at or above 90% for `services/` and `eval/` together, the same scope lint and type checking use.
 
 ## Required Gates
 

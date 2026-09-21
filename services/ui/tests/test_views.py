@@ -334,6 +334,13 @@ def test_error_page_keeps_actions_inside_the_application():
     assert "href='/app'" in page and "href='/activity'" in page
 
 
+def test_a_flat_history_at_zero_still_draws_a_sparkline():
+    entries = [{"score": 0.0, "bar": None}, {"score": 0.0, "bar": None}]
+    line = views._sparkline(entries, 0.0)
+    assert [point["y"] for point in line["points"]] == ["24.00", "24.00"]
+    assert line["mark"] == "24.00"
+
+
 def test_a_rejected_start_stops_the_clock_instead_of_spinning():
     assert "if (!res.ok && res.status !== 409) failed();" in JS
     assert "say(T.runStartFailed);" in JS

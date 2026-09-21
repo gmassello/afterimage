@@ -19,14 +19,14 @@ NO_DEFECT = "NONE"
 def _severity_label(events) -> str:
     for event in events:
         if event.get("tool") == "classify_severity":
-            return event["metrics"]["label"]
+            return (event.get("metrics") or {}).get("label") or NO_DEFECT
     return NO_DEFECT
 
 
 def _quality_metrics(events) -> dict:
     for event in events:
         if event.get("tool") == "assess_quality":
-            return event["metrics"]
+            return event.get("metrics") or {}
     return {}
 
 

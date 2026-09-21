@@ -229,12 +229,12 @@ def _fmt(value) -> str:
 
 def _scale(value: float, threshold: float) -> float:
     top = max(abs(value), abs(threshold))
-    if top == 0.0:
-        return 1.0
     return 1.0 if top <= 1.0 else top * 1.5
 
 
 def _pct(value: float, scale: float) -> float:
+    if not scale:
+        return 0.0
     return max(0.0, min(100.0, value / scale * 100.0))
 
 

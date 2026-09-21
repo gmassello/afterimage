@@ -10,3 +10,4 @@ docs
 web
 infra
 video
+services/**/tests

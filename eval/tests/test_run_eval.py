@@ -55,3 +55,12 @@ def test_a_crashing_scenario_does_not_discard_the_others(tmp_path, monkeypatch):
     summary = (tmp_path / "summary.md").read_text()
     assert "RuntimeError: s3 is down" in summary
     assert "boom" in str(exit_info.value)
+
+
+def test_a_failed_tool_call_keeps_its_branch_instead_of_raising():
+    events = [
+        {"type": "tool_call", "tool": "assess_quality", "error": "S3 timed out"},
+        {"type": "tool_call", "tool": "classify_severity", "error": "S3 timed out"},
+    ]
+    assert run_eval._quality_metrics(events) == {}
+    assert run_eval._severity_label(events) == run_eval.NO_DEFECT
