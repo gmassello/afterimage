@@ -70,6 +70,8 @@ def broken_at(events: list[dict]) -> int | None:
 
 
 def emit(run_dir: Path, event_type: str, **fields) -> dict:
+    # ponytail: the log is read and rewritten whole, so two concurrent emits on one run keep the
+    # last writer only; a conditional append on the object ETag is the upgrade if that matters
     previous = runs.last(run_dir, EVENTS_FILE)
     event = _link({"type": event_type, "ts": now(), **fields}, previous["hash"] if previous else GENESIS)
     runs.append(run_dir, EVENTS_FILE, event)

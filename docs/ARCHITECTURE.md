@@ -145,6 +145,8 @@ requests and the long inspection request. There is no external queue or independ
   HTML for browsers or `{detail, code, retryable}` JSON for API clients.
 - Inspection and `META` summary updates are not a DynamoDB transaction.
 - In-process image and asset caches are not bounded.
+- Two concurrent event appends on one run keep the last writer only.
+- Activity filters reach the 200 most recent runs, not the whole archive.
 
 See [BACKEND.md](BACKEND.md) for contracts and failure behavior, [FRONTEND.md](FRONTEND.md) for the
 browser architecture, and [SECURITY.md](SECURITY.md) for trust boundaries.

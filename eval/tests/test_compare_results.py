@@ -12,7 +12,7 @@ SUMMARY = {
     "passed": 25,
     "branch": {"accuracy": 0.8621, "macro": {"f1": 0.8624}},
     "defect": {"accuracy": 0.9, "macro": {"f1": 0.8753}},
-    "localisation": {"mean_iou": 0.7875},
+    "localisation": {"mean_iou": 0.7875, "measured": 14, "at_least_half": 12},
 }
 
 
@@ -50,3 +50,12 @@ def test_a_changed_count_or_a_real_drift_is_rejected(tmp_path):
     with pytest.raises(SystemExit) as moved:
         compare_results.main([published, str(_results(tmp_path / "drifted", drifted))])
     assert "mean_iou" in str(moved.value)
+
+
+def test_a_region_that_stops_being_located_is_rejected_even_when_the_mean_improves(tmp_path):
+    published = str(_results(tmp_path / "published", SUMMARY))
+    lost = _variant()
+    lost["localisation"] = {"mean_iou": 0.8131, "measured": 13, "at_least_half": 12}
+    with pytest.raises(SystemExit) as fewer:
+        compare_results.main([published, str(_results(tmp_path / "lost", lost))])
+    assert "localisation.measured" in str(fewer.value)

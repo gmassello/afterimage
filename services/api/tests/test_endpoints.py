@@ -128,6 +128,18 @@ def test_the_empty_queue_counts_what_memory_holds(client):
 
 
 @localstack
+def test_the_polled_queue_lists_the_runs_prefix_once_per_window(client, monkeypatch):
+    from services.api import app as api
+
+    listings = []
+    monkeypatch.setattr(runs, "pending", lambda root: listings.append(root) or [])
+    api._pending_in_memory.cache_clear()
+    client.get("/queue")
+    client.get("/queue")
+    assert len(listings) == 1
+
+
+@localstack
 def test_queue_flow(client, tmp_path):
     from services.agent import hitl
     from services.observability import trace

@@ -17,6 +17,8 @@ def figures(summary: dict) -> dict:
         "defect.accuracy": summary["defect"]["accuracy"],
         "defect.macro.f1": summary["defect"]["macro"]["f1"],
         "localisation.mean_iou": summary["localisation"]["mean_iou"],
+        "localisation.measured": summary["localisation"]["measured"],
+        "localisation.at_least_half": summary["localisation"]["at_least_half"],
     }
 
 

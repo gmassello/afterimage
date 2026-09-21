@@ -15,9 +15,7 @@ STATE = "state.json"
 RETRY = "retry.json"
 
 STALE_AFTER_SECONDS = 900
-
-# ponytail: unbounded per-process cache of append targets; entries are small JSON arrays
-_append_cache: dict[tuple[str, str], list] = {}
+SCAN_LIMIT = 200
 
 
 def _on_s3() -> bool:
@@ -86,18 +84,13 @@ def write_once(run_dir: Path, name: str, data) -> tuple[bool, Any]:
 
 
 def append(run_dir: Path, name: str, item) -> None:
-    cache_key = (str(run_dir), name)
-    items = _append_cache.get(cache_key)
-    if items is None:
-        items = _append_cache[cache_key] = read(run_dir, name) or []
+    items = read(run_dir, name) or []
     items.append(item)
     write(run_dir, name, items)
 
 
 def last(run_dir: Path, name: str) -> Any:
-    items = _append_cache.get((str(run_dir), name))
-    if items is None:
-        items = read(run_dir, name) or []
+    items = read(run_dir, name) or []
     return items[-1] if items else None
 
 
@@ -118,16 +111,18 @@ def pending(runs_dir: str | Path = "runs") -> list[dict]:
 
 
 
-def _run_ids(root: str | Path, name: str = EVENTS) -> list[str]:
+def _run_ids(root: str | Path, name: str = EVENTS, limit: int | None = None) -> list[str]:
     if not _on_s3():
         return [path.parent.name for path in Path(root).glob(f"*/{name}")]
     paginator = images._s3().get_paginator("list_objects_v2")
-    return [
-        item["Key"].split("/")[1]
+    found = [
+        item
         for page in paginator.paginate(Bucket=images.BUCKET, Prefix="runs/")
         for item in page.get("Contents", [])
         if item["Key"].endswith(f"/{name}")
     ]
+    found.sort(key=lambda item: item["LastModified"], reverse=True)
+    return [item["Key"].split("/")[1] for item in (found[:limit] if limit else found)]
 
 
 def stale(events: list[dict], now: datetime | None = None) -> bool:
@@ -169,7 +164,10 @@ def recent(root: str | Path = "runs", limit: int = 50, q: str = "",
            status: str = "") -> list[dict]:
     query = q.strip().lower()
     wanted_status = status.strip().lower()
-    items = [item for run_id in _run_ids(root) if (item := _summary(root, run_id))]
+    # ponytail: filters reach the most recent SCAN_LIMIT runs, not the whole history; a run index
+    # is the upgrade if the archive ever needs to be searchable in full
+    window = SCAN_LIMIT if (query or wanted_status) else limit
+    items = [item for run_id in _run_ids(root, limit=window) if (item := _summary(root, run_id))]
     if query:
         items = [
             item for item in items

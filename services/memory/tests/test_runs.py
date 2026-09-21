@@ -27,6 +27,15 @@ def test_disk_backend(tmp_path):
     exercise_backend(tmp_path / uuid.uuid4().hex[:12])
 
 
+def test_append_reads_the_stored_file_on_every_call(tmp_path):
+    run_dir = tmp_path / "abcdef123456"
+    runs.append(run_dir, runs.EVENTS, {"n": 1})
+    runs.write(run_dir, runs.EVENTS, [{"n": 1}, {"n": 2}])
+    runs.append(run_dir, runs.EVENTS, {"n": 3})
+    assert runs.read(run_dir, runs.EVENTS) == [{"n": 1}, {"n": 2}, {"n": 3}]
+    assert runs.last(run_dir, runs.EVENTS) == {"n": 3}
+
+
 def test_the_queue_comes_back_oldest_first(tmp_path):
     older = {"run_id": "ffffffffffff", "captured_at": "2026-09-12T09:00:00.000+00:00"}
     newer = {"run_id": "000000000000", "captured_at": "2026-09-12T10:00:00.000+00:00"}
@@ -103,10 +112,10 @@ def test_the_s3_queue_pages_through_every_listing_page(monkeypatch):
 
     pages = [
         {"Contents": [
-            {"Key": "runs/aaaaaaaaaaaa/pending.json"},
-            {"Key": "runs/aaaaaaaaaaaa/events.json"},
+            {"Key": "runs/aaaaaaaaaaaa/pending.json", "LastModified": 2},
+            {"Key": "runs/aaaaaaaaaaaa/events.json", "LastModified": 2},
         ]},
-        {"Contents": [{"Key": "runs/bbbbbbbbbbbb/pending.json"}]},
+        {"Contents": [{"Key": "runs/bbbbbbbbbbbb/pending.json", "LastModified": 1}]},
     ]
 
     class FakeS3:
@@ -124,6 +133,35 @@ def test_the_s3_queue_pages_through_every_listing_page(monkeypatch):
         "aaaaaaaaaaaa",
         "bbbbbbbbbbbb",
     ]
+
+
+def test_the_s3_listing_keeps_only_the_newest_runs(monkeypatch):
+    from services.memory import images
+
+    pages = [{"Contents": [
+        {"Key": f"runs/{run_id}/events.json", "LastModified": stamp}
+        for run_id, stamp in (("aaaaaaaaaaaa", 1), ("bbbbbbbbbbbb", 3), ("cccccccccccc", 2))
+    ]}]
+
+    class FakeS3:
+        def get_paginator(self, operation):
+            return self
+
+        def paginate(self, **kwargs):
+            return iter(pages)
+
+    monkeypatch.setenv("AFTERIMAGE_RUNS_S3", "1")
+    monkeypatch.setattr(images, "_s3", FakeS3)
+    assert runs._run_ids("runs", limit=2) == ["bbbbbbbbbbbb", "cccccccccccc"]
+
+
+def test_recent_widens_the_window_only_when_it_filters(tmp_path, monkeypatch):
+    windows = []
+    monkeypatch.setattr(runs, "_run_ids", lambda root, limit=None: windows.append(limit) or [])
+    runs.recent(tmp_path, limit=50)
+    runs.recent(tmp_path, limit=50, q="panel-3")
+    runs.recent(tmp_path, limit=50, status="failed")
+    assert windows == [50, runs.SCAN_LIMIT, runs.SCAN_LIMIT]
 
 
 def _interrupted(minutes_ago, finished=False):

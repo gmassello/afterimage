@@ -49,6 +49,12 @@ def test_headline_figures_match_the_artefact(published, measured):
     assert _claim(published, r"Defect accuracy \*\*([\d.]+)\*\*") == str(measured["defect"]["accuracy"])
     assert _claim(published, r"Defect accuracy.*?macro F1 \*\*([\d.]+)\*\*") == str(measured["defect"]["macro"]["f1"])
     assert _claim(published, r"Mean IoU \*\*([\d.]+)\*\*") == str(measured["localisation"]["mean_iou"])
+    assert _claim(published, r"over the (\d+) scenarios where a region was both injected") == str(
+        measured["localisation"]["measured"]
+    )
+    assert _claim(published, r"(\d+) of them\s+at IoU") == str(
+        measured["localisation"]["at_least_half"]
+    )
 
 
 def test_the_report_restates_the_same_figures(measured):
@@ -64,6 +70,12 @@ def test_the_report_restates_the_same_figures(measured):
     assert _claim(report, r"Mean IoU of the located region \| \*\*([\d.]+)\*\*") == str(
         measured["localisation"]["mean_iou"]
     )
+    assert _claim(report, r"Mean IoU of the located region.*?(\d+) of \d+ at IoU") == str(
+        measured["localisation"]["at_least_half"]
+    )
+    assert _claim(report, r"Mean IoU of the located region.*?\d+ of (\d+) at IoU") == str(
+        measured["localisation"]["measured"]
+    )
     assert _claim(report, r"\*\*(\d+) passed\*\*") == str(measured["passed"])
     assert _claim(report, r"\*\*(\d+) scenarios\*\*") == str(measured["scenarios"])
     assert _claim(report, r"\*\* . (\d+) synthetic") == str(measured["synthetic"])
@@ -77,6 +89,10 @@ def test_the_readme_restates_the_same_figures(measured):
     assert rows["Branch accuracy"].strip() == str(measured["branch"]["accuracy"])
     assert rows["Defect macro F1"].strip() == str(measured["defect"]["macro"]["f1"])
     assert rows["Mean IoU"].strip() == str(measured["localisation"]["mean_iou"])
+    assert _claim(readme, r"(\d+) localised regions") == str(measured["localisation"]["measured"])
+    assert _claim(readme, r"localised regions, (\d+) at IoU") == str(
+        measured["localisation"]["at_least_half"]
+    )
     assert rows["Scenarios passed"].strip() == f"{measured['passed']} / {measured['scenarios']}"
     assert _claim(readme, r"macro F1 ([\d.]+)") == str(measured["branch"]["macro"]["f1"])
     assert _claim(readme, r"(\d+) scenarios —") == str(measured["scenarios"])

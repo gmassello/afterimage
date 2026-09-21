@@ -38,6 +38,7 @@ CHOICE_MAX_AGE = 365 * 24 * 3600
 CHOICES = ((LANG_COOKIE, "lang", LANGS), (REGISTER_COOKIE, "register", REGISTERS))
 # ponytail: the Function URL rejects bodies over 6 MB anyway; this guard is for local uvicorn
 MAX_UPLOAD_BYTES = 6 * 1024 * 1024
+PENDING_WINDOW_SECONDS = 15
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="afterimage")
@@ -224,6 +225,7 @@ async def execute_run(run_id: str, request: Request):
         raise ApiError(404, "run not found", "run_not_found")
     except loop.AlreadyStarted:
         raise ApiError(409, "run already started", "run_already_started")
+    _pending_in_memory.cache_clear()
     if wants_html(request):
         return RedirectResponse(f"/traces/{run_id}", status_code=303)
     return {"run_id": result.run_id, "status": result.status, "branch": result.branch}
@@ -292,9 +294,18 @@ def _assets_in_memory(minute: int) -> int:
     return len(store.list_assets())
 
 
+# ponytail: the queue polls every 5 s and each poll lists the whole runs prefix, so the listing is
+# memoised in windows and dropped on resolve; a pending-only prefix is the upgrade
+@lru_cache(maxsize=1)
+def _pending_in_memory(root: str, window: int) -> list[dict]:
+    return runs.pending(root)
+
+
 @app.get("/queue")
 def queue(lang: str = Depends(language), reading: str = Depends(register)):
-    pending = runs.pending(runs.runs_dir())
+    pending = _pending_in_memory(
+        str(runs.runs_dir()), int(monotonic() // PENDING_WINDOW_SECONDS)
+    )
     settled = 0 if pending else _assets_in_memory(int(monotonic() // 60))
     return HTMLResponse(
         queue_page(pending, assets_in_memory=settled, lang=lang, register=reading)
@@ -322,6 +333,7 @@ def resolve_pending(request: Request, run_id: str, verdict: str):
         )
     except FileNotFoundError:
         raise ApiError(404, "nothing pending for this run", "approval_not_found")
+    _pending_in_memory.cache_clear()
     return RedirectResponse("/queue", status_code=303)
 
 

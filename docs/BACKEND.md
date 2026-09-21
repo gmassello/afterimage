@@ -23,7 +23,7 @@ subprocess exposes five tools and receives storage keys rather than image arrays
 | `GET /health` | Returns liveness. It is also used by the production warmer. |
 | `GET /` | Renders the public product landing without reading asset memory. |
 | `GET /app` | Renders the upload form, sample captures, and asset gallery. |
-| `GET /activity?q=&status=` | Renders at most 50 recent runs, newest first, after optional free-text and exact-status filters. |
+| `GET /activity?q=&status=` | Renders at most 50 recent runs, newest first. Filters apply to the 200 most recent runs, not to the whole archive. |
 | `GET /assets/{asset_id}` | Renders the chronological history and current baseline. |
 | `POST /inspections` | Validates the asset ID and image, stores the capture, starts a trace, and redirects with 303. |
 | `POST /runs/{run_id}/execute` | Claims and executes the opened run; returns 404 for unknown runs and 409 when already claimed. HTML receives a 303 back to the trace, so the run also starts without JavaScript. |
@@ -113,6 +113,10 @@ demand. It also maintains process-local caches.
 Artifacts live at `runs/{run_id}/events.json`, `state.json`, `pending.json`, and, for a retried
 failure, `retry.json`. The first file is the causal history; `state.json` and `pending.json` are
 materialized terminal and approval state; `retry.json` is the write-once pointer to the replacement.
+Every append reads the stored file again, so a process never rewrites the log from a stale copy; two
+concurrent appends on one run still keep the last writer only. On S3 the run listing is ordered by
+`LastModified` and truncated before any object is read, and `GET /queue` memoizes that listing for 15
+seconds, dropping it as soon as a run starts or a verdict lands.
 
 ## Human approval
 
