@@ -3,7 +3,7 @@
 {% block body %}
 <section class='col'><h1 class='kicker'>{{ t.queue_kicker }} &middot; {{ t.approval_threshold }} {{ threshold }}</h1><div class='queue' data-poll='5000' data-poll-timeout='{{ t.js_queue_timeout }}'>
 {%- if entries -%}
-{%- for e in entries %}<section class='panel'><div class='top'>{{ c.trace_link(e.run_id) }}<span class='pill'>{{ e.asset_id }}</span></div>{{ c.figures(e.figures) }}{% if e.score %}<div class='big{{ ' ' ~ e.bar.tone if e.bar and e.bar.tone else '' }}'><span class='n'>{{ e.score }}</span><span class='u'>{{ t.unit_severity }}</span></div>{% endif %}{{ c.bar(e.bar) }}<p class='hint'>{{ e.message }}</p><div class='foot'>{{ c.stages(e.stages, e.raw_url) }}{{ c.approve(e.run_id) }}</div></section>{% endfor -%}
+{%- for e in entries %}<section class='panel'><div class='top'>{{ c.trace_link(e.run_id) }}<span class='pill'>{{ e.asset_id }}</span></div>{{ c.figures(e.figures) }}{% if e.score %}<div class='big{{ ' ' ~ e.bar.tone if e.bar and e.bar.tone else '' }}'><span class='n'>{{ e.score }}</span><span class='u'>{{ t.unit_severity }}</span></div>{% endif %}{{ c.bar(e.bar) }}<p class='hint'>{{ e.message }}</p><div class='foot'>{{ c.stages(e.stages, e.raw_url) }}{{ c.approve(e.run_id, e.claimed) }}</div></section>{% endfor -%}
 {%- else -%}
 <p class='hint'>{{ t.queue_empty }}{% if assets_in_memory %} &middot; <a href='/app'>{{ in_memory }}</a>{{ t.all_settled }}{% endif %}</p>
 <p class='hint'>{{ t.queue_explainer.format(threshold=threshold) }}</p>

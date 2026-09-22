@@ -467,6 +467,7 @@ def _queue_entry(item: dict, t: dict) -> dict:
         "score": _fmt(_severity_score(item)) if severity.get("score") is not None else "",
         "stages": _stage_rows(metrics, t),
         "raw_url": f"/traces/{item['run_id']}?format=json",
+        "claimed": item.get("claimed"),
     }
 
 

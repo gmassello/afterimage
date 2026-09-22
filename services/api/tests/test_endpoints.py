@@ -542,3 +542,18 @@ def test_the_demo_samples_write_to_one_asset_per_visitor(client):
 
     stranger = TestClient(app, follow_redirects=False).get("/app")
     assert stranger.cookies["demo"] != suffix
+
+
+def test_a_verdict_whose_claim_is_still_in_flight_is_a_conflict(client, tmp_path, monkeypatch):
+    from services.agent import hitl
+
+    run_id = uuid.uuid4().hex[:12]
+    hitl.request_approval(tmp_path / run_id, {"run_id": run_id})
+
+    def in_flight(*args, **kwargs):
+        raise runs.ClaimInFlight(run_id)
+
+    monkeypatch.setattr(runs, "write_once", in_flight)
+    refused = client.post(f"/queue/{run_id}/approve")
+    assert refused.status_code == 409
+    assert refused.json()["code"] == "approval_already_resolved"

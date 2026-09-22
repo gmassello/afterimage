@@ -264,11 +264,14 @@ def retry_run(run_id: str, request: Request):
         raise ApiError(409, "only a failed run can be retried", "run_not_failed")
 
     candidate = uuid.uuid4().hex[:12]
-    created, marker = runs.write_once(
-        original_dir,
-        runs.RETRY,
-        {"run_id": candidate, "retry_of": run_id},
-    )
+    try:
+        created, marker = runs.write_once(
+            original_dir,
+            runs.RETRY,
+            {"run_id": candidate, "retry_of": run_id},
+        )
+    except runs.ClaimInFlight:
+        raise ApiError(409, "a retry of this run is already starting", "retry_in_progress")
     retry_id = marker["run_id"]
     if created:
         try:
@@ -335,7 +338,7 @@ def resolve_pending(request: Request, run_id: str, verdict: str):
         )
     except FileNotFoundError:
         raise ApiError(404, "nothing pending for this run", "approval_not_found")
-    except hitl.AlreadyResolved:
+    except (hitl.AlreadyResolved, runs.ClaimInFlight):
         raise ApiError(409, "this run already has a verdict", "approval_already_resolved")
     _pending_in_memory.cache_clear()
     return RedirectResponse("/queue", status_code=303)

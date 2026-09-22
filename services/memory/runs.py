@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -16,7 +17,12 @@ RETRY = "retry.json"
 VERDICT = "verdict.json"
 
 STALE_AFTER_SECONDS = 900
+CLAIM_READ_ATTEMPTS = 3
 SCAN_LIMIT = 200
+
+
+class ClaimInFlight(Exception):
+    pass
 
 
 def _on_s3() -> bool:
@@ -65,7 +71,12 @@ def write_once(run_dir: Path, name: str, data) -> tuple[bool, Any]:
             code = rejected.response.get("Error", {}).get("Code")
             if code not in ("PreconditionFailed", "ConditionalRequestConflict"):
                 raise
-            return False, read(run_dir, name)
+            for attempt in range(CLAIM_READ_ATTEMPTS):
+                stored = read(run_dir, name)
+                if stored is not None:
+                    return False, stored
+                time.sleep(0.1)
+            raise ClaimInFlight(_key(run_dir, name))
         return True, data
     path = Path(run_dir) / name
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -108,6 +119,10 @@ def pending(runs_dir: str | Path = "runs") -> list[dict]:
         for run_id in _run_ids(runs_dir, PENDING)
         if (payload := read(Path(runs_dir) / run_id, PENDING)) is not None
     ]
+    for payload in payloads:
+        verdict = read(Path(runs_dir) / payload["run_id"], VERDICT)
+        if verdict is not None:
+            payload["claimed"] = verdict["approved"]
     return sorted(payloads, key=lambda payload: payload.get("captured_at", ""))
 
 

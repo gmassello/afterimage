@@ -28,7 +28,7 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
 | `index.html` | Inspection workspace, four sample captures, and asset gallery. |
 | `activity.html` | Recent-run search and status filter, capped at 50 rows. |
 | `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action. |
-| `queue.html` | Pending comparisons with approve and reject actions. |
+| `queue.html` | Pending comparisons with approve and reject actions; an interrupted verdict shows only the claimed action and a note to repeat it. |
 | `asset.html` | Longitudinal timeline, severity trend, current baseline, and superseded baselines. |
 | `error.html` | Consistent browser error with a stable code, explanation, and recovery action when available. |
 | `base.html` | Document shell, initial theme selection, navigation, and static assets. |

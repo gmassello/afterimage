@@ -697,3 +697,19 @@ def test_a_trace_without_a_verdict_is_not_cached_as_one(tmp_path):
     assert views._verdict_from_trace(str(run_dir)) is None
     runs.write(run_dir, runs.EVENTS, [started, decided])
     assert views._verdict_from_trace(str(run_dir))["value"] == 0.7
+
+
+@pytest.mark.parametrize("claimed,shown,hidden,note", [
+    (True, "/approve", "/reject", "approve again to finish it"),
+    (False, "/reject", "/approve", "reject again to finish it"),
+])
+def test_an_interrupted_verdict_offers_only_the_claimed_action(claimed, shown, hidden, note):
+    page = views.queue_page([{"run_id": "abcdef123456", "asset_id": "panel", "claimed": claimed}])
+    assert f"/queue/abcdef123456{shown}" in page
+    assert f"/queue/abcdef123456{hidden}" not in page
+    assert note in page
+
+
+def test_an_unclaimed_verdict_offers_both_actions():
+    page = views.queue_page([{"run_id": "abcdef123456", "asset_id": "panel"}])
+    assert "/queue/abcdef123456/approve" in page and "/queue/abcdef123456/reject" in page

@@ -3,6 +3,9 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import pytest
+from botocore.exceptions import ClientError
+
 from services.conftest import localstack
 from services.memory import runs
 
@@ -128,7 +131,10 @@ def test_the_s3_queue_pages_through_every_listing_page(monkeypatch):
 
     monkeypatch.setenv("AFTERIMAGE_RUNS_S3", "1")
     monkeypatch.setattr(images, "_s3", FakeS3)
-    monkeypatch.setattr(runs, "read", lambda run_dir, name: {"run_id": Path(run_dir).name})
+    monkeypatch.setattr(
+        runs, "read",
+        lambda run_dir, name: {"run_id": Path(run_dir).name} if name == runs.PENDING else None,
+    )
     assert [payload["run_id"] for payload in runs.pending("runs")] == [
         "aaaaaaaaaaaa",
         "bbbbbbbbbbbb",
@@ -193,3 +199,35 @@ def test_an_interrupted_run_is_retryable_while_it_still_reads_as_running(tmp_pat
     assert items["aaaaaaaaaaaa"]["status"] == "running"
     assert items["aaaaaaaaaaaa"]["retryable"] is True
     assert items["bbbbbbbbbbbb"]["retryable"] is False
+
+
+def _conflicting_s3(monkeypatch, reads):
+    from services.memory import images
+
+    class FakeS3:
+        def put_object(self, **kwargs):
+            raise ClientError({"Error": {"Code": "ConditionalRequestConflict"}}, "PutObject")
+
+    monkeypatch.setenv("AFTERIMAGE_RUNS_S3", "1")
+    monkeypatch.setattr(images, "_s3", FakeS3)
+    monkeypatch.setattr(runs.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(runs, "read", lambda run_dir, name: reads.pop(0))
+
+
+def test_a_conflicting_claim_waits_for_the_winner_to_become_visible(tmp_path, monkeypatch):
+    _conflicting_s3(monkeypatch, [None, {"approved": True}])
+    assert runs.write_once(tmp_path, runs.VERDICT, {"approved": True}) == (False, {"approved": True})
+
+
+def test_a_claim_that_never_becomes_visible_is_reported_in_flight(tmp_path, monkeypatch):
+    _conflicting_s3(monkeypatch, [None] * runs.CLAIM_READ_ATTEMPTS)
+    with pytest.raises(runs.ClaimInFlight):
+        runs.write_once(tmp_path, runs.VERDICT, {"approved": True})
+
+
+def test_the_queue_marks_a_claimed_verdict(tmp_path):
+    run_dir = tmp_path / "abcdef123456"
+    runs.write(run_dir, runs.PENDING, {"run_id": run_dir.name})
+    assert "claimed" not in runs.pending(tmp_path)[0]
+    runs.write_once(run_dir, runs.VERDICT, {"approved": True})
+    assert runs.pending(tmp_path)[0]["claimed"] is True
