@@ -45,26 +45,30 @@ def resolve(run_dir: Path, approved: bool, actor: str | None = None) -> dict:
     claimed, _ = runs.write_once(run_dir, runs.VERDICT, {"approved": approved, "actor": actor})
     if not claimed:
         raise AlreadyResolved(run_dir / runs.VERDICT)
-    extra = {"actor": actor} if actor else {}
-    if approved:
-        extra["baseline"] = PROMOTED if commit(
-            payload["asset_id"],
-            payload["run_id"],
-            payload["captured_at"],
-            payload["metrics"],
-            payload["image_keys"],
-            payload.get("verdict"),
-        ) else HISTORICAL
-    record = policy.decision(
-        policy.HUMAN_GATE_METRIC,
-        1.0 if approved else 0.0,
-        1.0,
-        APPROVED if approved else REJECTED,
-        **extra,
-    )
-    trace.emit(run_dir, "decision", **record)
-    state = runs.read(run_dir, "state.json") or {}
-    state["status"] = record["branch"]
-    runs.write(run_dir, "state.json", state)
-    runs.delete(run_dir, runs.PENDING)
-    return record
+    try:
+        extra = {"actor": actor} if actor else {}
+        if approved:
+            extra["baseline"] = PROMOTED if commit(
+                payload["asset_id"],
+                payload["run_id"],
+                payload["captured_at"],
+                payload["metrics"],
+                payload["image_keys"],
+                payload.get("verdict"),
+            ) else HISTORICAL
+        record = policy.decision(
+            policy.HUMAN_GATE_METRIC,
+            1.0 if approved else 0.0,
+            1.0,
+            APPROVED if approved else REJECTED,
+            **extra,
+        )
+        trace.emit(run_dir, "decision", **record)
+        state = runs.read(run_dir, "state.json") or {}
+        state["status"] = record["branch"]
+        runs.write(run_dir, "state.json", state)
+        runs.delete(run_dir, runs.PENDING)
+        return record
+    except Exception:
+        runs.delete(run_dir, runs.VERDICT)
+        raise

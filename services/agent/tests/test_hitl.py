@@ -23,3 +23,17 @@ def test_a_second_verdict_on_the_same_run_is_refused(tmp_path):
         hitl.resolve(run_dir, approved=False, actor="second")
     decisions = [e for e in trace.read_events(run_dir) if e["type"] == "decision"]
     assert [decision["extra"]["actor"] for decision in decisions] == ["first"]
+
+
+def test_a_failed_approval_can_be_retried(tmp_path, monkeypatch):
+    run_dir = tmp_path / "abcdef123456"
+    _pending(run_dir)
+    monkeypatch.setattr(hitl, "commit", lambda *args: (_ for _ in ()).throw(RuntimeError("down")))
+
+    with pytest.raises(RuntimeError, match="down"):
+        hitl.resolve(run_dir, approved=True)
+
+    assert (run_dir / "pending.json").exists()
+    assert not (run_dir / "verdict.json").exists()
+    monkeypatch.setattr(hitl, "commit", lambda *args: True)
+    assert hitl.resolve(run_dir, approved=True)["branch"] == hitl.APPROVED

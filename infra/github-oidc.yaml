@@ -21,8 +21,7 @@ Resources:
     Properties:
       ManagedPolicyName: !Sub '${AppStackName}-permissions-boundary'
       Description: >-
-        Ceiling for every role the deploy creates. A role carrying this boundary can never
-        exceed what the afterimage Lambda actually needs, no matter what policies get attached.
+        Resource and action ceiling for roles the deploy creates.
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -33,13 +32,22 @@ Resources:
               - logs:PutLogEvents
             Resource: !Sub 'arn:aws:logs:*:${AWS::AccountId}:*'
           - Effect: Allow
-            Action: dynamodb:*
+            Action:
+              - dynamodb:PutItem
+              - dynamodb:Query
+              - dynamodb:Scan
+              - dynamodb:UpdateItem
             Resource: !Sub 'arn:aws:dynamodb:*:${AWS::AccountId}:table/${AppStackName}'
           - Effect: Allow
-            Action: s3:*
+            Action: s3:ListBucket
             Resource:
               - !Sub 'arn:aws:s3:::${AppStackName}-${AWS::AccountId}'
-              - !Sub 'arn:aws:s3:::${AppStackName}-${AWS::AccountId}/*'
+          - Effect: Allow
+            Action:
+              - s3:DeleteObject
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Sub 'arn:aws:s3:::${AppStackName}-${AWS::AccountId}/*'
 
   DeployRole:
     Type: AWS::IAM::Role

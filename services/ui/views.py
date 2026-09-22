@@ -80,7 +80,7 @@ _HEADLINE = {
     "assess_quality": ("blur_variance",),
     "align_to_baseline": ("inlier_ratio",),
     "diff_against_memory": ("mean_delta", "changed_ratio"),
-    "crop_and_rescan": ("area_ratio", "changed_ratio"),
+    "crop_and_rescan": ("zoom_area_ratio", "area_ratio"),
     "classify_severity": ("score",),
 }
 
@@ -205,7 +205,10 @@ def activity_page(items: list[dict], q: str = "", status: str = "",
         items=items,
         query=q,
         selected_status=status,
-        status_options=("", "unstarted", "running", "completed", "failed", "awaiting_approval"),
+        status_options=(
+            "", "unstarted", "running", "completed", "failed", "awaiting_approval", "approved",
+            "rejected",
+        ),
     )
 
 
@@ -379,8 +382,8 @@ def _inspection_entry(item: dict, entry: dict, t: dict) -> dict:
     entry["pills"] = [{"label": t["pill_inspection"]}]
     if label:
         entry["pills"].append({"label": str(label)})
-    entry["bar"] = _severity_bar(metrics, _verdict_of(item), t)
     entry["score"] = (metrics.get("severity") or {}).get("score")
+    entry["bar"] = _severity_bar(metrics, _verdict_of(item) if entry["score"] is not None else None, t)
     entry["stages"] = _stage_rows(metrics, t)
     entry["image_key"] = (item.get("image_keys") or {}).get("capture", "")
     return entry
@@ -460,7 +463,7 @@ def _queue_entry(item: dict, t: dict) -> dict:
             _tag(severity.get("label"), region.get("mean_delta")),
             aligned=bool(warped),
         ),
-        "bar": _severity_bar(metrics, _verdict_of(item), t),
+        "bar": _severity_bar(metrics, _verdict_of(item) if severity.get("score") is not None else None, t),
         "score": _fmt(_severity_score(item)) if severity.get("score") is not None else "",
         "stages": _stage_rows(metrics, t),
         "raw_url": f"/traces/{item['run_id']}?format=json",
@@ -667,10 +670,9 @@ def _card(event: dict, t: dict) -> dict:
     policy = event.get("policy")
     bar = None
     if policy:
-        word = t["bar_max"] if policy["value"] < policy["threshold"] else t["bar_min"]
         ends: list[dict] = [
             {"text": f"{policy['input_metric']} {_fmt(policy['value'])}", "lit": True},
-            {"text": f"{word} {_fmt(policy['threshold'])}"},
+            {"text": f"threshold {_fmt(policy['threshold'])}"},
         ]
         bar = _bar(policy["value"], policy["threshold"], ends)
         bar["tone"] = _TONE.get(policy["branch"])

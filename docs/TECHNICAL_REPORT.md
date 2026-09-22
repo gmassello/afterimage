@@ -205,7 +205,7 @@ changing a decision is a fact you can point at rather than something inferred fr
 | `assess_quality` | `cv2.Laplacian(..., CV_64F).var()`, `cv2.Canny` + `cv2.findContours` + `cv2.boundingRect` | `blur_variance`, `mean_brightness`, `clipped_dark_ratio`, `clipped_bright_ratio`, `coverage_ratio` |
 | `align_to_baseline` | `cv2.ALIKED.create` + `cv2.LightGlueMatcher.create` (neural) or `cv2.ORB.create(4000)` + `cv2.BFMatcher(NORM_HAMMING)` (fallback); `cv2.findHomography(..., cv2.USAC_MAGSAC, 3.0)`; `cv2.warpPerspective`; `cv2.erode` | `keypoints_query`, `keypoints_train`, `matches`, `inliers`, `inlier_ratio`, `mean_reprojection_error` |
 | `diff_against_memory` | `cv2.createCLAHE`, `cv2.absdiff`, `cv2.GaussianBlur`, `cv2.threshold`, `cv2.connectedComponentsWithStats` | `changed_ratio`, and per region `area_px`, `area_ratio`, `mean_delta`, `bbox` |
-| `crop_and_rescan` | the same diff pipeline plus `cv2.resize(..., INTER_CUBIC)` | the same fields, measured on the upscaled crop |
+| `crop_and_rescan` | the same diff pipeline plus `cv2.resize(..., INTER_CUBIC)` | full-frame `area_px` and `area_ratio`, plus crop-relative `zoom_area_ratio` |
 | `classify_severity` | `cv2.cvtColor(..., COLOR_BGR2HSV)`, `cv2.absdiff` | `score` and the features `brightness_delta`, `saturation_delta`, `hue_shift`, `spatial_uniformity`, `mean_delta`, `area_ratio` |
 
 The `Features` module is used substantively, not decoratively: ALIKED keypoints matched by LightGlue
@@ -262,7 +262,7 @@ flowchart TD
     DD -->|"no region at all"| NC(["NO_CHANGE"])
     DD -->|"below 35, uncertain"| CR["crop_and_rescan<br/>re-measure the region with 4x the pixels"]
     DD -->|"35 or above, confirmed"| S
-    CR --> CRD{"area_ratio<br/>below 0.02"}
+    CR --> CRD{"zoom_area_ratio<br/>below 0.02"}
     CRD -->|"yes"| NC
     CRD -->|"no, confirmed"| S["classify_severity"]
 
@@ -322,7 +322,7 @@ The full policy, with every default:
 | `diff_delta_threshold` | 30.0 | per-pixel delta that counts as changed | diff |
 | `diff_min_region_area_ratio` | 0.0005 | smallest connected component that counts as a region — the real bar of the `no_change` branch | diff |
 | `mean_delta_confirm` | 35.0 | `mean_delta` of the top region | diff |
-| `rescan_area_ratio_min` | 0.02 | `area_ratio` after the zoom | rescan |
+| `rescan_area_ratio_min` | 0.02 | `zoom_area_ratio` after the zoom | rescan |
 | `severity_full_scale_delta` | 64.0 | divisor that turns `mean_delta` into `score` | severity |
 | `severity_score_approve` | 0.40 | `score` | severity |
 

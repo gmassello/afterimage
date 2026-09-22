@@ -175,10 +175,11 @@ const stopClock = () => {
   clearInterval(ticker);
   if (clock) clock.textContent = '';
 };
+let stopPolling = stopClock;
 
 if (page.dataset.runState === 'unstarted' && page.dataset.executeUrl) {
   const failed = () => {
-    stopClock();
+    stopPolling();
     say(T.runStartFailed);
   };
   fetch(page.dataset.executeUrl, { method: 'POST' })
@@ -194,7 +195,11 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
   let pending = null;
   const halt = () => { live = false; stopClock(); };
   addEventListener('submit', halt, true);
-  addEventListener('click', (e) => e.target.closest?.('a') && halt(), true);
+  addEventListener('click', (e) => {
+    const link = e.target.closest?.('a[href]');
+    if (link && !link.getAttribute('href').startsWith('#') && !e.ctrlKey && !e.metaKey && e.button === 0) halt();
+  }, true);
+  stopPolling = halt;
   const block = () => document.querySelector('[data-poll]');
   const busy = () => {
     const shown = block();
@@ -210,6 +215,12 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
   addEventListener('focusout', () => setTimeout(flush, 0));
   addEventListener('toggle', flush, true);
   const poll = async () => {
+    if (!live || page.dataset.runState === 'done') return;
+    if (++attempts >= cap) {
+      stopClock();
+      say(block().dataset.pollTimeout || T.pollTimeout);
+      return;
+    }
     if (document.hidden) { setTimeout(poll, 5000); return; }
     let next = every;
     try {
@@ -223,11 +234,6 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
       if (state === 'done') stopClock();
     } catch (e) { next = 3000; }
     if (!live || page.dataset.runState === 'done') return;
-    if (++attempts >= cap) {
-      stopClock();
-      say(block().dataset.pollTimeout || T.pollTimeout);
-      return;
-    }
     setTimeout(poll, next);
   };
   if (clock) {

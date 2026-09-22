@@ -16,6 +16,7 @@ class ChangedRegion:
     area_px: int
     area_ratio: float
     mean_delta: float
+    zoom_area_ratio: float | None = None
 
 
 @dataclass(frozen=True)
@@ -120,9 +121,8 @@ def crop_and_rescan(
     ]
     rescanned = _regions(_delta_map(*enlarged), delta_threshold, min_region_area_ratio)
 
-    # Ratios stay relative to the crop — that is what the zoom measures. The bbox does not:
-    # it comes back in full-frame coordinates so the agent can chain this into the next tool.
     left, top = crop_origin(bbox, margin)
+    frame_area = float(aligned.shape[0] * aligned.shape[1])
     return DiffResult(
         regions=[
             ChangedRegion(
@@ -132,9 +132,10 @@ def crop_and_rescan(
                     int(region.bbox[2] / scale),
                     int(region.bbox[3] / scale),
                 ),
-                area_px=region.area_px,
-                area_ratio=region.area_ratio,
+                area_px=round(region.area_px / scale**2),
+                area_ratio=region.area_px / scale**2 / frame_area,
                 mean_delta=region.mean_delta,
+                zoom_area_ratio=region.area_ratio,
             )
             for region in rescanned.regions
         ],

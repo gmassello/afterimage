@@ -35,10 +35,23 @@ Resources:
       LoggingConfig:
         LogGroup: !Ref ApiLogGroup
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref Table
-        - S3CrudPolicy:
-            BucketName: !Ref Bucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:Query
+                - dynamodb:Scan
+                - dynamodb:UpdateItem
+              Resource: !GetAtt Table.Arn
+            - Effect: Allow
+              Action: s3:ListBucket
+              Resource: !GetAtt Bucket.Arn
+            - Effect: Allow
+              Action:
+                - s3:DeleteObject
+                - s3:GetObject
+                - s3:PutObject
+              Resource: !Sub '${Bucket.Arn}/*'
 
   ApiLogGroup:
     Type: AWS::Logs::LogGroup

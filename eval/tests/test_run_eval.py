@@ -1,4 +1,3 @@
-import json
 import sys
 
 import pytest
@@ -38,7 +37,7 @@ def fake_run_scenario(scenario, runs_dir):
     }
 
 
-def test_a_crashing_scenario_does_not_discard_the_others(tmp_path, monkeypatch):
+def test_a_crashing_scenario_does_not_publish_results(tmp_path, monkeypatch):
     monkeypatch.setattr(run_eval.store, "ensure_table", lambda: None)
     monkeypatch.setattr(run_eval.images, "ensure_bucket", lambda: None)
     monkeypatch.setattr(run_eval.scenarios_module, "load", lambda path: SCENARIOS)
@@ -48,12 +47,7 @@ def test_a_crashing_scenario_does_not_discard_the_others(tmp_path, monkeypatch):
     with pytest.raises(SystemExit) as exit_info:
         run_eval.main()
 
-    results = json.loads((tmp_path / "results.json").read_text())
-    assert [record["id"] for record in results["scenarios"]] == ["boom", "fine"]
-    assert results["summary"]["scenarios"] == 2
-    assert results["summary"]["passed"] == 1
-    summary = (tmp_path / "summary.md").read_text()
-    assert "RuntimeError: s3 is down" in summary
+    assert not (tmp_path / "results.json").exists()
     assert "boom" in str(exit_info.value)
 
 
@@ -63,4 +57,4 @@ def test_a_failed_tool_call_keeps_its_branch_instead_of_raising():
         {"type": "tool_call", "tool": "classify_severity", "error": "S3 timed out"},
     ]
     assert run_eval._quality_metrics(events) == {}
-    assert run_eval._severity_label(events) == run_eval.NO_DEFECT
+    assert run_eval._severity_label(events) == run_eval.CLASSIFICATION_ERROR

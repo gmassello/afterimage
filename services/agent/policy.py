@@ -107,11 +107,12 @@ def _evaluate_rescan(m: dict, p: Policy) -> dict:
             "area_ratio", m["largest_area_ratio"], p.rescan_area_ratio_min, NO_CHANGE
         )
     top = m["regions"][0]
-    if top["area_ratio"] < p.rescan_area_ratio_min:
-        return decision("area_ratio", top["area_ratio"], p.rescan_area_ratio_min, NO_CHANGE)
+    zoom_area_ratio = top["zoom_area_ratio"]
+    if zoom_area_ratio < p.rescan_area_ratio_min:
+        return decision("zoom_area_ratio", zoom_area_ratio, p.rescan_area_ratio_min, NO_CHANGE)
     return decision(
-        "area_ratio", top["area_ratio"], p.rescan_area_ratio_min, CHANGE_CONFIRMED,
-        bbox=top["bbox"], area_ratio=top["area_ratio"],
+        "zoom_area_ratio", zoom_area_ratio, p.rescan_area_ratio_min, CHANGE_CONFIRMED,
+        bbox=top["bbox"], area_ratio=top["area_ratio"], zoom_area_ratio=zoom_area_ratio,
     )
 
 

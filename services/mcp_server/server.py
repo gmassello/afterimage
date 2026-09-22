@@ -11,6 +11,8 @@ def _bbox(raw: list[float]) -> tuple[int, int, int, int]:
     if len(raw) != 4:
         raise ValueError(f"bbox must be [x, y, w, h], got {raw!r}")
     x, y, width, height = (int(v) for v in raw)
+    if width <= 0 or height <= 0:
+        raise ValueError(f"bbox width and height must be positive, got {raw!r}")
     return x, y, width, height
 
 
@@ -24,6 +26,11 @@ def _diff_payload(result: diffing.DiffResult) -> dict:
                 "area_px": region.area_px,
                 "area_ratio": round(float(region.area_ratio), 6),
                 "mean_delta": round(float(region.mean_delta), 4),
+                **(
+                    {"zoom_area_ratio": round(float(region.zoom_area_ratio), 6)}
+                    if region.zoom_area_ratio is not None
+                    else {}
+                ),
             }
             for region in result.regions
         ],
@@ -98,9 +105,11 @@ def crop_and_rescan(aligned_key: str, baseline_key: str, bbox: list[float]) -> d
 @server.tool()
 def classify_severity(aligned_key: str, baseline_key: str, bbox: list[float], area_ratio: float) -> dict:
     box = _bbox(bbox)
+    crops = [diffing.crop_region(images.get_image(key), box) for key in (aligned_key, baseline_key)]
+    if any(crop.size == 0 for crop in crops):
+        raise ValueError(f"bbox is outside image bounds: {bbox!r}")
     result = severity.classify_severity(
-        diffing.crop_region(images.get_image(aligned_key), box),
-        diffing.crop_region(images.get_image(baseline_key), box),
+        *crops,
         float(area_ratio),
         full_scale_delta=Policy.from_env().severity_full_scale_delta,
     )

@@ -279,7 +279,7 @@ def test_the_upload_form_states_what_it_accepts():
     for register, rule in (("tech", "lowercase letters, digits and hyphens"),
                            ("plain", "Lowercase letters, numbers and hyphens")):
         page = views.index_page([], register=register)
-        assert "image/jpeg,image/png,image/webp,image/tiff,image/bmp" in page
+        assert "image/jpeg,image/png" in page
         assert "image/*" not in page
         assert "up to 6&nbsp;MB" in page
         assert rule in page
@@ -344,6 +344,33 @@ def test_a_flat_history_at_zero_still_draws_a_sparkline():
 def test_a_rejected_start_stops_the_clock_instead_of_spinning():
     assert "if (!res.ok && res.status !== 409) failed();" in JS
     assert "say(T.runStartFailed);" in JS
+    assert "stopPolling();" in JS
+
+
+def test_trace_cards_use_a_neutral_threshold_label():
+    card = views._card({"tool": "assess_quality", "policy": {
+        "input_metric": "blur_variance", "value": 3.6, "threshold": 100.0,
+        "branch": "recapture",
+    }}, EN)
+    assert card["bar"]["ends"][1]["text"] == "threshold 100"
+
+
+def test_activity_translates_human_gate_statuses():
+    page = views.activity_page([{
+        "run_id": "abcdef123456", "asset_id": "panel", "captured_at": "2026-09-19T12:00:00+00:00",
+        "status": "approved", "branch": "", "retryable": False,
+    }], lang="es")
+    assert "aprobada" in page and "rechazada" in page
+
+
+def test_entries_without_severity_do_not_read_a_trace(monkeypatch):
+    calls = []
+    monkeypatch.setattr(views, "_verdict_of", lambda item: calls.append(item) or None)
+
+    views._inspection_entry({"metrics": {}}, {}, EN)
+    views._queue_entry({"run_id": "abcdef123456", "metrics": {}}, EN)
+
+    assert calls == []
 
 
 def test_the_poller_defers_the_swap_while_the_block_is_in_use():

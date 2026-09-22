@@ -93,13 +93,20 @@ def test_strong_change_is_confirmed_without_rescan():
 
 
 def test_rescan_confirms_above_area_threshold():
-    region = {"bbox": [0, 0, 10, 10], "area_px": 100, "area_ratio": 0.68, "mean_delta": 22.0}
+    region = {
+        "bbox": [0, 0, 10, 10], "area_px": 100, "area_ratio": 0.01,
+        "zoom_area_ratio": 0.68, "mean_delta": 22.0,
+    }
     decision = evaluate("rescan", {"changed_ratio": 0.68, "regions": [region]}, Policy())
     assert decision["branch"] == pol.CHANGE_CONFIRMED
+    assert decision["extra"]["area_ratio"] == 0.01
 
 
 def test_rescan_dismisses_below_area_threshold():
-    region = {"bbox": [0, 0, 2, 2], "area_px": 4, "area_ratio": 0.001, "mean_delta": 22.0}
+    region = {
+        "bbox": [0, 0, 2, 2], "area_px": 4, "area_ratio": 0.001,
+        "zoom_area_ratio": 0.001, "mean_delta": 22.0,
+    }
     decision = evaluate("rescan", {"changed_ratio": 0.001, "regions": [region]}, Policy())
     assert decision["branch"] == pol.NO_CHANGE
 

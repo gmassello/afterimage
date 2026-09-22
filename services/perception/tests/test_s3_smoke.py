@@ -19,6 +19,7 @@ def make_checkerboard() -> np.ndarray:
 def test_s3_roundtrip_returns_opencv_metric():
     image = make_checkerboard()
     key = images.put_image(f"panel-smoke-{uuid.uuid4().hex[:8]}", uuid.uuid4().hex[:12], "capture", image)
+    images._cache.clear()
 
     metric = laplacian_variance(images.get_image(key))
 

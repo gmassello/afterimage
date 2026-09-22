@@ -83,8 +83,7 @@ taxonomy; scoring them against a class the fixture does not represent would infl
 Mean IoU **0.7875** over the 14 scenarios where a region was both injected and detected, 12 of them
 at IoU ≥ 0.5. Ground truth is the region actually altered, not the bounding box passed to the
 injector — `faint_spot_at` darkens 35% of its box and `hotspot_at` draws an inscribed circle, so
-`eval/scenarios.py:_altered_region` narrows the truth accordingly. Scoring against the full box
-instead reported mean IoU 0.6515, which measured the harness rather than the detector.
+`eval/scenarios.py:_altered_region` narrows the truth accordingly.
 
 ## Where it fails
 
@@ -202,13 +201,13 @@ stage 6 left open. Two `POST /inspections` on a fresh asset, baseline then the d
 assess_quality       blur_variance     2237.0408 vs 100.0  -> quality_ok
 align_to_baseline    inlier_ratio            1.0 vs 0.9    -> aligned
 diff_against_memory  mean_delta          33.3427 vs 35.0   -> crop_and_rescan
-crop_and_rescan      area_ratio           0.1702 vs 0.02   -> change_confirmed
+crop_and_rescan      zoom_area_ratio      0.1702 vs 0.02   -> change_confirmed
 classify_severity    score                0.2596 vs 0.4    -> auto_write
 ```
 
 Live trace: <https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/traces/90472757e472>.
 Every value above is identical to the one the local container recorded for the same scenario —
-`blur_variance` 2237.0408, `inlier_ratio` 1.0, `mean_delta` 33.3427, `area_ratio` 0.1702, `score`
+`blur_variance` 2237.0408, `inlier_ratio` 1.0, `mean_delta` 33.3427, `zoom_area_ratio` 0.1702, `score`
 0.2596, to four decimals on all five. That is the second-channel check this stage owed: the numbers
 that drive the decisions do not move between where they are measured and where they are served.
 

@@ -88,6 +88,9 @@ The loop enforces a maximum of 12 turns and the following order:
 6. `classify_severity`
 7. `submit` with the branch already decided by policy
 
+The rescan result keeps `zoom_area_ratio` for the crop-relative confirmation threshold and passes
+full-frame `area_ratio` to severity classification.
+
 For a first capture, only quality is required before creating the baseline. Every later tool result
 is passed to `services/agent/policy.py:evaluate`, which returns the deciding metric, value,
 threshold, and branch. The loop rejects out-of-order calls and a submitted branch that differs from

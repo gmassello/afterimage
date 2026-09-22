@@ -25,7 +25,7 @@ In `services/api/app.py`:
 | `ASSET_ID_PATTERN` | `^[a-z0-9-]{1,64}$`, enforced with `fullmatch` before any storage call |
 | `RUN_ID_PATTERN` | twelve hex characters, enforced before the filesystem or S3 is touched |
 | `MAX_UPLOAD_BYTES` | 6 MB; a larger body is rejected with 413 |
-| Image decoding | a body that OpenCV cannot decode is rejected with 400, before anything is stored |
+| Image decoding | only PNG and JPEG are accepted; dimensions above 16 MP are rejected before OpenCV decodes them |
 | Unknown ids | answered with 404 rather than 400, so the endpoint does not confirm what exists |
 | Approval verdicts | restricted to `approve` and `reject` |
 
@@ -48,8 +48,8 @@ genesis link.
   repository, CloudFormation stack, function, table, bucket, log group and warmer rule. It may create
   roles only under `afterimage-*`, only with the stack's permissions boundary attached, and may pass
   a role only to Lambda.
-- **The function itself** runs under the same permissions boundary, with CRUD on its own DynamoDB
-  table and its own S3 bucket and nothing else (`infra/template.yaml`).
+- **The function itself** runs under the same permissions boundary, with only the DynamoDB reads and
+  writes plus the S3 object and listing actions used by the application (`infra/template.yaml`).
 - **The API key** for the model provider is a `NoEcho` CloudFormation parameter. `deploy.sh` never
   puts it on a command line: it writes a `mktemp` parameter file, passes it as `file://`, and removes
   it on a shell trap.

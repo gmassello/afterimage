@@ -14,13 +14,14 @@ from services.observability import trace
 from services.perception import alignment
 
 NO_DEFECT = "NONE"
+CLASSIFICATION_ERROR = "ERROR"
 
 
-def _severity_label(events) -> str:
+def _severity_label(events) -> str | None:
     for event in events:
         if event.get("tool") == "classify_severity":
-            return (event.get("metrics") or {}).get("label") or NO_DEFECT
-    return NO_DEFECT
+            return (event.get("metrics") or {}).get("label") or CLASSIFICATION_ERROR
+    return None
 
 
 def _quality_metrics(events) -> dict:
@@ -57,6 +58,7 @@ def run_scenario(scenario: dict, runs_dir: Path) -> dict:
     expected = scenario["expect"]
     path = [decision["branch"] for decision in result.decisions]
     located = _located_bbox(result.decisions)
+    defect = _severity_label(events)
     record = {
         "id": scenario["id"],
         "source": "real" if "file" in scenario["base"] else "synthetic",
@@ -67,7 +69,8 @@ def run_scenario(scenario: dict, runs_dir: Path) -> dict:
         "branch_ok": result.branch == expected["branch"],
         "expected_defect": expected.get("defect", NO_DEFECT),
         "score_defect": scenario.get("score_defect", True),
-        "defect": _severity_label(events),
+        "defect": defect,
+        "severity_ran": defect is not None,
         "path": path,
         "expected_in_path": [b for b in expected.get("path_contains", []) if b not in path],
         "truth_bbox": list(truth_bbox) if truth_bbox else None,
@@ -77,7 +80,11 @@ def run_scenario(scenario: dict, runs_dir: Path) -> dict:
         "deciding_number": _deciding_number(result.decisions),
         "decisions": result.decisions,
     }
-    record["defect_ok"] = not record["score_defect"] or record["defect"] == record["expected_defect"]
+    record["defect_ok"] = (
+        not record["score_defect"]
+        or not record["severity_ran"]
+        or record["defect"] == record["expected_defect"]
+    )
     record["passed"] = record["branch_ok"] and record["defect_ok"] and not record["expected_in_path"]
     return record
 
@@ -94,7 +101,8 @@ def _failed_record(scenario: dict, error: Exception) -> dict:
         "branch_ok": False,
         "expected_defect": expected.get("defect", NO_DEFECT),
         "score_defect": scenario.get("score_defect", True),
-        "defect": NO_DEFECT,
+        "defect": None,
+        "severity_ran": False,
         "path": [],
         "expected_in_path": list(expected.get("path_contains", [])),
         "truth_bbox": None,
@@ -104,14 +112,18 @@ def _failed_record(scenario: dict, error: Exception) -> dict:
         "deciding_number": f"{type(error).__name__}: {error}",
         "decisions": [],
     }
-    record["defect_ok"] = not record["score_defect"] or record["defect"] == record["expected_defect"]
+    record["defect_ok"] = not record["score_defect"]
     record["passed"] = False
     return record
 
 
 def summarise(records: list[dict]) -> dict:
     branch_pairs = [(r["expected_branch"], r["branch"] or "failed") for r in records]
-    defect_pairs = [(r["expected_defect"], r["defect"]) for r in records if r["score_defect"]]
+    defect_pairs = [
+        (r["expected_defect"], r["defect"])
+        for r in records
+        if r["score_defect"] and r["severity_ran"]
+    ]
     ious = [r["iou"] for r in records if r["iou"] is not None]
     branch_report = metrics_module.per_class(branch_pairs)
     defect_report = metrics_module.per_class(defect_pairs)
@@ -216,14 +228,14 @@ def main() -> None:
         detail = record["deciding_number"] if record["status"] == "crashed" else record["branch"]
         print(f"[{index:>2}/{len(scenarios)}] {mark} {record['id']:<38} {detail}")
 
+    failed = [record["id"] for record in records if record["status"] in ("crashed", "failed")]
+    if failed:
+        raise SystemExit(f"{len(failed)} scenario(s) failed: {', '.join(failed)}")
     summary = summarise(records)
     summary["generated_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     (out / "results.json").write_text(json.dumps({"summary": summary, "scenarios": records}, indent=2) + "\n")
     (out / "summary.md").write_text(render_summary(records, summary))
     print(f"\n{summary['passed']}/{summary['scenarios']} passed — wrote {out}/results.json and summary.md")
-    crashed = [record["id"] for record in records if record["status"] == "crashed"]
-    if crashed:
-        raise SystemExit(f"{len(crashed)} scenario(s) crashed: {', '.join(crashed)}")
 
 
 if __name__ == "__main__":

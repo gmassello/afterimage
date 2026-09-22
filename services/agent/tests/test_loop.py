@@ -121,7 +121,7 @@ def test_faint_change_zooms_then_auto_writes(tmp_path):
     assert rescan["input_metric"] == "mean_delta"
     assert rescan["value"] < rescan["threshold"]
     assert rescan["extra"]["bbox"]
-    confirmed = next(d for d in result.decisions if d["input_metric"] == "area_ratio")
+    confirmed = next(d for d in result.decisions if d["input_metric"] == "zoom_area_ratio")
     assert confirmed["branch"] == "change_confirmed"
     assert store.current_baseline(asset)["inspection_id"] == result.run_id
 

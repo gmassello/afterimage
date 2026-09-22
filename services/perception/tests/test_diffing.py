@@ -36,8 +36,9 @@ def test_rescan_measures_a_faint_region_with_more_pixels(panel):
     rescanned = crop_and_rescan(damaged, panel, region.bbox, scale=2.0)
 
     assert rescanned.regions
-    assert rescanned.regions[0].area_px > 3 * region.area_px
-    assert rescanned.regions[0].area_ratio > region.area_ratio
+    assert rescanned.regions[0].area_px <= region.area_px
+    assert rescanned.regions[0].area_ratio <= region.area_ratio
+    assert rescanned.regions[0].zoom_area_ratio > region.area_ratio
 
 
 def test_rescan_returns_full_frame_coordinates(panel):

@@ -64,6 +64,21 @@ def test_the_page_counts_the_scenarios_it_leaves_out_of_the_defect_table(publish
     ]
 
 
+def test_coverage_claims_match_the_scenario_records(published):
+    records = {record["id"]: record for record in json.loads(RESULTS.read_text())["scenarios"]}
+    claimed = dict(re.findall(r"\| (.+?) \| `(0\.\d+)` \|", published))
+    expected = {
+        "Partially framed panel (the case the gate exists to catch)": "recapture-partial-frame-synthetic",
+        "Good synthetic panel": "first-baseline-synthetic",
+        "Good real photograph, worst case (`no-change-real-warehouse`)": "no-change-real-warehouse",
+        "Good real photograph, best case (`delamination-real-jetion`)": "delamination-real-jetion",
+    }
+    assert {name: claimed[name] for name in expected} == {
+        name: f"{records[scenario]['quality']['coverage_ratio']:.4f}"
+        for name, scenario in expected.items()
+    }
+
+
 def test_the_report_restates_the_same_figures(measured):
     report = REPORT.read_text()
     assert _claim(report, r"Branch accuracy \| \*\*([\d.]+)\*\*") == str(measured["branch"]["accuracy"])

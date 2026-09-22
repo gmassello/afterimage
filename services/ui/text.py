@@ -42,13 +42,13 @@ _EN = {
     "upload_hint_tech": Markup(
         "The asset id takes lowercase letters, digits and hyphens, up to 64 characters "
         "&mdash; an id memory already holds adds to that asset&rsquo;s history, a new one "
-        "starts its own. JPEG, PNG, WebP, TIFF or BMP, up to 6&nbsp;MB. The trace opens "
+        "starts its own. JPEG or PNG, up to 6&nbsp;MB. The trace opens "
         "immediately and fills in as the agent works."
     ),
     "upload_hint_plain": Markup(
         "Give the thing you are watching a name, and send a photo of it. Use the same name next "
         "time and this becomes its history; a new name starts a new one. Lowercase letters, "
-        "numbers and hyphens, up to 64 characters, and a photo up to 6&nbsp;MB. The result opens "
+        "numbers and hyphens, up to 64 characters, and a JPEG or PNG photo up to 6&nbsp;MB. The result opens "
         "straight away and fills in while the agent looks."
     ),
     "label_asset_id": "asset id",
@@ -257,8 +257,13 @@ _EN = {
     "trace_headline": "Inspection trace",
     "path_taken": "the path this run took",
     "path_so_far": "the path so far",
-    "bar_max": "max",
-    "bar_min": "min",
+    "status_unstarted": "unstarted",
+    "status_running": "running",
+    "status_completed": "completed",
+    "status_failed": "failed",
+    "status_awaiting_approval": "awaiting approval",
+    "status_approved": "approved",
+    "status_rejected": "rejected",
     "chain_intact_tech": "sha256 chain intact over {n} events",
     "chain_intact_plain": "the {n} steps of this run close over each other: none was edited on "
                           "its own",
@@ -281,6 +286,8 @@ _EN = {
     "tip_mean_delta_plain": "How different the changed part looks from the reference photo.",
     "tip_area_ratio_tech": "How much of the frame the changed region covers.",
     "tip_area_ratio_plain": "How big the changed part is next to the whole photo.",
+    "tip_zoom_area_ratio_tech": "How much of the enlarged crop the changed region covers.",
+    "tip_zoom_area_ratio_plain": "How much of the zoomed-in area changed.",
     "tip_changed_ratio_tech": "Share of the aligned frame whose pixels moved at all since the "
                          "baseline.",
     "tip_changed_ratio_plain": "How much of the photo looks different from the reference at all.",
@@ -348,13 +355,13 @@ _ES = {
     "upload_hint_tech": Markup(
         "El id del activo admite minúsculas, dígitos y guiones, hasta 64 caracteres "
         "&mdash; un id que la memoria ya tiene suma a la historia de ese activo, uno nuevo "
-        "empieza la suya. JPEG, PNG, WebP, TIFF o BMP, hasta 6&nbsp;MB. La traza se abre "
+        "empieza la suya. JPEG o PNG, hasta 6&nbsp;MB. La traza se abre "
         "enseguida y se completa a medida que el agente trabaja."
     ),
     "upload_hint_plain": Markup(
         "Poné un nombre para la cosa que querés vigilar y mandá una foto. Usá el mismo nombre la "
         "próxima vez y esto se vuelve su historia; un nombre nuevo empieza otra. Minúsculas, "
-        "números y guiones, hasta 64 caracteres, y una foto de hasta 6&nbsp;MB. El resultado se "
+        "números y guiones, hasta 64 caracteres, y una foto JPEG o PNG de hasta 6&nbsp;MB. El resultado se "
         "abre enseguida y se completa mientras el agente mira."
     ),
     "label_asset_id": "id del activo",
@@ -566,8 +573,13 @@ _ES = {
     "trace_headline": "Traza de inspección",
     "path_taken": "el camino que tomó esta corrida",
     "path_so_far": "el camino hasta acá",
-    "bar_max": "máx",
-    "bar_min": "mín",
+    "status_unstarted": "sin iniciar",
+    "status_running": "en curso",
+    "status_completed": "completada",
+    "status_failed": "fallida",
+    "status_awaiting_approval": "esperando aprobación",
+    "status_approved": "aprobada",
+    "status_rejected": "rechazada",
     "chain_intact_tech": "cadena sha256 intacta sobre {n} eventos",
     "chain_intact_plain": "los {n} pasos de esta corrida cierran entre sí: ninguno se editó por "
                           "separado",
@@ -598,6 +610,8 @@ _ES = {
                             "referencia.",
     "tip_area_ratio_tech": "Cuánto del cuadro ocupa la región que cambió.",
     "tip_area_ratio_plain": "Qué tan grande es la parte que cambió al lado de toda la foto.",
+    "tip_zoom_area_ratio_tech": "Cuánto del recorte ampliado ocupa la región que cambió.",
+    "tip_zoom_area_ratio_plain": "Qué tanto cambió dentro del área ampliada.",
     "tip_changed_ratio_tech": "Proporción del cuadro alineado cuyos píxeles se movieron "
                          "algo desde el baseline.",
     "tip_changed_ratio_plain": "Cuánto de la foto se ve distinto de la referencia, aunque sea un "
