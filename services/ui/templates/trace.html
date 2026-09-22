@@ -28,7 +28,7 @@
 
 {%- if comparison %}<section class='col'><div class='kicker'>{{ t.compared_kicker }}</div>{{ c.compare(comparison) }}</section>{% endif -%}
 
-{%- if cta %}<section class='cta'><div class='col tight'><span class='t'>{{ t.cta_title }}</span><span class='s'>{{ cta.message }} {{ t.cta_nothing_written }}</span></div>{{ c.approve(cta.run_id) }}</section>{% endif -%}
+{%- if cta %}<section class='cta'><div class='col tight'><span class='t'>{{ t.cta_title }}</span><span class='s'>{{ cta.message }} {{ t.cta_nothing_written }}</span></div>{{ c.approve(cta.run_id, cta.claimed) }}</section>{% endif -%}
 </div>
 {% endblock %}
 {% block tail %}

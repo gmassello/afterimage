@@ -726,12 +726,13 @@ def _says(events: list[dict], run_state: str, summary: dict, t: dict) -> str:
     return f"{t['state_working']} \u00b7 {counted(t, 'calls', calls)}"
 
 
-def _cta(summary: dict) -> dict | None:
+def _cta(summary: dict, claimed: bool | None = None) -> dict | None:
     if summary.get("status") != trace.AWAITING_APPROVAL:
         return None
     return {
         "message": str(summary.get("message") or ""),
         "run_id": str(summary.get("run_id") or ""),
+        "claimed": claimed,
     }
 
 
@@ -743,7 +744,7 @@ def _chain_line(events: list[dict], t: dict) -> str:
 
 
 def render_html(state: dict, events: list[dict], lang: str = DEFAULT_LANG,
-                register: str = DEFAULT_REGISTER) -> str:
+                register: str = DEFAULT_REGISTER, claimed: bool | None = None) -> str:
     summary = _summary(state, events)
     run_state = trace.run_state(events)
     run_id = str(summary.get("run_id") or "")
@@ -760,7 +761,7 @@ def render_html(state: dict, events: list[dict], lang: str = DEFAULT_LANG,
         path=_path(events, run_state, t),
         cards=[_card(e, t) for e in events if e["type"] == "tool_call"],
         comparison=_figures(baseline, capture, bbox, tag, aligned=aligned),
-        cta=_cta(summary),
+        cta=_cta(summary, claimed),
         footer={
             "run_id": run_id,
             "asset_id": str(summary.get("asset_id") or ""),

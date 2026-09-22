@@ -384,5 +384,7 @@ def get_trace(run_id: str, request: Request, lang: str = Depends(language),
     if not events:
         raise ApiError(404, "trace not found", "trace_not_found")
     if wants_html(request) and request.query_params.get("format") != "json":
-        return HTMLResponse(render_html(state, events, lang=lang, register=reading))
+        verdict = runs.read(run_dir, runs.VERDICT)
+        claimed = verdict["approved"] if verdict else None
+        return HTMLResponse(render_html(state, events, lang=lang, register=reading, claimed=claimed))
     return {"state": state, "events": events, "chain": chain_verdict(events)}

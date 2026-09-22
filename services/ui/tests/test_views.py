@@ -713,3 +713,14 @@ def test_an_interrupted_verdict_offers_only_the_claimed_action(claimed, shown, h
 def test_an_unclaimed_verdict_offers_both_actions():
     page = views.queue_page([{"run_id": "abcdef123456", "asset_id": "panel"}])
     assert "/queue/abcdef123456/approve" in page and "/queue/abcdef123456/reject" in page
+
+
+def test_the_trace_offers_only_the_claimed_action_after_an_interruption():
+    awaiting = dict(STATE, status="awaiting_approval")
+    run_id = views._summary(awaiting, EVENTS)["run_id"]
+    both = views.render_html(awaiting, EVENTS)
+    assert f"/queue/{run_id}/approve" in both and f"/queue/{run_id}/reject" in both
+    claimed = views.render_html(awaiting, EVENTS, claimed=True)
+    assert f"/queue/{run_id}/approve" in claimed
+    assert f"/queue/{run_id}/reject" not in claimed
+    assert "approve again to finish it" in claimed
