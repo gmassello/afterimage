@@ -44,7 +44,7 @@ beat	en	es
 3:15	It cannot move a threshold	Y no puede mover un umbral.
 3:15	A number, in a field, next to the action it caused	Un número guardado, justo al lado de la acción que provocó.
 4:00	29 scenarios, 18 on real licensed photographs	Lo probé con veintinueve casos. Dieciocho son fotografías reales de paneles, con licencia.
-4:00	Branch accuracy 0.8621 · defect macro F1 0.8753	Acierta qué hacer en el ochenta y seis por ciento de los casos.
+4:00	Branch accuracy 0.8621 · defect macro F1 0.8542	Acierta qué hacer en el ochenta y seis por ciento de los casos.
 4:00	Mean IoU 0.7875 locating the region · precision 1.0 on calling a human	Clasifica bien el tipo de defecto, y ubica dónde está dentro de la imagen.
 4:00	It never interrupted someone for nothing	Y cada vez que llamó a una persona, hacía falta. Ni una interrupción de más.
 4:00	Five of the 29 fail, and they're in the report	Cinco de los veintinueve fallan, y están en el reporte.

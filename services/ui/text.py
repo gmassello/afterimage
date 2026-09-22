@@ -42,13 +42,13 @@ _EN = {
     "upload_hint_tech": Markup(
         "The asset id takes lowercase letters, digits and hyphens, up to 64 characters "
         "&mdash; an id memory already holds adds to that asset&rsquo;s history, a new one "
-        "starts its own. JPEG or PNG, up to 6&nbsp;MB. The trace opens "
+        "starts its own. JPEG or PNG, up to 6&nbsp;MB and 16 megapixels. The trace opens "
         "immediately and fills in as the agent works."
     ),
     "upload_hint_plain": Markup(
         "Give the thing you are watching a name, and send a photo of it. Use the same name next "
         "time and this becomes its history; a new name starts a new one. Lowercase letters, "
-        "numbers and hyphens, up to 64 characters, and a JPEG or PNG photo up to 6&nbsp;MB. The result opens "
+        "numbers and hyphens, up to 64 characters, and a JPEG or PNG photo up to 6&nbsp;MB and 16 megapixels. The result opens "
         "straight away and fills in while the agent looks."
     ),
     "label_asset_id": "asset id",
@@ -177,6 +177,7 @@ _EN = {
     "queue_kicker_tech": "runs the policy would not write unattended",
     "queue_kicker_plain": "changes the agent will not record on its own",
     "approval_threshold": "approval threshold",
+    "bar_threshold": "threshold",
     "unit_severity": "severity",
     "queue_empty": "nothing awaiting approval",
     "all_settled": ", all of them settled",
@@ -317,6 +318,7 @@ _EN = {
     "js_arm": "Click Confirm? again to {action}, or move away to cancel.",
     "js_too_large": "image larger than 6 MB",
     "js_not_an_image": "not a decodable image",
+    "err_too_many_pixels": "image larger than 16 megapixels — resize it and try again",
     "js_sample_failed": "the example could not be loaded — pick a file instead",
     "js_run_start_failed": "the run could not be started",
     "js_poll_timeout": "the run did not answer in time — open activity to check it",
@@ -355,13 +357,13 @@ _ES = {
     "upload_hint_tech": Markup(
         "El id del activo admite minúsculas, dígitos y guiones, hasta 64 caracteres "
         "&mdash; un id que la memoria ya tiene suma a la historia de ese activo, uno nuevo "
-        "empieza la suya. JPEG o PNG, hasta 6&nbsp;MB. La traza se abre "
+        "empieza la suya. JPEG o PNG, hasta 6&nbsp;MB y 16 megapíxeles. La traza se abre "
         "enseguida y se completa a medida que el agente trabaja."
     ),
     "upload_hint_plain": Markup(
         "Poné un nombre para la cosa que querés vigilar y mandá una foto. Usá el mismo nombre la "
         "próxima vez y esto se vuelve su historia; un nombre nuevo empieza otra. Minúsculas, "
-        "números y guiones, hasta 64 caracteres, y una foto JPEG o PNG de hasta 6&nbsp;MB. El resultado se "
+        "números y guiones, hasta 64 caracteres, y una foto JPEG o PNG de hasta 6&nbsp;MB y 16 megapíxeles. El resultado se "
         "abre enseguida y se completa mientras el agente mira."
     ),
     "label_asset_id": "id del activo",
@@ -493,6 +495,7 @@ _ES = {
     "queue_kicker_tech": "corridas que la política no escribiría sin supervisión",
     "queue_kicker_plain": "cambios que el agente no va a anotar por su cuenta",
     "approval_threshold": "umbral de aprobación",
+    "bar_threshold": "umbral",
     "unit_severity": "severidad",
     "queue_empty": "no hay nada esperando aprobación",
     "all_settled": ", todos resueltos",
@@ -644,6 +647,7 @@ _ES = {
               "para cancelar.",
     "js_too_large": "imagen de más de 6 MB",
     "js_not_an_image": "no es una imagen decodificable",
+    "err_too_many_pixels": "imagen de más de 16 megapíxeles — reducila y probá de nuevo",
     "js_sample_failed": "no se pudo cargar el ejemplo — elegí un archivo",
     "js_run_start_failed": "no se pudo iniciar la corrida",
     "js_poll_timeout": "la corrida no respondió a tiempo — abrí actividad para revisarla",

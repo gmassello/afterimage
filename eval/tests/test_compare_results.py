@@ -10,8 +10,12 @@ SUMMARY = {
     "real": 18,
     "synthetic": 11,
     "passed": 25,
-    "branch": {"accuracy": 0.8621, "macro": {"f1": 0.8624}},
-    "defect": {"accuracy": 0.9, "macro": {"f1": 0.8753}},
+    "branch": {"accuracy": 0.8621, "macro": {"f1": 0.8624}, "per_class": {"recapture": {"support": 8}}},
+    "defect": {
+        "accuracy": 0.9,
+        "macro": {"f1": 0.8753},
+        "per_class": {"hotspot": {"support": 3}, "NONE": {"support": 12}},
+    },
     "localisation": {"mean_iou": 0.7875, "measured": 14, "at_least_half": 12},
 }
 
@@ -59,3 +63,12 @@ def test_a_region_that_stops_being_located_is_rejected_even_when_the_mean_improv
     with pytest.raises(SystemExit) as fewer:
         compare_results.main([published, str(_results(tmp_path / "lost", lost))])
     assert "localisation.measured" in str(fewer.value)
+
+
+def test_a_changed_class_support_is_rejected_even_inside_the_tolerance(tmp_path):
+    published = str(_results(tmp_path / "published", SUMMARY))
+    regrouped = _variant()
+    regrouped["defect"]["per_class"] = {"hotspot": {"support": 3}}
+    with pytest.raises(SystemExit) as changed:
+        compare_results.main([published, str(_results(tmp_path / "regrouped", regrouped))])
+    assert "defect.per_class support" in str(changed.value)

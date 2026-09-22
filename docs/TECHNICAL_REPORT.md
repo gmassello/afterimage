@@ -463,7 +463,7 @@ network and no tokens.
 |---|---|
 | Scenarios on real photographs | **18 of 29** |
 | Branch accuracy | **0.8621** · macro F1 **0.8624** |
-| Defect classification accuracy | **0.9231** · macro F1 **0.8753** |
+| Defect classification accuracy | **0.8571** · macro F1 **0.8542** |
 | Mean IoU of the located region | **0.7875**, 12 of 14 at IoU ≥ 0.5 |
 | `human_approval` precision | **1.0** over 14 scenarios — a human was never called for nothing |
 
@@ -476,7 +476,7 @@ Both were annotated in the code, waiting for measurement rather than opinion.
 
 **The severity heuristic holds.** `services/perception/severity.py` classifies defects with
 thresholds over OpenCV features and carried a note to replace it with a trained classifier if the
-classes failed to separate. They mostly separate: macro F1 0.8753, **precision 1.0 on `crack` and
+classes failed to separate. They mostly separate: macro F1 0.8542, **precision 1.0 on `crack` and
 `delamination`** and at least 0.75 on all four. Neither miss is a confusion between neighbouring
 classes: one is an exposure gate firing first, and one is the soiling rule's area threshold, measured
 on the generated panel, failing to transfer to a photograph. No classifier is warranted — both are
@@ -522,7 +522,7 @@ the overfitting this dataset exists to prevent.
 Written as they were measured, not assembled at the end.
 
 - Defect classification is a threshold heuristic over OpenCV features, not a trained classifier —
-  measured, not assumed, at macro F1 0.8753.
+  measured, not assumed, at macro F1 0.8542.
 - `severity.score` ignores the classifier's label, so a defect over a small area can be written
   automatically. Observed once, at 0.3412 against a 0.40 threshold.
 - `crop_and_rescan` re-measures the same capture at higher resolution. It buys measurement precision

@@ -100,7 +100,7 @@ if (zone) {
     const file = input.files[0];
     let problem = '';
     if (file && file.size > MAX_UPLOAD_BYTES) problem = T.tooLarge;
-    else if (file && file.type && !file.type.startsWith('image/')) problem = T.notAnImage;
+    else if (file && file.type && !['image/jpeg', 'image/png'].includes(file.type)) problem = T.notAnImage;
     input.setCustomValidity(problem);
     if (preview.src) URL.revokeObjectURL(preview.src);
     preview.hidden = !file || !!problem;

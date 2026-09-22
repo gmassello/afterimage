@@ -1,3 +1,4 @@
+import json
 import sys
 
 import pytest
@@ -23,7 +24,8 @@ def fake_run_scenario(scenario, runs_dir):
         "branch_ok": True,
         "expected_defect": run_eval.NO_DEFECT,
         "score_defect": True,
-        "defect": run_eval.NO_DEFECT,
+        "defect": None,
+        "severity_ran": False,
         "path": [scenario["expect"]["branch"]],
         "expected_in_path": [],
         "truth_bbox": None,
@@ -58,3 +60,34 @@ def test_a_failed_tool_call_keeps_its_branch_instead_of_raising():
     ]
     assert run_eval._quality_metrics(events) == {}
     assert run_eval._severity_label(events) == run_eval.CLASSIFICATION_ERROR
+
+
+def test_an_abstention_on_a_real_defect_is_scored_as_missed(tmp_path, monkeypatch):
+    def run(scenario, runs_dir):
+        record = fake_run_scenario(scenario, runs_dir)
+        if scenario["id"] == "missed":
+            record.update(
+                branch="recapture", branch_ok=False, expected_defect="hotspot",
+                defect=run_eval.MISSED, defect_ok=False, passed=False,
+            )
+        if scenario["id"] == "seen":
+            record.update(expected_defect="hotspot", defect="hotspot", severity_ran=True)
+        return record
+
+    monkeypatch.setattr(run_eval.store, "ensure_table", lambda: None)
+    monkeypatch.setattr(run_eval.images, "ensure_bucket", lambda: None)
+    monkeypatch.setattr(run_eval.scenarios_module, "load", lambda path: [
+        {"id": name, "base": {"kind": "synthetic"}, "expect": {"branch": "human_approval"}}
+        for name in ("fine", "seen", "missed")
+    ])
+    monkeypatch.setattr(run_eval, "run_scenario", run)
+    monkeypatch.setattr(sys, "argv", ["run_eval", "--out", str(tmp_path)])
+
+    run_eval.main()
+
+    defect = json.loads((tmp_path / "results.json").read_text())["summary"]["defect"]
+    assert defect["accuracy"] == 0.5
+    assert set(defect["per_class"]) == {"hotspot", run_eval.MISSED}
+    assert "| `missed` | human_approval / hotspot | recapture / MISSED |" in (
+        tmp_path / "summary.md"
+    ).read_text()

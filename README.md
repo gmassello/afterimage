@@ -75,7 +75,7 @@ A failed run remains immutable and can be retried from recent activity, and a ru
 |:---|---:|:---|
 | Real photographs | 18 / 29 | the majority of the suite runs on photographs, not on generated panels |
 | Branch accuracy | 0.8621 | 29 scenarios, macro F1 0.8624 |
-| Defect macro F1 | 0.8753 | precision 0.75 or better on every defect class |
+| Defect macro F1 | 0.8542 | precision 0.75 or better on every defect class |
 | Mean IoU | 0.7875 | 14 localised regions, 12 at IoU ≥ 0.5 |
 | Scenarios passed | 24 / 29 | 14 real-photograph and 10 synthetic scenarios |
 

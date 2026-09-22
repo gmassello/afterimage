@@ -9,5 +9,5 @@ from services.memory import images
 ])
 def test_decode_rejects_a_header_above_the_pixel_limit(data):
 
-    with pytest.raises(ValueError, match="exceeds"):
+    with pytest.raises(images.ImageTooLarge, match="exceeds"):
         images.decode(data)

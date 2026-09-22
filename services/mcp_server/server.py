@@ -105,11 +105,14 @@ def crop_and_rescan(aligned_key: str, baseline_key: str, bbox: list[float]) -> d
 @server.tool()
 def classify_severity(aligned_key: str, baseline_key: str, bbox: list[float], area_ratio: float) -> dict:
     box = _bbox(bbox)
-    crops = [diffing.crop_region(images.get_image(key), box) for key in (aligned_key, baseline_key)]
-    if any(crop.size == 0 for crop in crops):
+    aligned, baseline = (
+        diffing.crop_region(images.get_image(key), box) for key in (aligned_key, baseline_key)
+    )
+    if aligned.size == 0 or baseline.size == 0:
         raise ValueError(f"bbox is outside image bounds: {bbox!r}")
     result = severity.classify_severity(
-        *crops,
+        aligned,
+        baseline,
         float(area_ratio),
         full_scale_delta=Policy.from_env().severity_full_scale_delta,
     )

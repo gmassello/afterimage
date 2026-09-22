@@ -184,6 +184,8 @@ async def _accept_capture(asset_id: str, image: UploadFile | None, t: dict):
         raise ApiError(413, t["js_too_large"], "upload_too_large")
     try:
         return images.decode(data)
+    except images.ImageTooLarge:
+        raise ApiError(413, t["err_too_many_pixels"], "image_too_many_pixels")
     except ValueError:
         raise ApiError(400, t["js_not_an_image"], "invalid_image")
 

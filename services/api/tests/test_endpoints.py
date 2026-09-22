@@ -94,6 +94,14 @@ def test_upload_rejects_bad_input(client):
         "code": "invalid_image",
         "retryable": False,
     }
+    oversized = client.post(
+        "/inspections",
+        data={"asset_id": unique("api-big")},
+        files={"image": ("panel.png", b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR"
+                         + (5712).to_bytes(4, "big") + (4284).to_bytes(4, "big"), "image/png")},
+    )
+    assert oversized.status_code == 413
+    assert oversized.json()["code"] == "image_too_many_pixels"
 
 
 @localstack
@@ -154,7 +162,7 @@ def test_a_verdict_that_lost_the_race_is_refused(client, tmp_path):
     hitl.request_approval(tmp_path / run_id, payload)
     assert client.post(f"/queue/{run_id}/reject").status_code == 303
     hitl.request_approval(tmp_path / run_id, payload)
-    refused = client.post(f"/queue/{run_id}/reject")
+    refused = client.post(f"/queue/{run_id}/approve")
     assert refused.status_code == 409
     assert refused.json()["code"] == "approval_already_resolved"
 

@@ -27,3 +27,17 @@ def test_an_older_capture_is_filed_without_moving_the_pointer():
     assert baselines["insp-1"]["superseded_by"] == "insp-3"
     assert baselines["insp-2"]["superseded_by"] == "insp-3"
     assert "superseded_by" not in baselines["insp-3"]
+
+
+@localstack
+def test_repeating_a_promotion_still_supersedes_the_previous_baseline():
+    asset = "panel-retry"
+    assert store.promote_baseline(asset, "insp-1", FIRST, "k1", 300.0) is True
+    assert store.promote_baseline(asset, "insp-2", SECOND, "k2", 300.0) is True
+    store._table().update_item(
+        Key={"pk": store.asset_key(asset), "sk": f"{store.BASELINE}{FIRST}"},
+        UpdateExpression="REMOVE superseded_by",
+    )
+    assert store.promote_baseline(asset, "insp-2", SECOND, "k2", 300.0) is True
+
+    assert _baselines(asset)["insp-1"]["superseded_by"] == "insp-2"

@@ -28,6 +28,11 @@ def differences(published: dict, measured: dict) -> list[str]:
         for name in EXACT
         if published[name] != measured[name]
     ]
+    for key in ("branch", "defect"):
+        published_support = {label: row["support"] for label, row in published[key]["per_class"].items()}
+        measured_support = {label: row["support"] for label, row in measured[key]["per_class"].items()}
+        if published_support != measured_support:
+            drift.append(f"{key}.per_class support: published {published_support}, measured {measured_support}")
     fresh = figures(measured)
     for name, value in figures(published).items():
         other = fresh[name]

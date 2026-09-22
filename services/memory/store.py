@@ -152,7 +152,12 @@ def promote_baseline(
         "image_key": image_key,
         "quality_score": quality_score,
     }
-    current = current_baseline(asset_id)
+    latest = _table().query(
+        KeyConditionExpression=Key("pk").eq(asset_key(asset_id)) & Key("sk").begins_with(BASELINE),
+        ScanIndexForward=False,
+        Limit=2,
+    )["Items"]
+    current = next((_plain(found) for found in latest if found["sk"] != item["sk"]), None)
     promoted = current is None or current["sk"] <= item["sk"]
     if current is not None and not promoted:
         item["superseded_by"] = current["inspection_id"]

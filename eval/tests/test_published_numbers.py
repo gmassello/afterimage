@@ -18,6 +18,7 @@ SPELLED = (
     "fifteen sixteen seventeen eighteen nineteen twenty"
 ).split()
 NO_DEFECT = "NONE"  # the class for a capture with nothing wrong, not one of the defect classes
+MISSED = "MISSED"  # predicted when the agent abstained on a capture that had a defect
 
 # Read off the screen during the 5 September browser rehearsal — see video/PRODUCTION.md.
 ON_CAMERA = {"3.6589", "2483.1292", "1064.0321", "0.9988", "67.7646", "0.6798"}
@@ -59,14 +60,14 @@ def test_headline_figures_match_the_artefact(published, measured):
 
 def test_the_page_counts_the_scenarios_it_leaves_out_of_the_defect_table(published, measured):
     scored = sum(row["support"] for row in measured["defect"]["per_class"].values())
-    assert _claim(published, r"The (\w+) `faint-spot` scenarios are excluded") == SPELLED[
+    assert _claim(published, r"The (\w+) scenarios left out of this table") == SPELLED[
         measured["scenarios"] - scored
     ]
 
 
 def test_coverage_claims_match_the_scenario_records(published):
     records = {record["id"]: record for record in json.loads(RESULTS.read_text())["scenarios"]}
-    claimed = dict(re.findall(r"\| (.+?) \| `(0\.\d+)` \|", published))
+    claimed = dict(re.findall(r"\| (.+?) \| (0\.\d+) \|", published))
     expected = {
         "Partially framed panel (the case the gate exists to catch)": "recapture-partial-frame-synthetic",
         "Good synthetic panel": "first-baseline-synthetic",
@@ -134,7 +135,7 @@ def test_the_public_page_restates_the_same_figures(measured):
     defects = {
         label: row
         for label, row in measured["defect"]["per_class"].items()
-        if label != NO_DEFECT
+        if label not in (NO_DEFECT, MISSED)
     }
     assert len(defects) == 4, "the page says four defect classes"
     assert _claim(site, r"precision (?:at least )?([\d.]+) on all four defect classes") == str(

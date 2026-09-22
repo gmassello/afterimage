@@ -355,6 +355,14 @@ def test_trace_cards_use_a_neutral_threshold_label():
     assert card["bar"]["ends"][1]["text"] == "threshold 100"
 
 
+def test_trace_cards_translate_the_threshold_label():
+    card = views._card({"tool": "assess_quality", "policy": {
+        "input_metric": "blur_variance", "value": 3.6, "threshold": 100.0,
+        "branch": "recapture",
+    }}, strings("es"))
+    assert card["bar"]["ends"][1]["text"] == "umbral 100"
+
+
 def test_activity_translates_human_gate_statuses():
     page = views.activity_page([{
         "run_id": "abcdef123456", "asset_id": "panel", "captured_at": "2026-09-19T12:00:00+00:00",
@@ -593,7 +601,7 @@ def test_a_failed_tool_call_leaves_the_rest_of_the_rail_pending():
 
 
 def test_a_capture_the_dropzone_cannot_type_is_left_to_the_server():
-    assert "file.type && !file.type.startsWith('image/')" in JS
+    assert "file.type && !['image/jpeg', 'image/png'].includes(file.type)" in JS
 
 
 def test_the_baseline_in_force_is_marked_apart_from_the_ones_it_superseded():

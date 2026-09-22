@@ -184,7 +184,7 @@ def landing_page(metrics: list[dict] | None = None, lang: str = DEFAULT_LANG,
          "note": t["landing_metric_real_note"]},
         {"value": "0.8621", "label": t["landing_metric_branch"],
          "note": t["landing_metric_branch_note"]},
-        {"value": "0.8753", "label": t["landing_metric_defect"],
+        {"value": "0.8542", "label": t["landing_metric_defect"],
          "note": t["landing_metric_defect_note"]},
         {"value": "0.7875", "label": t["landing_metric_iou"],
          "note": t["landing_metric_iou_note"]},
@@ -257,7 +257,7 @@ def _decided_bar(verdict: dict, t: dict, large: bool = False) -> dict:
     value, threshold, branch = verdict["value"], verdict.get("threshold"), verdict.get("branch")
     head = (
         f"{verdict['input_metric']} {_fmt(float(value))}" if threshold is None
-        else f"threshold {_fmt(threshold)}"
+        else f"{t['bar_threshold']} {_fmt(threshold)}"
     )
     bar = _bar(value, threshold, [{"text": "0"}, {"text": head, "lit": True}], large=large)
     bar["ends"].append({"text": _fmt(bar["scale"])})
@@ -672,7 +672,7 @@ def _card(event: dict, t: dict) -> dict:
     if policy:
         ends: list[dict] = [
             {"text": f"{policy['input_metric']} {_fmt(policy['value'])}", "lit": True},
-            {"text": f"threshold {_fmt(policy['threshold'])}"},
+            {"text": f"{t['bar_threshold']} {_fmt(policy['threshold'])}"},
         ]
         bar = _bar(policy["value"], policy["threshold"], ends)
         bar["tone"] = _TONE.get(policy["branch"])

@@ -47,7 +47,7 @@ section.
 29 scenarios — 11 synthetic, 18 on real photographs. **24 passed** every assertion (branch, defect
 class and required decision path). **Most of the suite runs on photographs**: 18 of 29.
 
-Branch accuracy **0.8621**, macro F1 **0.8624**. Defect accuracy **0.9231**, macro F1 **0.8753**.
+Branch accuracy **0.8621**, macro F1 **0.8624**. Defect accuracy **0.8571**, macro F1 **0.8542**.
 
 ### Agent branch
 
@@ -68,15 +68,19 @@ below.
 
 | Class | Support | Precision | Recall | F1 |
 |---|---:|---:|---:|---:|
-| `NONE` | 12 | 0.9231 | 1.0 | 0.96 |
+| `MISSED` | 0 | 0.0 | 0.0 | 0.0 |
 | `crack` | 4 | 1.0 | 1.0 | 1.0 |
 | `delamination` | 4 | 1.0 | 1.0 | 1.0 |
 | `hotspot` | 4 | 0.75 | 0.75 | 0.75 |
 | `soiling` | 2 | 1.0 | 0.5 | 0.6667 |
 
-The three `faint-spot` scenarios are excluded from this table (`"score_defect": false` in the
-manifest). They inject a marginal darkening to exercise the zoom branch, not a member of the
-taxonomy; scoring them against a class the fixture does not represent would inflate the numbers.
+The fifteen scenarios left out of this table are the three `faint-spot` ones (`"score_defect": false`
+in the manifest) and the twelve that correctly ended before severity on a capture with no defect
+(recapture, unrecognized asset, first baseline, no change), where there is no class to score. The
+`faint-spot` scenarios inject a marginal darkening to exercise the zoom branch, not a member of the
+taxonomy; scoring them against a class the fixture does not represent would inflate the numbers. An
+abstention on a capture that did carry a defect stays in the table as a `MISSED` prediction: that
+is `hotspot-real-plain` (case 2 below), and it is why `MISSED` shows support 0 but one prediction.
 
 ### Localisation
 
@@ -93,7 +97,7 @@ Five scenarios out of 29, each with the number that decided it.
 |---|---|---|---|
 | `recapture-partial-frame-synthetic` | recapture | unrecognized_asset | `inlier_ratio` 0.0602 vs 0.3 |
 | `recapture-partial-frame-real-arapaho` | recapture | unrecognized_asset | `inlier_ratio` 0.1232 vs 0.3 |
-| `hotspot-real-plain` | human_approval / hotspot | recapture / NONE | `clipped_bright_ratio` 0.3086 vs 0.3 |
+| `hotspot-real-plain` | human_approval / hotspot | recapture / MISSED | `clipped_bright_ratio` 0.3086 vs 0.3 |
 | `delamination-real-packed` | human_approval / delamination | auto_write | `score` 0.3412 vs 0.4 |
 | `soiling-real-forest` | human_approval / soiling | human_approval / hotspot | `area_ratio` 0.0759 vs 0.25 |
 
@@ -140,7 +144,7 @@ than the largest connected component — left unmade here for the same reason as
 
 `severity._label` carried a note saying to replace the heuristic with a trained
 classifier if the evaluation showed the classes did not separate. They mostly separate: macro F1
-**0.8753**, precision 1.0 on `crack` and `delamination` and at least 0.75 on all four classes. The
+**0.8542**, precision 1.0 on `crack` and `delamination` and at least 0.75 on all four classes. The
 two misses are not confusions between neighbouring classes — one (case 2 above) is an exposure gate
 firing first, and one (case 4) is the soiling rule's area threshold failing to transfer from the
 generated panel to a photograph. **Still no classifier is warranted**: both are rules that can be

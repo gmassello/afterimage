@@ -13,6 +13,10 @@ MAX_IMAGE_PIXELS = 16_000_000
 _cache: dict[str, np.ndarray] = {}
 
 
+class ImageTooLarge(ValueError):
+    pass
+
+
 @lru_cache(maxsize=1)
 def _s3():
     return boto3.client("s3")
@@ -63,8 +67,10 @@ def ids_from_key(key: str) -> tuple[str, str]:
 
 def decode(data: bytes) -> np.ndarray:
     width, height = _dimensions(data)
-    if width <= 0 or height <= 0 or width * height > MAX_IMAGE_PIXELS:
-        raise ValueError(f"image exceeds {MAX_IMAGE_PIXELS} pixels")
+    if width <= 0 or height <= 0:
+        raise ValueError("not a decodable image")
+    if width * height > MAX_IMAGE_PIXELS:
+        raise ImageTooLarge(f"image exceeds {MAX_IMAGE_PIXELS} pixels")
     image = cv2.imdecode(np.frombuffer(data, dtype=np.uint8), cv2.IMREAD_COLOR)
     if image is None:
         raise ValueError("not a decodable image")

@@ -14,6 +14,7 @@ from services.observability import trace
 from services.perception import alignment
 
 NO_DEFECT = "NONE"
+MISSED = "MISSED"
 CLASSIFICATION_ERROR = "ERROR"
 
 
@@ -80,9 +81,11 @@ def run_scenario(scenario: dict, runs_dir: Path) -> dict:
         "deciding_number": _deciding_number(result.decisions),
         "decisions": result.decisions,
     }
+    if not record["severity_ran"] and record["expected_defect"] != NO_DEFECT:
+        record["defect"] = MISSED
     record["defect_ok"] = (
         not record["score_defect"]
-        or not record["severity_ran"]
+        or not _defect_scored(record)
         or record["defect"] == record["expected_defect"]
     )
     record["passed"] = record["branch_ok"] and record["defect_ok"] and not record["expected_in_path"]
@@ -101,7 +104,7 @@ def _failed_record(scenario: dict, error: Exception) -> dict:
         "branch_ok": False,
         "expected_defect": expected.get("defect", NO_DEFECT),
         "score_defect": scenario.get("score_defect", True),
-        "defect": None,
+        "defect": None if expected.get("defect", NO_DEFECT) == NO_DEFECT else MISSED,
         "severity_ran": False,
         "path": [],
         "expected_in_path": list(expected.get("path_contains", [])),
@@ -117,12 +120,16 @@ def _failed_record(scenario: dict, error: Exception) -> dict:
     return record
 
 
+def _defect_scored(record: dict) -> bool:
+    return record["severity_ran"] or record["expected_defect"] != NO_DEFECT
+
+
 def summarise(records: list[dict]) -> dict:
     branch_pairs = [(r["expected_branch"], r["branch"] or "failed") for r in records]
     defect_pairs = [
         (r["expected_defect"], r["defect"])
         for r in records
-        if r["score_defect"] and r["severity_ran"]
+        if r["score_defect"] and _defect_scored(r)
     ]
     ious = [r["iou"] for r in records if r["iou"] is not None]
     branch_report = metrics_module.per_class(branch_pairs)

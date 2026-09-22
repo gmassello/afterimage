@@ -69,21 +69,21 @@
       }
     },
     "defect": {
-      "accuracy": 0.9231,
+      "accuracy": 0.8571,
       "macro": {
-        "precision": 0.9346,
-        "recall": 0.85,
-        "f1": 0.8753
+        "precision": 0.9375,
+        "recall": 0.8125,
+        "f1": 0.8542
       },
       "per_class": {
-        "NONE": {
-          "support": 12,
-          "true_positives": 12,
+        "MISSED": {
+          "support": 0,
+          "true_positives": 0,
           "false_positives": 1,
           "false_negatives": 0,
-          "precision": 0.9231,
-          "recall": 1.0,
-          "f1": 0.96
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0
         },
         "crack": {
           "support": 4,
@@ -128,20 +128,21 @@
       "mean_iou": 0.7875,
       "at_least_half": 12
     },
-    "generated_at": "2026-09-16T01:52:40+00:00"
+    "generated_at": "2026-09-22T21:49:05+00:00"
   },
   "scenarios": [
     {
       "id": "first-baseline-synthetic",
       "source": "synthetic",
-      "run_id": "ebb3b66b9dc6",
+      "run_id": "d0771881c234",
       "status": "completed",
       "expected_branch": "first_baseline",
       "branch": "first_baseline",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "first_baseline",
         "quality_ok"
@@ -178,14 +179,15 @@
     {
       "id": "recapture-blur-synthetic",
       "source": "synthetic",
-      "run_id": "d9ff29f9ca73",
+      "run_id": "25b5d79368c0",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "recapture"
       ],
@@ -215,14 +217,15 @@
     {
       "id": "recapture-overexposed-synthetic",
       "source": "synthetic",
-      "run_id": "5bbb7906b455",
+      "run_id": "94128d2803e4",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "recapture"
       ],
@@ -252,14 +255,15 @@
     {
       "id": "recapture-partial-frame-synthetic",
       "source": "synthetic",
-      "run_id": "32bf082b1b8c",
+      "run_id": "507e7ccfd345",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "unrecognized_asset",
       "branch_ok": false,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "quality_ok",
         "retry_classic",
@@ -303,14 +307,15 @@
     {
       "id": "unrecognized-asset-synthetic",
       "source": "synthetic",
-      "run_id": "7ce0bbec5875",
+      "run_id": "b659f69b4e2f",
       "status": "completed",
       "expected_branch": "unrecognized_asset",
       "branch": "unrecognized_asset",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "quality_ok",
         "retry_classic",
@@ -354,14 +359,15 @@
     {
       "id": "no-change-synthetic",
       "source": "synthetic",
-      "run_id": "4d8d7114e561",
+      "run_id": "88aa56b1450d",
       "status": "completed",
       "expected_branch": "no_change",
       "branch": "no_change",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "quality_ok",
         "aligned",
@@ -405,7 +411,7 @@
     {
       "id": "crack-synthetic",
       "source": "synthetic",
-      "run_id": "5ef2da075300",
+      "run_id": "8cb2d0840a92",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -413,6 +419,7 @@
       "expected_defect": "crack",
       "score_defect": true,
       "defect": "crack",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -482,7 +489,7 @@
     {
       "id": "hotspot-synthetic",
       "source": "synthetic",
-      "run_id": "35cafffe8c68",
+      "run_id": "7880345261b6",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -490,6 +497,7 @@
       "expected_defect": "hotspot",
       "score_defect": true,
       "defect": "hotspot",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -559,7 +567,7 @@
     {
       "id": "delamination-synthetic",
       "source": "synthetic",
-      "run_id": "b4cfbb44387b",
+      "run_id": "20739fc300a8",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -567,6 +575,7 @@
       "expected_defect": "delamination",
       "score_defect": true,
       "defect": "delamination",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -636,7 +645,7 @@
     {
       "id": "soiling-synthetic",
       "source": "synthetic",
-      "run_id": "87906925769f",
+      "run_id": "cd25bb1b11f8",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -644,6 +653,7 @@
       "expected_defect": "soiling",
       "score_defect": true,
       "defect": "soiling",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -708,7 +718,7 @@
     {
       "id": "faint-spot-synthetic",
       "source": "synthetic",
-      "run_id": "bade905d473b",
+      "run_id": "fa15ecdd3378",
       "status": "completed",
       "expected_branch": "auto_write",
       "branch": "auto_write",
@@ -716,6 +726,7 @@
       "expected_defect": "NONE",
       "score_defect": false,
       "defect": "crack",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -774,7 +785,7 @@
           }
         },
         {
-          "input_metric": "area_ratio",
+          "input_metric": "zoom_area_ratio",
           "value": 0.7237,
           "threshold": 0.02,
           "branch": "change_confirmed",
@@ -785,7 +796,8 @@
               18,
               17
             ],
-            "area_ratio": 0.723684
+            "area_ratio": 0.000967,
+            "zoom_area_ratio": 0.723684
           }
         },
         {
@@ -801,7 +813,7 @@
     {
       "id": "crack-real-closeup",
       "source": "real",
-      "run_id": "ab783cf6e3d0",
+      "run_id": "4f1665b9d309",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -809,6 +821,7 @@
       "expected_defect": "crack",
       "score_defect": true,
       "defect": "crack",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -878,7 +891,7 @@
     {
       "id": "crack-real-israel-center",
       "source": "real",
-      "run_id": "e0797551f0c5",
+      "run_id": "58fd8c3b7e4c",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -886,6 +899,7 @@
       "expected_defect": "crack",
       "score_defect": true,
       "defect": "crack",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -955,14 +969,15 @@
     {
       "id": "hotspot-real-plain",
       "source": "real",
-      "run_id": "459f0b536d1a",
+      "run_id": "9db333417d57",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "recapture",
       "branch_ok": false,
       "expected_defect": "hotspot",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": "MISSED",
+      "severity_ran": false,
       "path": [
         "recapture"
       ],
@@ -997,7 +1012,7 @@
     {
       "id": "hotspot-real-cleaning",
       "source": "real",
-      "run_id": "f4c4ae8ba4bd",
+      "run_id": "c88de9fbd25b",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -1005,6 +1020,7 @@
       "expected_defect": "hotspot",
       "score_defect": true,
       "defect": "hotspot",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -1074,7 +1090,7 @@
     {
       "id": "delamination-real-jetion",
       "source": "real",
-      "run_id": "daf8c88d250b",
+      "run_id": "22dcd1d12c09",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -1082,6 +1098,7 @@
       "expected_defect": "delamination",
       "score_defect": true,
       "defect": "delamination",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -1151,7 +1168,7 @@
     {
       "id": "delamination-real-packed",
       "source": "real",
-      "run_id": "31beb226a60e",
+      "run_id": "589e2ace157e",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "auto_write",
@@ -1159,6 +1176,7 @@
       "expected_defect": "delamination",
       "score_defect": true,
       "defect": "delamination",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -1228,7 +1246,7 @@
     {
       "id": "faint-spot-real-et-solar",
       "source": "real",
-      "run_id": "b04721922e21",
+      "run_id": "98d3baa81a3b",
       "status": "completed",
       "expected_branch": "auto_write",
       "branch": "auto_write",
@@ -1236,6 +1254,7 @@
       "expected_defect": "NONE",
       "score_defect": false,
       "defect": "crack",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -1294,7 +1313,7 @@
           }
         },
         {
-          "input_metric": "area_ratio",
+          "input_metric": "zoom_area_ratio",
           "value": 0.1702,
           "threshold": 0.02,
           "branch": "change_confirmed",
@@ -1305,7 +1324,8 @@
               21,
               25
             ],
-            "area_ratio": 0.170153
+            "area_ratio": 0.000347,
+            "zoom_area_ratio": 0.170153
           }
         },
         {
@@ -1321,14 +1341,15 @@
     {
       "id": "no-change-real-et-solar",
       "source": "real",
-      "run_id": "e64b1281ea07",
+      "run_id": "d199d4399bce",
       "status": "completed",
       "expected_branch": "no_change",
       "branch": "no_change",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "quality_ok",
         "aligned",
@@ -1372,14 +1393,15 @@
     {
       "id": "no-change-real-warehouse",
       "source": "real",
-      "run_id": "d3b7de227091",
+      "run_id": "1a8f47a787be",
       "status": "completed",
       "expected_branch": "no_change",
       "branch": "no_change",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "quality_ok",
         "aligned",
@@ -1423,14 +1445,15 @@
     {
       "id": "recapture-blur-real-rooftop",
       "source": "real",
-      "run_id": "ff9d9ff1b91d",
+      "run_id": "6273e442a805",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "recapture"
       ],
@@ -1460,14 +1483,15 @@
     {
       "id": "recapture-overexposed-real-ground",
       "source": "real",
-      "run_id": "0fd90994cf50",
+      "run_id": "850d1bd72663",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "recapture"
       ],
@@ -1497,14 +1521,15 @@
     {
       "id": "unrecognized-asset-real-marine",
       "source": "real",
-      "run_id": "633b7a738096",
+      "run_id": "960931098164",
       "status": "completed",
       "expected_branch": "unrecognized_asset",
       "branch": "unrecognized_asset",
       "branch_ok": true,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "quality_ok",
         "retry_classic",
@@ -1548,7 +1573,7 @@
     {
       "id": "soiling-real-forest",
       "source": "real",
-      "run_id": "149043c07b8d",
+      "run_id": "cc59a6c8ebac",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -1556,6 +1581,7 @@
       "expected_defect": "soiling",
       "score_defect": true,
       "defect": "hotspot",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -1620,14 +1646,15 @@
     {
       "id": "recapture-partial-frame-real-arapaho",
       "source": "real",
-      "run_id": "76c81716a47a",
+      "run_id": "7f9732be6867",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "unrecognized_asset",
       "branch_ok": false,
       "expected_defect": "NONE",
       "score_defect": true,
-      "defect": "NONE",
+      "defect": null,
+      "severity_ran": false,
       "path": [
         "quality_ok",
         "retry_classic",
@@ -1671,7 +1698,7 @@
     {
       "id": "crack-real-tororo",
       "source": "real",
-      "run_id": "86900fbacd5e",
+      "run_id": "78befb1e22d1",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -1679,6 +1706,7 @@
       "expected_defect": "crack",
       "score_defect": true,
       "defect": "crack",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -1748,7 +1776,7 @@
     {
       "id": "hotspot-real-ogiinuur",
       "source": "real",
-      "run_id": "3087e10ad971",
+      "run_id": "b403de14396c",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -1756,6 +1784,7 @@
       "expected_defect": "hotspot",
       "score_defect": true,
       "defect": "hotspot",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -1825,7 +1854,7 @@
     {
       "id": "delamination-real-bifacial",
       "source": "real",
-      "run_id": "44d28aa04d36",
+      "run_id": "ab7cc426dab2",
       "status": "awaiting_approval",
       "expected_branch": "human_approval",
       "branch": "human_approval",
@@ -1833,6 +1862,7 @@
       "expected_defect": "delamination",
       "score_defect": true,
       "defect": "delamination",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -1902,7 +1932,7 @@
     {
       "id": "faint-spot-real-hannover-roof",
       "source": "real",
-      "run_id": "16a571658e18",
+      "run_id": "3e242e015f0e",
       "status": "completed",
       "expected_branch": "auto_write",
       "branch": "auto_write",
@@ -1910,6 +1940,7 @@
       "expected_defect": "NONE",
       "score_defect": false,
       "defect": "unknown",
+      "severity_ran": true,
       "path": [
         "quality_ok",
         "aligned",
@@ -1968,7 +1999,7 @@
           }
         },
         {
-          "input_metric": "area_ratio",
+          "input_metric": "zoom_area_ratio",
           "value": 0.1369,
           "threshold": 0.02,
           "branch": "change_confirmed",
@@ -1979,7 +2010,8 @@
               32,
               25
             ],
-            "area_ratio": 0.136939
+            "area_ratio": 0.000395,
+            "zoom_area_ratio": 0.136939
           }
         },
         {
