@@ -22,6 +22,14 @@ under the SIL Open Font License 1.1, reproduced in full below.
 
 Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)
 
+services/ui/static/jetbrains-mono-400.woff2 and jetbrains-mono-500.woff2 are the
+Regular and Medium webfonts of JetBrains Mono 2.304, copied unmodified from the
+official release (https://github.com/JetBrains/JetBrainsMono/releases/tag/v2.304)
+and served from the same origin. They are licensed under the same SIL Open Font
+License 1.1 reproduced below.
+
+Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
+
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
 http://scripts.sil.org/OFL

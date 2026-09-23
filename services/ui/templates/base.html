@@ -1,4 +1,4 @@
-<!doctype html><html lang='{{ lang }}' data-theme='light'><head><meta charset='utf-8'>
+<!doctype html><html lang='{{ lang }}'><head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width, initial-scale=1'>
 <title>afterimage &mdash; {{ title }}</title>
 <meta name='description' content='A visual inspection agent that remembers: every branch it takes is decided in code, and the trace carries the number that decided it.'>
@@ -7,24 +7,25 @@
 <meta property='og:image' content='https://raw.githubusercontent.com/gmassello/afterimage/main/docs/img/trace.png'>
 <meta property='og:type' content='website'>
 <meta name='twitter:card' content='summary_large_image'>
-<meta name='theme-color' content='#e4e7f5' media='(prefers-color-scheme: light)'>
-<meta name='theme-color' content='#161826' media='(prefers-color-scheme: dark)'>
+<meta name='theme-color' content='#ffffff'>
 <link rel='icon' href='{{ icon_url }}' type='image/svg+xml'>
-<link rel='preload' href='{{ font_url }}' as='font' type='font/woff2' crossorigin>
-<style>
-@font-face { font-family: 'Inter'; src: url('{{ font_url }}') format('woff2');
-             font-weight: 100 900; font-style: normal; font-display: swap; }
-</style>
-<link rel='stylesheet' href='{{ css_url }}'>
 <script>
 try {
-  const saved = localStorage.getItem('afterimage-theme');
-  if (saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches)) {
-    document.documentElement.dataset.theme = 'dark';
-  }
+  if (localStorage.getItem('afterimage-theme') === 'dark') document.documentElement.dataset.theme = 'dark';
 } catch (e) {}
 document.documentElement.classList.add('js');
 </script>
+<link rel='preload' href='{{ font_url }}' as='font' type='font/woff2' crossorigin>
+<link rel='preload' href='{{ mono_font_url }}' as='font' type='font/woff2' crossorigin>
+<style>
+@font-face { font-family: 'Inter'; src: url('{{ font_url }}') format('woff2');
+             font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('{{ mono_font_url }}') format('woff2');
+             font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'JetBrains Mono'; src: url('{{ mono_medium_font_url }}') format('woff2');
+             font-weight: 500 700; font-style: normal; font-display: swap; }
+</style>
+<link rel='stylesheet' href='{{ css_url }}'>
 </head><body>
 <a class='skip-link' href='#main-content'>{{ t.skip_to_content }}</a>
 <div class='page'

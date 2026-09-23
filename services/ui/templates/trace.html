@@ -16,6 +16,10 @@
 </div></div>{% endif -%}
 </section>{% endif -%}
 
+{%- if terminal %}<section class='col'><div class='kicker' id='terminal-title'>{{ t.trace_terminal }}</div><div class='terminal' role='region' aria-labelledby='terminal-title'><div class='chrome' aria-hidden='true'><i></i><i></i><i></i><span>{{ footer.run_id }}</span></div><ol>
+{%- for line in terminal %}<li><span class='tool'>{{ line.tool }}</span>  {% if line.error %}<span class='bad'>&#x2715; {{ line.error }}</span>{% elif line.metric %}{{ line.metric }} <b>{{ line.value }}</b> {{ line.op }} {{ line.threshold }}  &rarr; <span class='{{ line.tone or '' }}'>{{ line.branch }}</span>{% endif %}</li>{% endfor -%}
+</ol></div></section>{% endif -%}
+
 {%- if cards %}<section class='cards'>
 {%- for card in cards %}<div class='card'><div class='head'><span class='name'>{{ card.name }}</span><span class='ms'>{{ card.ms }} ms</span></div>
 {%- if card.question %}<p class='hint'>{{ card.question }}</p>{% endif -%}

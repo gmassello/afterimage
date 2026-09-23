@@ -22,12 +22,28 @@ const paint = (theme) => {
   root.dataset.theme = theme;
   label.textContent = theme === 'dark' ? T.light : T.dark;
 };
-paint(root.dataset.theme);
+paint(root.dataset.theme === 'dark' ? 'dark' : 'light');
 toggle.addEventListener('click', () => {
   const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
   paint(next);
   try { localStorage.setItem('afterimage-theme', next); } catch (e) {}
 });
+
+const duration = (name) => parseFloat(getComputedStyle(root).getPropertyValue(name)) || 0;
+
+function tween(cell, shown, span, ease = (at) => at) {
+  const [, lead, rest] = shown.match(/^(\d+(?:\.\d+)?)([\s\S]*)$/) || [];
+  if (!lead || !span) return;
+  const target = Number(lead);
+  const decimals = (lead.split('.')[1] || '').length;
+  const began = performance.now();
+  const tick = (now) => {
+    const at = Math.min(1, (now - began) / span);
+    cell.textContent = at < 1 ? (target * ease(at)).toFixed(decimals) + rest : shown;
+    if (at < 1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
 
 let counted = null;
 function countUp() {
@@ -36,19 +52,51 @@ function countUp() {
   const shown = cell.textContent.trim();
   if (shown === counted) return;
   counted = shown;
-  const target = Number(shown);
-  const span = parseFloat(getComputedStyle(root).getPropertyValue('--dur-live'));
-  if (!isFinite(target) || !span) return;
-  const decimals = (shown.split('.')[1] || '').length;
-  const began = performance.now();
-  const tick = (now) => {
-    const at = Math.min(1, (now - began) / span);
-    cell.textContent = at < 1 ? (target * at).toFixed(decimals) : shown;
-    if (at < 1) requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
+  tween(cell, shown, duration('--dur-live'));
 }
 countUp();
+
+const metrics = document.querySelector('.landing-metrics');
+if (metrics && duration('--dur-live')) {
+  const watcher = new IntersectionObserver((entries) => {
+    if (!entries.some((entry) => entry.isIntersecting)) return;
+    watcher.disconnect();
+    metrics.querySelectorAll('strong').forEach((cell) =>
+      tween(cell, cell.textContent.trim(), 900, (at) => 1 - Math.pow(1 - at, 3)));
+  }, { threshold: 0.4 });
+  watcher.observe(metrics);
+}
+
+let typed = { run: null, count: 0 };
+function typeLines() {
+  const lines = [...document.querySelectorAll('.terminal li')];
+  const run = document.querySelector('.terminal .chrome span')?.textContent;
+  if (typed.run !== run) typed = { run, count: 0 };
+  const fresh = lines.slice(typed.count);
+  typed.count = lines.length;
+  const step = duration('--dur-type');
+  if (!fresh.length || !step) return;
+  let end = 0;
+  const plan = fresh.map((line) => {
+    const chars = line.textContent.length;
+    line.style.setProperty('--shown', '0ch');
+    const entry = { line, chars, from: end };
+    end += chars * step + 350;
+    return entry;
+  });
+  const began = performance.now();
+  const frame = () => {
+    const elapsed = performance.now() - began;
+    plan.forEach(({ line, chars, from }) => {
+      const shown = Math.max(0, Math.min(chars, Math.floor((elapsed - from) / step)));
+      if (shown >= chars) line.style.removeProperty('--shown');
+      else line.style.setProperty('--shown', `${shown}ch`);
+    });
+    if (elapsed < end) setTimeout(frame, step);
+  };
+  frame();
+}
+typeLines();
 
 function placeBoxes() {
   document.querySelectorAll('.box[data-bbox]').forEach((box) => {
@@ -209,7 +257,7 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
     if (!pending || busy()) return;
     const arrived = pending;
     pending = null;
-    const swap = () => { block().replaceWith(arrived); placeBoxes(); countUp(); };
+    const swap = () => { block().replaceWith(arrived); placeBoxes(); countUp(); typeLines(); };
     document.startViewTransition ? document.startViewTransition(swap) : swap();
   };
   addEventListener('focusout', () => setTimeout(flush, 0));

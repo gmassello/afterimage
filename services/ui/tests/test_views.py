@@ -1,5 +1,6 @@
 import json
 import re
+from pathlib import Path
 
 import pytest
 
@@ -62,25 +63,31 @@ def test_every_view_escapes_untrusted_strings(name):
 
 
 def test_both_themes_ship_in_the_stylesheet():
-    dark, light = CSS.split(":root[data-theme='light']")
-    assert ":root {" in dark
-    assert "color-scheme: dark;" in dark and "color-scheme: light;" in light
-    for token in ("--ok:", "--warn:", "--bad:"):
+    light, dark = CSS.split('[data-theme="dark"]', 1)
+    assert ":root {" in light
+    assert "color-scheme: light;" in light and "color-scheme: dark;" in dark
+    for token in ("--ok:", "--warn:", "--danger:"):
         assert token in dark and token in light
     page = views.index_page([])
     assert "localStorage.getItem('afterimage-theme')" in page.split("</head>")[0]
 
 
-def test_the_first_visit_follows_the_system_theme():
+def test_the_first_visit_starts_light_whatever_the_system_prefers():
     head = views.index_page([]).split("</head>")[0]
-    assert "<html lang='en' data-theme='light'>" in head
-    assert "matchMedia('(prefers-color-scheme: dark)')" in head
-    assert head.index("localStorage.getItem") < head.index("matchMedia")
-    assert "paint(root.dataset.theme);" in JS
+    assert "<html lang='en'>" in head
+    assert "matchMedia" not in head
+    assert head.index("localStorage.getItem('afterimage-theme')") < head.index("rel='stylesheet'")
+    assert "paint(root.dataset.theme === 'dark' ? 'dark' : 'light');" in JS
+
+
+def test_the_stylesheet_carries_the_design_system_tokens_verbatim():
+    design = Path("docs/DESIGN.md").read_text()
+    tokens = design.split("```css\n", 1)[1].split("```", 1)[0]
+    assert CSS.startswith(tokens)
 
 
 def test_trace_cards_shrink_to_the_mobile_container():
-    assert "@media (max-width: 620px) { .cards { grid-template-columns: minmax(0, 1fr); } }" in CSS
+    assert "@media (max-width: 768px) { .cards { grid-template-columns: minmax(0, 1fr); } }" in CSS
 
 
 def test_static_assets_are_content_addressed():
@@ -620,7 +627,7 @@ def test_the_baseline_in_force_is_marked_apart_from_the_ones_it_superseded():
 def test_the_deciding_number_counts_up_only_when_it_changes():
     assert "if (shown === counted) return;" in JS
     assert "document.querySelector('.hero .big .n')" in JS
-    assert "parseFloat(getComputedStyle(root).getPropertyValue('--dur-live'))" in JS
+    assert "tween(cell, shown, duration('--dur-live'));" in JS
 
 
 def test_the_landing_renders_its_copy_instead_of_empty_slots():
@@ -724,3 +731,23 @@ def test_the_trace_offers_only_the_claimed_action_after_an_interruption():
     assert f"/queue/{run_id}/approve" in claimed
     assert f"/queue/{run_id}/reject" not in claimed
     assert "approve again to finish it" in claimed
+
+
+def test_the_terminal_writes_one_decision_per_tool_call():
+    page = views.render_html(STATE, EVENTS)
+    terminal = page.split("class='terminal'", 1)[1].split("</ol>", 1)[0]
+    assert terminal.count("<li>") == 1
+    assert "align_to_baseline</span>  inlier_ratio <b>0.259</b> &lt; 0.5  &rarr; " in terminal
+    assert "<span class='bad'>unrecognized_asset</span>" in terminal
+
+
+def test_the_terminal_line_of_a_failed_call_carries_its_error():
+    failed = [EVENTS[0], {**EVENTS[1], "error": "S3 timed out", "policy": None}]
+    terminal = views.render_html({}, failed).split("class='terminal'", 1)[1]
+    assert "<span class='bad'>&#x2715; S3 timed out</span>" in terminal
+
+
+def test_the_landing_counts_its_metrics_up_once_they_are_seen():
+    assert "document.querySelector('.landing-metrics')" in JS
+    assert "tween(cell, cell.textContent.trim(), 900" in JS
+    assert "typeLines(); };" in JS

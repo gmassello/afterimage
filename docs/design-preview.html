@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>afterimage design system</title>
+<script>
+  try {
+    if (localStorage.getItem('afterimage-theme') === 'dark') document.documentElement.dataset.theme = 'dark';
+  } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface-1: #f5f6f6;
+  --surface-2: #eceef0;
+  --surface-3: #e3e5e8;
+  --fg: #0f1011;
+  --muted: #3e3e44;
+  --subtle: #5f636b;
+  --border: #e1e3e6;
+  --border-strong: #8a8f98;
+  --accent: #5d5294;
+  --accent-hover: #4a4078;
+  --accent-soft: #e9e6f8;
+  --on-accent: #ffffff;
+  --ring: #5d5294;
+  --ok: #176b42;
+  --warn: #8a5a06;
+  --danger: #a03028;
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-24: 96px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  --shadow-overlay: 0 12px 32px rgba(15, 16, 17, 0.12);
+  --dur-fast: 140ms;
+  --dur-live: 320ms;
+  --dur-type: 28ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e0e14;
+  --surface-1: #15151c;
+  --surface-2: #1c1c25;
+  --surface-3: #23232e;
+  --fg: #f2f2f5;
+  --muted: #c9cbd4;
+  --subtle: #9194a5;
+  --border: #262631;
+  --border-strong: #6e7284;
+  --accent: #9184d9;
+  --accent-hover: #b5abfc;
+  --accent-soft: #2a2545;
+  --on-accent: #0e0e14;
+  --ring: #9184d9;
+  --ok: #6fce9f;
+  --warn: #e8bd6b;
+  --danger: #ffa198;
+  --shadow-overlay: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: 0ms; --dur-live: 0ms; --dur-type: 0ms; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 1rem/1.5 var(--font-sans);
+       letter-spacing: -0.05px; transition: background var(--dur-fast) var(--ease-out); }
+.mono { font-family: var(--font-mono); }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 var(--space-8) var(--space-24); }
+nav.top { position: sticky; top: 0; z-index: 1; height: 56px; display: flex; align-items: center;
+          justify-content: space-between; gap: var(--space-4); padding: 0 var(--space-8);
+          background: var(--bg); border-bottom: 1px solid var(--border); }
+.brand { font-weight: 500; font-size: 1.125rem; letter-spacing: -0.3px; }
+.seg { display: inline-flex; gap: var(--space-1); padding: var(--space-1); border: 1px solid var(--border);
+       border-radius: var(--radius-pill); }
+.seg button { font: 400 0.75rem/1.4 var(--font-mono); color: var(--muted); background: transparent; border: 0;
+              min-height: 28px; padding: 2px 10px; border-radius: var(--radius-pill); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+section { padding-top: var(--space-12); display: flex; flex-direction: column; gap: var(--space-4); }
+.eyebrow { margin: 0; font-size: 0.875rem; font-weight: 600; line-height: 1.4; letter-spacing: 2.52px;
+           text-transform: uppercase; color: var(--subtle); }
+.display { margin: 0; font-size: 3.5rem; font-weight: 600; line-height: 1.1; letter-spacing: -1.8px; max-width: 18ch; }
+h1 { margin: 0; font-size: 2.5rem; font-weight: 600; line-height: 1.15; letter-spacing: -1px; }
+h2 { margin: 0; font-size: 1.75rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.6px; }
+h3 { margin: 0; font-size: 1.375rem; font-weight: 500; line-height: 1.25; letter-spacing: -0.4px; }
+.lead { margin: 0; font-size: 1.125rem; line-height: 1.5; letter-spacing: -0.1px; color: var(--muted); max-width: 64ch; }
+p { margin: 0; max-width: 64ch; }
+.small { font-size: 0.875rem; color: var(--muted); }
+.caption { font-size: 0.75rem; line-height: 1.4; color: var(--subtle); }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6); }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); }
+.swatch { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface-1); }
+.swatch i { display: block; height: 56px; border-bottom: 1px solid var(--border); }
+.swatch span { display: block; padding: var(--space-2) var(--space-3); font: 400 0.75rem/1.4 var(--font-mono); }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
+        padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
+.card.featured { border-left: 2px solid var(--accent); }
+.col { display: flex; flex-direction: column; gap: var(--space-2); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); }
+.btn { font: 500 0.875rem/1.2 var(--font-sans); min-height: 40px; padding: 8px 14px; border-radius: var(--radius-md);
+       cursor: pointer; border: 1px solid transparent; transition: background var(--dur-fast) var(--ease-out); }
+.btn.primary { background: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { background: var(--accent-hover); }
+.btn.secondary { background: var(--surface-1); color: var(--fg); border-color: var(--border-strong); }
+.btn.secondary:hover { background: var(--surface-2); }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.ghost:hover { text-decoration: underline; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { background: var(--surface-3); color: var(--subtle); border-color: transparent; cursor: not-allowed; transform: none; }
+label { font-size: 0.875rem; font-weight: 500; }
+.input { font: 400 1rem/1.5 var(--font-mono); min-height: 40px; padding: 8px 12px; width: 100%; max-width: 360px;
+         background: var(--surface-1); color: var(--fg); border: 1px solid var(--border-strong); border-radius: var(--radius-md); }
+.input:hover { border-color: var(--fg); }
+.input[aria-invalid="true"] { border-color: var(--danger); }
+.err { color: var(--danger); font-size: 0.875rem; }
+.pill { font: 400 0.75rem/1.4 var(--font-mono); padding: 2px 8px; border-radius: var(--radius-pill); border: 1px solid currentColor; }
+.ok { color: var(--ok); } .warn { color: var(--warn); } .danger { color: var(--danger); }
+.metric { font: 500 2.5rem/1.1 var(--font-mono); letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.bar .track { position: relative; height: 6px; background: var(--surface-3); border-radius: var(--radius-pill); }
+.bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: var(--radius-pill); background: var(--warn); }
+.bar .tick { position: absolute; top: -4px; width: 2px; height: 14px; background: var(--fg); }
+.bar .ends { display: flex; justify-content: space-between; margin-top: var(--space-2); font: 400 0.8125rem/1.4 var(--font-mono); color: var(--subtle); }
+.bar .ends b { color: var(--fg); font-weight: 500; }
+.terminal { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-md);
+            padding: var(--space-5); font: 400 0.8125rem/18px var(--font-mono); overflow-x: auto; }
+.terminal header { display: flex; align-items: center; gap: 6px; margin-bottom: var(--space-4); color: var(--subtle); }
+.terminal header i { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
+.terminal header span { margin-left: var(--space-2); }
+.terminal ol { margin: 0; padding: 0; list-style: none; }
+.terminal li { white-space: pre; width: max-content; clip-path: inset(0 calc(100% - var(--shown, 100%)) 0 0); }
+.terminal li .tool { color: var(--muted); }
+.terminal li b { font-weight: 500; color: var(--fg); }
+.terminal li.last { color: var(--subtle); }
+.terminal li.active::after { content: "\258D"; color: var(--accent); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.counters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); }
+.counter { border-top: 1px solid var(--border); padding-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); }
+@media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .counters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 768px) {
+  .wrap, nav.top { padding-left: var(--space-4); padding-right: var(--space-4); }
+  .grid { grid-template-columns: 1fr; }
+  .btn, .input { min-height: 44px; }
+  nav.top .brand { display: none; }
+}
+@media (max-width: 480px) { .display { font-size: 2.25rem; } h1 { font-size: 2rem; } .counters { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) {
+  .terminal li { clip-path: none; }
+  .terminal li.active::after { animation: none; }
+}
+</style>
+</head>
+<body>
+<nav class="top" aria-label="Preview controls">
+  <span class="brand">afterimage</span>
+  <div class="row">
+    <span class="seg" role="group" aria-label="Language"><button type="button" aria-pressed="true">EN</button><button type="button" aria-pressed="false" disabled>ES</button></span>
+    <span class="seg" role="group" aria-label="Theme"><button type="button" data-theme-set="light">light</button><button type="button" data-theme-set="dark">dark</button></span>
+  </div>
+</nav>
+<main class="wrap">
+  <section aria-labelledby="hero">
+    <p class="eyebrow">Visual inspection agent</p>
+    <h1 id="hero" class="display">An inspection agent that remembers every asset it has seen.</h1>
+    <p class="lead">It gates the photo, anchors it to the stored baseline with OpenCV 5, diffs it against memory, and stops for a human when a finding is severe. Every decision is written down with the number that caused it.</p>
+    <div class="row">
+      <button class="btn primary" type="button">Inspect a capture</button>
+      <button class="btn secondary" type="button">Watch the trace</button>
+      <button class="btn ghost" type="button">Read the evaluation</button>
+      <button class="btn primary" type="button" disabled>Starting…</button>
+    </div>
+  </section>
+
+  <section aria-labelledby="effect">
+    <p class="eyebrow">Protagonist · terminal that types itself</p>
+    <h2 id="effect">The agent, one decision per line</h2>
+    <div class="terminal" role="region" aria-label="Agent trace for the crack-real-closeup scenario" aria-live="off">
+      <header><i></i><i></i><i></i><span>run crack-real-closeup</span></header>
+      <ol>
+        <li><span class="tool">assess_quality      </span> blur_variance <b>1064.0321</b> ≥ 100.0  → <span class="ok">quality_ok</span></li>
+        <li><span class="tool">align_to_baseline   </span> inlier_ratio <b>0.9988</b> ≥ 0.9        → <span class="ok">aligned</span></li>
+        <li><span class="tool">diff_against_memory </span> mean_delta <b>67.7646</b> ≥ 35.0        → <span>change_confirmed</span></li>
+        <li><span class="tool">classify_severity   </span> score <b>0.6798</b> ≥ 0.4               → <span class="warn">human_approval</span></li>
+        <li class="last">awaiting a human · nothing written to memory</li>
+      </ol>
+    </div>
+    <p class="eyebrow" style="margin-top: var(--space-6)">Secondary · animated counters</p>
+    <div class="counters">
+      <div class="counter"><span class="metric" data-count="0.8621">0.8621</span><span class="small">branch accuracy</span></div>
+      <div class="counter"><span class="metric" data-count="0.8542">0.8542</span><span class="small">defect macro F1</span></div>
+      <div class="counter"><span class="metric" data-count="0.7875">0.7875</span><span class="small">mean IoU of the located region</span></div>
+      <div class="counter"><span class="metric"><span data-count="18">18</span> / 29</span><span class="small">scenarios on real photographs</span></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="palette">
+    <p class="eyebrow">Tokens</p>
+    <h2 id="palette">Palette</h2>
+    <div class="swatches" id="swatches"></div>
+  </section>
+
+  <section aria-labelledby="type">
+    <p class="eyebrow">Typography</p>
+    <h1 id="type">Trace abcdef123456</h1>
+    <h2>Human approval required</h2>
+    <h3>Crack on panel-a7-north</h3>
+    <p>The severity score passed the approval threshold, so nothing was written to memory. A person decides whether this capture becomes the new baseline.</p>
+    <p class="caption">assets/panel-a7-north/abcdef123456/capture.png</p>
+  </section>
+
+  <section aria-labelledby="components">
+    <p class="eyebrow">Components</p>
+    <h2 id="components">Upload, finding, verdict</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>New inspection</h3>
+        <div class="col">
+          <label for="asset">Asset id</label>
+          <input class="input" id="asset" value="panel-a7-north" autocomplete="off">
+        </div>
+        <div class="col">
+          <label for="bad">Asset id (error)</label>
+          <input class="input" id="bad" value="Panel A7" aria-invalid="true" aria-describedby="bad-err">
+          <span class="err" id="bad-err">lowercase letters, digits and hyphens only</span>
+        </div>
+      </div>
+      <div class="card featured">
+        <div class="row"><p class="eyebrow">Severity</p><span class="pill warn">human_approval</span></div>
+        <span class="metric">0.6798</span>
+        <div class="bar" role="img" aria-label="score 0.6798 against threshold 0.4">
+          <div class="track"><div class="fill" style="width: 67.98%"></div><div class="tick" style="left: 40%"></div></div>
+          <div class="ends"><span>0</span><span><b>0.6798</b> · threshold 0.4</span></div>
+        </div>
+        <p class="small mono">score 0.6798 ≥ 0.4 → human_approval</p>
+        <div class="row"><button class="btn primary" type="button">Approve and write</button><button class="btn secondary" type="button">Reject</button></div>
+      </div>
+      <div class="card">
+        <h3>Branches</h3>
+        <div class="row">
+          <span class="pill ok">auto_write</span>
+          <span class="pill ok">no_change</span>
+          <span class="pill warn">human_approval</span>
+          <span class="pill danger">recapture</span>
+          <span class="pill danger">unrecognized_asset</span>
+        </div>
+        <p class="small">blur_variance <span class="mono">3.1798</span> is under <span class="mono">100.0</span>, so the agent asks for a recapture instead of scoring a blurred photo.</p>
+      </div>
+    </div>
+  </section>
+</main>
+<script>
+(() => {
+  const root = document.documentElement;
+  const buttons = document.querySelectorAll('[data-theme-set]');
+  const paint = () => {
+    const theme = root.dataset.theme === 'dark' ? 'dark' : 'light';
+    buttons.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.themeSet === theme)));
+    renderSwatches();
+  };
+  buttons.forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.themeSet === 'dark') root.dataset.theme = 'dark'; else delete root.dataset.theme;
+    try { localStorage.setItem('afterimage-theme', b.dataset.themeSet); } catch (e) {}
+    paint();
+  }));
+
+  const TOKENS = ['--bg', '--surface-1', '--surface-2', '--surface-3', '--fg', '--muted', '--subtle',
+    '--border', '--border-strong', '--accent', '--accent-hover', '--accent-soft', '--on-accent', '--ring',
+    '--ok', '--warn', '--danger'];
+  function renderSwatches() {
+    const style = getComputedStyle(root);
+    document.getElementById('swatches').innerHTML = TOKENS.map((name) =>
+      `<div class="swatch"><i style="background: var(${name})"></i><span>${name}<br>${style.getPropertyValue(name).trim()}</span></div>`
+    ).join('');
+  }
+
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lines = [...document.querySelectorAll('.terminal li')];
+  const counters = [...document.querySelectorAll('[data-count]')];
+  const once = (element, run) => {
+    if (still) return;
+    const watcher = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) { watcher.disconnect(); run(); }
+    }, { threshold: 0.4 });
+    watcher.observe(element);
+  };
+
+  if (!still) lines.forEach((line) => line.style.setProperty('--shown', '0ch'));
+  once(document.querySelector('.terminal'), () => {
+    const step = parseFloat(getComputedStyle(root).getPropertyValue('--dur-type')) || 28;
+    let at = 0;
+    const plan = lines.map((line) => {
+      const chars = line.textContent.length;
+      const entry = { line, chars, from: at };
+      at += chars * step + 350;
+      return entry;
+    });
+    const begin = performance.now();
+    const update = () => {
+      const elapsed = performance.now() - begin;
+      let current = null;
+      plan.forEach(({ line, chars, from }) => {
+        const shown = Math.max(0, Math.min(chars, Math.floor((elapsed - from) / step)));
+        if (shown >= chars) line.style.removeProperty('--shown');
+        else line.style.setProperty('--shown', `${shown}ch`);
+        if (elapsed >= from) current = line;
+      });
+      lines.forEach((line) => line.classList.toggle('active', line === current));
+      if (elapsed < at) setTimeout(update, step);
+    };
+    update();
+  });
+
+  once(document.querySelector('.counters'), () => {
+    counters.forEach((node) => {
+      const target = parseFloat(node.dataset.count);
+      const decimals = (node.dataset.count.split('.')[1] || '').length;
+      const start = performance.now();
+      const frame = (now) => {
+        const t = Math.min(1, (now - start) / 900);
+        const eased = 1 - Math.pow(1 - t, 3);
+        node.textContent = (target * eased).toFixed(decimals);
+        if (t < 1) requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+  });
+
+  paint();
+})();
+</script>
+</body>
+</html>

@@ -170,7 +170,9 @@ def _render(template: str, title: str, current: str, lang: str, register: str,
         nav=_nav(current, t),
         css_url=_static_url(".css", "app"),
         js_url=_static_url(".js", "app"),
-        font_url=_static_url(".woff2"),
+        font_url=_static_url(".woff2", "inter"),
+        mono_font_url=_static_url(".woff2", "jetbrains-mono-400"),
+        mono_medium_font_url=_static_url(".woff2", "jetbrains-mono-500"),
         icon_url=_static_url(".svg"),
         **context,
     )
@@ -695,6 +697,26 @@ def _card(event: dict, t: dict) -> dict:
     }
 
 
+def _terminal(events: list[dict]) -> list[dict]:
+    calls = [event for event in events if event["type"] == "tool_call"]
+    width = max((len(event["tool"]) for event in calls), default=0)
+    lines = []
+    for event in calls:
+        policy = event.get("policy")
+        line = {"tool": event["tool"].ljust(width), "error": event.get("error")}
+        if policy and not line["error"]:
+            line.update(
+                metric=policy["input_metric"],
+                value=_fmt(policy["value"]),
+                op="\u2265" if policy["value"] >= policy["threshold"] else "<",
+                threshold=_fmt(policy["threshold"]),
+                branch=policy["branch"],
+                tone=_TONE.get(policy["branch"]),
+            )
+        lines.append(line)
+    return lines
+
+
 def _image_refs(summary: dict, events: list[dict]) -> tuple[str, str, bool]:
     baseline, warped = "", ""
     for event in events:
@@ -760,6 +782,7 @@ def render_html(state: dict, events: list[dict], lang: str = DEFAULT_LANG,
         hero=_hero(summary, events, _decisions(events), t),
         path=_path(events, run_state, t),
         cards=[_card(e, t) for e in events if e["type"] == "tool_call"],
+        terminal=_terminal(events),
         comparison=_figures(baseline, capture, bbox, tag, aligned=aligned),
         cta=_cta(summary, claimed),
         footer={

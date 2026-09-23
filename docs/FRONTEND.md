@@ -86,13 +86,19 @@ so cookies carry the selected preferences across live updates.
 
 ## Theme and responsive behavior
 
-The document defaults to a light data attribute, then an inline head script applies the saved
-`localStorage` choice or the operating-system preference before paint. The theme control updates
-the root attribute and persists the choice locally.
+The light theme is the default and lives on `:root`; dark overrides it under
+`[data-theme="dark"]`. An inline head script, placed before the stylesheet, applies a saved
+`localStorage` choice of dark before paint. The operating-system preference is deliberately
+ignored (see `docs/DESIGN.md`). The theme control updates the root attribute and persists the
+choice locally.
 
 `services/ui/static/app.css` provides the layout, light and dark tokens, responsive rules, visible
 focus styles, high-contrast decision states, tooltip behavior, and reduced-motion alternatives.
-The Inter font is self-hosted and attributed in `NOTICE`.
+The tokens at the top of the stylesheet are copied verbatim from `docs/DESIGN.md`, and a test
+fails if they drift. Inter and JetBrains Mono are self-hosted and attributed in `NOTICE`.
+The trace renders a terminal of decisions, one line per tool call, that types itself in; the
+landing counts its evaluation figures up when they scroll into view. Both show their final state
+under reduced motion.
 
 The landing uses a wide two-column hero with the scenario demo as its primary evidence, followed by
 the published metrics, the three-step flow, baseline history, stack and limits, and a final `/app`
