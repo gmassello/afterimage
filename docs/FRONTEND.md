@@ -26,7 +26,7 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
 |---|---|
 | `landing.html` | Public product explanation, workflow, evaluation evidence, stack, limits, and entry points. |
 | `index.html` | Inspection workspace, four sample captures, and asset gallery. The asset ID is optional; its placeholder says an empty field asks the agent to recognise the asset. |
-| `activity.html` | Recent-run search and status filter, capped at 50 rows. |
+| `activity.html` | Recent-run search and status filter, capped at 4 rows. |
 | `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action; like the queue, an interrupted verdict offers only its claimed action. The `classify_severity` card shows the annotated evidence image (`evidence_key`) as a figure linking to the full-size PNG. The headline skips `policy.AUDIT_METRICS`, so a re-observation or Jev check never replaces the verdict it follows. |
 | `queue.html` | Pending comparisons with approve and reject actions; the reject form carries an optional `reason` field (500 characters). An interrupted verdict shows only the claimed action and a note to repeat it. |
 | `asset.html` | Longitudinal timeline, severity trend, current baseline, and superseded baselines. |

@@ -163,7 +163,7 @@ def index(request: Request, lang: str = Depends(language), reading: str = Depend
 @app.get("/activity")
 def activity(q: str = "", status: str = "", lang: str = Depends(language),
              reading: str = Depends(register)):
-    items = runs.recent(runs.runs_dir(), limit=50, q=q, status=status)
+    items = runs.recent(runs.runs_dir(), limit=4, q=q, status=status)
     return HTMLResponse(
         activity_page(items, q=q, status=status, lang=lang, register=reading)
     )

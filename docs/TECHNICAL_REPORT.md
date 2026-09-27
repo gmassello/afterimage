@@ -177,7 +177,7 @@ function call, and the whole system is one deployable artefact.
 |---|---|
 | `GET /` | public product landing, evidence and limits |
 | `GET /app` | assets, upload form and bundled sample captures |
-| `GET /activity` | search and status filtering over the latest 50 runs |
+| `GET /activity` | search and status filtering over the latest runs, showing 4 |
 | `POST /inspections` | upload a capture, open its trace, redirect to it; an empty `asset_id` asks the agent to recognise the asset; 503 `calibration_failed` while calibration is out of tolerance |
 | `POST /runs/{run_id}/execute` | run the agent loop for an opened trace |
 | `POST /runs/{run_id}/retry` | idempotently open a replacement for a terminal failed run |
