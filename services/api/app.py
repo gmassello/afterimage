@@ -144,6 +144,11 @@ def landing(lang: str = Depends(language), reading: str = Depends(register)):
     return HTMLResponse(landing_page(lang=lang, register=reading))
 
 
+def _demo(request: Request) -> tuple[str, bool]:
+    sample_asset = f"{SAMPLE_ASSET}-{demo_suffix(request)}"
+    return sample_asset, store.current_baseline(sample_asset) is not None
+
+
 def demo_suffix(request: Request) -> str:
     saved = request.cookies.get(DEMO_COOKIE, "")
     return saved if DEMO_SUFFIX_PATTERN.fullmatch(saved) else uuid.uuid4().hex[:6]
@@ -152,12 +157,13 @@ def demo_suffix(request: Request) -> str:
 @app.get("/app")
 def index(request: Request, sample: str = "", lang: str = Depends(language),
           reading: str = Depends(register)):
-    suffix = demo_suffix(request)
+    sample_asset, ready = _demo(request)
     answer = HTMLResponse(index_page(
         store.list_assets(), lang=lang, register=reading,
-        sample_asset=f"{SAMPLE_ASSET}-{suffix}", preselect=sample,
+        sample_asset=sample_asset, preselect=sample, sample_ready=ready,
     ))
-    answer.set_cookie(DEMO_COOKIE, suffix, max_age=CHOICE_MAX_AGE, samesite="lax")
+    answer.set_cookie(DEMO_COOKIE, sample_asset.rsplit("-", 1)[1], max_age=CHOICE_MAX_AGE,
+                      samesite="lax")
     return answer
 
 
@@ -171,12 +177,13 @@ def activity(q: str = "", status: str = "", lang: str = Depends(language),
 
 
 @app.get("/assets/{asset_id}")
-def asset_history(asset_id: str, lang: str = Depends(language),
+def asset_history(asset_id: str, next: str = "", lang: str = Depends(language),
                   reading: str = Depends(register)):
     if not ASSET_ID_PATTERN.fullmatch(asset_id):
         raise ApiError(404, "asset not found", "asset_not_found")
     return HTMLResponse(
-        asset_page(asset_id, store.history(asset_id), lang=lang, register=reading)
+        asset_page(asset_id, store.history(asset_id), lang=lang, register=reading,
+                   next_sample=next)
     )
 
 
@@ -206,6 +213,7 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
     except ApiError as rejected:
         if not wants_html(request):
             raise
+        sample_asset, ready = _demo(request)
         return HTMLResponse(
             index_page(
                 store.list_assets(),
@@ -213,7 +221,8 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
                 asset_id=asset_id,
                 lang=lang,
                 register=reading,
-                sample_asset=f"{SAMPLE_ASSET}-{demo_suffix(request)}",
+                sample_asset=sample_asset,
+                sample_ready=ready,
             ),
             status_code=rejected.status_code,
         )
@@ -358,7 +367,8 @@ def resolve_pending(request: Request, run_id: str, verdict: str, reason: str = F
         return RedirectResponse("/queue", status_code=303)
     asset_id = str((runs.read(runs.runs_dir() / run_id, runs.STATE) or {}).get("asset_id") or "")
     if verdict == "approve" and ASSET_ID_PATTERN.fullmatch(asset_id):
-        return RedirectResponse(f"/assets/{asset_id}", status_code=303)
+        tour = "?next=sample-blurred" if asset_id.startswith(f"{SAMPLE_ASSET}-") else ""
+        return RedirectResponse(f"/assets/{asset_id}{tour}", status_code=303)
     return RedirectResponse(f"/traces/{run_id}", status_code=303)
 
 

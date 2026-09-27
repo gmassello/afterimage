@@ -49,9 +49,10 @@ def test_the_trace_translates_the_prose_and_leaves_the_measurement_alone():
         assert untouched in body
 
 
-def test_the_agent_message_is_not_translated_because_the_trace_recorded_it():
+def test_the_agent_message_is_not_translated_so_only_the_technical_page_shows_it():
     message = EVENTS[-1]["message"]
-    assert message in views.render_html(STATE, EVENTS, lang="es")
+    assert message in views.render_html(STATE, EVENTS, lang="es", register="tech")
+    assert message not in views.render_html(STATE, EVENTS, lang="es")
 
 
 def test_the_date_reads_in_the_language_of_the_page():

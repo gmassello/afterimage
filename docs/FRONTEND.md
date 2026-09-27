@@ -45,8 +45,15 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
   `/app?sample=<stem>` preselects one of them on load; any other value is ignored.
   The chosen card gets `aria-pressed=true` and an accent border, a server-rendered `role=status`
   line says which sample loaded, and the form scrolls back into view.
-- A demo asset's `first_baseline` trace offers a `next_sample` link to `/app?sample=sample-defect`.
-  Approving from the trace's own CTA lands on the asset history; the queue's forms return to the queue.
+- Until the visitor's demo asset has a baseline, samples 2–4 carry `aria-disabled=true` and the
+  `sample_needs_reference` note, and `app.js` ignores clicks on them.
+- A demo asset walks a tour: `first_baseline` → sample 3, the approval → the asset history with
+  `?next=sample-blurred` → sample 2, `recapture` → sample 4, `unrecognized_asset` → the asset
+  history, which is the end frame. Approving from the trace's own CTA lands on the asset history;
+  the queue's forms return to the queue.
+- In the plain register the rail and "what it ruled out" name steps with `step_<tool>` copy, and the
+  model's message under the title is shown only in the technical register. The footer's integrity
+  line appears once the run is done, so it never shows a partial count.
 - Asset search and latest-branch filtering run entirely over the gallery already rendered in `/app`;
   they do not issue an API request.
 - The landing demo switches among the four bundled scenarios with an ARIA tablist. Arrow keys,

@@ -267,6 +267,36 @@ def test_a_verdict_given_on_the_trace_lands_on_its_result(client, tmp_path):
 
 
 @localstack
+def test_approving_a_demo_finding_continues_the_tour(client, tmp_path):
+    from services.agent import hitl
+
+    asset_id = f"demo-panel-{uuid.uuid4().hex[:6]}"
+    store.put_asset(asset_id)
+    run_id = uuid.uuid4().hex[:12]
+    capture_key = images.put_image(asset_id, run_id, "capture", PANEL)
+    runs.write(tmp_path / run_id, runs.STATE, {"run_id": run_id, "asset_id": asset_id})
+    hitl.request_approval(tmp_path / run_id, {
+        "run_id": run_id,
+        "asset_id": asset_id,
+        "captured_at": "2026-08-26T00:00:00+00:00",
+        "metrics": {"quality": {"blur_variance": 300.0}},
+        "image_keys": {"capture": capture_key},
+        "message": "confirm the change",
+    })
+    answer = client.post(f"/queue/{run_id}/approve", data={"from": "trace"})
+    assert answer.headers["location"] == f"/assets/{asset_id}?next=sample-blurred"
+    page = client.get(answer.headers["location"]).text
+    assert "href='/app?sample=sample-blurred'" in page
+
+
+@localstack
+def test_a_fresh_demo_asset_locks_every_sample_but_the_first(client):
+    client.cookies.set("demo", uuid.uuid4().hex[:6])
+    page = client.get("/app").text
+    assert page.count("aria-disabled='true'") == len(views.SAMPLES) - 1
+
+
+@localstack
 def test_images_endpoint(client):
     asset_id = unique("api-image")
     key = images.put_image(asset_id, "insp", "capture", PANEL)

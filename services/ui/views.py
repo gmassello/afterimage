@@ -135,16 +135,17 @@ def _static_url(suffix: str, stem: str | None = None) -> str:
     return f"/static/{name}"
 
 
-def _samples(t: dict, asset_id: str = SAMPLE_ASSET) -> list[dict]:
+def _samples(t: dict, asset_id: str = SAMPLE_ASSET, ready: bool = True) -> list[dict]:
     return [
         {
             "url": f"/static/{next(n for n in _assets() if n.startswith(stem + '.'))}",
             "name": f"{stem}.png",
             "asset_id": asset_id,
             "label": t[f"{key}_label"],
-            "note": t[f"{key}_note"],
+            "note": t[f"{key}_note"] if ready or not index else t["sample_needs_reference"],
+            "locked": not ready and index > 0,
         }
-        for stem, key in SAMPLES
+        for index, (stem, key) in enumerate(SAMPLES)
     ]
 
 
@@ -363,7 +364,8 @@ def _asset_card(asset: dict) -> dict:
 
 def index_page(assets: list[dict], error: str = "", asset_id: str = "",
                lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER,
-               sample_asset: str = SAMPLE_ASSET, preselect: str = "") -> str:
+               sample_asset: str = SAMPLE_ASSET, preselect: str = "",
+               sample_ready: bool = True) -> str:
     t = strings(lang, register)
     return _render(
         "index.html", t["nav_assets"], "assets", lang, register,
@@ -371,7 +373,7 @@ def index_page(assets: list[dict], error: str = "", asset_id: str = "",
         assets=[_asset_card(asset) for asset in assets],
         asset_branches=sorted({str(asset.get("last_branch")) for asset in assets
                                if asset.get("last_branch")}),
-        samples=_samples(t, sample_asset),
+        samples=_samples(t, sample_asset, sample_ready),
         error=error,
         asset_id=asset_id,
         preselect=preselect if preselect in {stem for stem, _ in SAMPLES} else "",
@@ -442,16 +444,18 @@ def _sparkline(entries: list[dict], threshold: float) -> dict | None:
 
 
 def asset_page(asset_id: str, items: list[dict], lang: str = DEFAULT_LANG,
-               register: str = DEFAULT_REGISTER) -> str:
+               register: str = DEFAULT_REGISTER, next_sample: str = "") -> str:
     ordered = sorted(
         (item for item in items if item["sk"] != store.META),
         key=lambda item: item.get("captured_at", ""),
         reverse=True,
     )
-    entries = [_timeline_entry(item, strings(lang, register)) for item in ordered]
+    t = strings(lang, register)
+    entries = [_timeline_entry(item, t) for item in ordered]
     return _render(
         "asset.html", asset_id, "assets", lang, register,
         asset_id=asset_id,
+        next_sample=_sample_step(next_sample, t),
         entries=entries,
         sparkline=_sparkline(entries, Policy.from_env().severity_score_approve),
     )
@@ -577,14 +581,14 @@ def _hero(summary: dict, events: list[dict], decisions: list[dict], t: dict) -> 
     }
 
 
-def _not_taken(events: list[dict]) -> list[dict]:
+def _not_taken(events: list[dict], t: dict) -> list[dict]:
     ghosts = []
     for event in events:
         policy = _policy_of(event)
         if not policy:
             continue
         ghosts.append({
-            "tool": event.get("tool", "decision"),
+            "tool": _step_name(event.get("tool", "decision"), t),
             "metric": policy["input_metric"],
             "value": _fmt(policy["value"]),
             "threshold": _fmt(policy["threshold"]),
@@ -621,11 +625,15 @@ def _expected_tool(events: list[dict]) -> str | None:
     return expected
 
 
+def _step_name(tool: str, t: dict) -> str:
+    return t.get(f"step_{tool}", tool)
+
+
 def _ran_node(tool: str, attempts: list[dict], t: dict) -> dict:
     event = attempts[-1]
     branch = _branch_of(event)
     return {
-        "name": tool,
+        "name": _step_name(tool, t),
         "state": "done",
         "outcome": str(branch or event.get("error") or t["no_verdict"]),
         "tone": _TONE.get(branch) if branch else None,
@@ -643,7 +651,7 @@ def _idle_node(tool: str, index: int, reach: int, reason: str | None, t: dict) -
     else:
         state = "skipped"
         outcome = f"{t['state_not_run']} \u00b7 {reason}" if reason else t["state_not_run"]
-    return {"name": tool, "state": state, "outcome": outcome,
+    return {"name": _step_name(tool, t), "state": state, "outcome": outcome,
             "tone": None, "ms": None, "failed": False, "tries": 0}
 
 
@@ -669,7 +677,7 @@ def _path(events: list[dict], run_state: str, t: dict) -> dict | None:
     return {
         "kicker": t["path_taken"] if done else t["path_so_far"],
         "steps": nodes,
-        "not_taken": _not_taken(events),
+        "not_taken": _not_taken(events, t),
     }
 
 
@@ -778,12 +786,31 @@ def _cta(summary: dict, claimed: bool | None = None) -> dict | None:
     }
 
 
+NEXT_LABEL = {
+    "sample-defect": "next_sample",
+    "sample-blurred": "next_sample_2",
+    "sample-foreign": "next_sample_4",
+}
+
+
+def _sample_step(stem: str, t: dict) -> dict | None:
+    if stem not in NEXT_LABEL:
+        return None
+    return {"url": f"/app?sample={stem}", "label": t[NEXT_LABEL[stem]]}
+
+
 def _next_sample(summary: dict, t: dict) -> dict | None:
-    if summary.get("branch") != policy_module.FIRST_BASELINE:
+    asset_id = str(summary.get("asset_id") or "")
+    if not asset_id.startswith(f"{SAMPLE_ASSET}-"):
         return None
-    if not str(summary.get("asset_id") or "").startswith(f"{SAMPLE_ASSET}-"):
-        return None
-    return {"url": "/app?sample=sample-defect", "label": t["next_sample"]}
+    branch = summary.get("branch")
+    if branch == policy_module.FIRST_BASELINE:
+        return _sample_step("sample-defect", t)
+    if branch == policy_module.RECAPTURE:
+        return _sample_step("sample-foreign", t)
+    if branch == policy_module.UNRECOGNIZED_ASSET:
+        return {"url": f"/assets/{asset_id}", "label": t["tour_end"]}
+    return None
 
 
 def _chain_line(events: list[dict], t: dict) -> str:
@@ -801,13 +828,16 @@ def render_html(state: dict, events: list[dict], lang: str = DEFAULT_LANG,
     baseline, capture, aligned = _image_refs(summary, events)
     bbox, tag = _region(events)
     t = strings(lang, register)
+    hero = _hero(summary, events, _decisions(events), t)
+    if register != "tech":
+        hero["message"] = ""
     return _render(
         "trace.html", t["title_trace"], "trace", lang, register,
         meta=f"run {run_id}" if run_id else "",
         says=_says(events, run_state, summary, t),
         run_state=run_state,
         execute_url=f"/runs/{run_id}/execute" if run_id else "",
-        hero=_hero(summary, events, _decisions(events), t),
+        hero=hero,
         path=_path(events, run_state, t),
         cards=[_card(e, t) for e in events if e["type"] == "tool_call"],
         terminal=_terminal(events),
@@ -817,6 +847,6 @@ def render_html(state: dict, events: list[dict], lang: str = DEFAULT_LANG,
         footer={
             "run_id": run_id,
             "asset_id": str(summary.get("asset_id") or ""),
-            "chain": _chain_line(events, t),
+            "chain": _chain_line(events, t) if run_state == trace.DONE else "",
         },
     )
