@@ -422,14 +422,14 @@ shown in the video, where an OpenCV number stopped the loop and a person restart
 | Concern | How it is handled |
 |---|---|
 | Compute | One Lambda container image, `arm64` Graviton, 2048 MB, 900 s timeout, behind a Function URL. A full inspection peaks at 1,891 MB of that 2,048 |
-| Latency | Cold start **2.34 s** at p50 (p90 2.53 s, worst 9.01 s); warm and server-side, **4 ms** at p50, 24 ms at p90, 2.13 s at p99; a full inspection **22.8 s** at p50, 39.0 s at worst |
+| Latency | Cold start **2.34 s** at p50 (p90 2.53 s, worst 9.01 s); warm and server-side, **4 ms** at p50, 24 ms at p90, 2.13 s at p99; a full inspection **20.4 s** at p50, 27.1 s at worst (8 runs, 27 September) |
 | Reproducibility | Exact pins in `requirements.txt`, the whole installed tree frozen in `requirements.lock` and installed with `--no-deps`; the Lambda adapter pinned by image digest; image tagged with the git short SHA; `make weights` sha1-verifies the two ONNX files |
 | Infrastructure as code | `infra/template.yaml` (SAM) and `infra/github-oidc.yaml`; `make deploy` and the GitHub Actions workflow run the same `deploy.sh` |
 | Deploy credentials | **None stored.** GitHub Actions federates over OIDC; the trust policy pins `sub` to the immutable numeric owner and repo IDs, not to names that can be transferred |
 | Blast radius | The deploy role carries no managed policy: its inline grant reaches only this stack's ECR repository, CloudFormation stack, function, table, bucket, log group and warmer rule. It may create roles only under `afterimage-*` and only with the stack's permissions boundary attached, and `iam:PassRole` only to Lambda |
 | Image retention | ECR lifecycle policy keeps the last 5 images |
 | Data retention | S3 objects expire at 180 days; incomplete multipart uploads at 7; CloudWatch Logs at 30 days |
-| Cost | **$0.0006 per inspection** at list price, and **~$0.10/month** for the stack, nearly all of it ECR image storage. Lambda itself bills nothing: 2,381 GB-s over the fortnight measured, against 400,000 free every month |
+| Cost | **$0.0005 per inspection** at list price, and **~$0.10/month** for the stack, nearly all of it ECR image storage. Lambda itself bills nothing: 2,381 GB-s over the fortnight measured, against 400,000 free every month |
 
 These come from the function's own `REPORT` lines. The log group dates from the 2 September
 redeploy, so the window is a fortnight rather than the full 30 days of retention: **2–16 September
@@ -461,16 +461,19 @@ Two traps in reading those back. `@maxMemoryUsed` returns **bytes**, hence the d
 Lambda's own "MB" is mebibytes, which is why a peak of 1,891 against 2,048 is 92% rather than the
 97% a decimal reading would give. And the share of invocations that paid an init, 4.3%, is flattered
 by the warmer's own synthetic calls being in the denominator; the honest version of that claim is
-that no request which paid an init was ever an inspection — the longest was 295 ms. The 22.8 s is
-the figure no warmer can move, being ALIKED, LightGlue and the diff running on a CPU. It was
-measured when each inspection still spawned the MCP server as a stdio subprocess, which paid the
-`mcp` import and a fresh ONNX load every time; the loop now talks to the server in process, so this
-figure is an upper bound until it is measured again after the next deploy.
+that no request which paid an init was ever an inspection — the longest was 295 ms. The inspection
+figure is the one no warmer can move. It is measured separately, after the deploy that moved the MCP
+server in process: the eight inspections from 27 September 2026 14:38 UTC onwards, read by the
+`Latency` workflow with the same `@duration > 10000` query, give 20.4 s at p50 (17.6 to 27.1 s,
+peak memory 1,853 MiB). The fortnight above, when each inspection still spawned the server as a stdio
+subprocess, gave 22.8 s. A trace from that window splits the 20 s: the perception tools take about
+7.7 s, almost all of it ALIKED and LightGlue aligning on a CPU, the Jev check 0.26 s, and the rest is
+Gemini choosing the next call and phrasing the message.
 
-The per-inspection cost is 22.79 billed seconds × 2 GB × $0.0000133334 per GB-second (arm64,
+The per-inspection cost is 20.38 billed seconds × 2 GB × $0.0000133334 per GB-second (arm64,
 us-east-1), plus $0.0000002 for the request; that rate is read from the Price List API rather than
 the pricing page (`aws pricing get-products --service-code AWSLambda`, group
-`AWS-Lambda-Duration-ARM`, first tier). It is a median over 21 runs whose spread is 10.0 to 39.0 s,
+`AWS-Lambda-Duration-ARM`, first tier). It is a median over 8 runs whose spread is 17.6 to 27.1 s,
 so treat it as an order of magnitude, not a quote. What the account actually pays comes from Cost
 Explorer: $0.0020 in July, $0.0138 in August, $0.0407 from 1–16 September, of which ECR is $0.0366 —
 five retained images of ~198 MB, 0.99 GB in all.

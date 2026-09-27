@@ -1031,10 +1031,10 @@
         paid one was ever an inspection. The longest was 295&nbsp;ms.
       </p>
       <p>
-        An inspection is the one number no warmer can move: <strong>22.8&nbsp;s</strong> at the
-        median, 39.0&nbsp;s at worst. That is ALIKED, LightGlue and the diff running on a CPU, and it
-        is why the page streams the trace instead of spinning. It bills 22.79 seconds at 2&nbsp;GB,
-        which at the published arm64 rate is <strong>$0.0006 a run</strong> — in practice nothing,
+        An inspection is the one number no warmer can move: <strong>20.4&nbsp;s</strong> at the
+        median, 27.1&nbsp;s at worst. About 8&nbsp;s of it is ALIKED and LightGlue on a CPU and the rest is Gemini deciding, and it
+        is why the page streams the trace instead of spinning. It bills 20.38 seconds at 2&nbsp;GB,
+        which at the published arm64 rate is <strong>$0.0005 a run</strong> — in practice nothing,
         because the whole function burns 2,381&nbsp;GB-s a fortnight against the 400,000 a month AWS
         never charges for. The account's bill is image storage, near $0.10 a month.
         <a href="https://github.com/gmassello/afterimage/blob/main/docs/TECHNICAL_REPORT.md#7-deployment-and-responsible-operation">Where each of these figures comes from</a>.
