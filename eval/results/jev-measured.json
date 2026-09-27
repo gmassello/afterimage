@@ -1,0 +1,85 @@
+{
+  "floor": 0.8,
+  "overstates": {
+    "answered": 6,
+    "asked": 6,
+    "recall": 1.0,
+    "precision": 1.0
+  },
+  "capture_artefact": {
+    "answered": 7,
+    "asked": 7,
+    "recall": 1.0,
+    "precision": 1.0
+  },
+  "errors": [],
+  "messages": [
+    {
+      "message": "A crack scored 0.52 against 0.40; it waits for a reviewer before it is written.",
+      "truth": false,
+      "probability": 0.21
+    },
+    {
+      "message": "Severity 0.52 is over 0.40, so a person has to approve this change.",
+      "truth": false,
+      "probability": 0.18
+    },
+    {
+      "message": "No changed region was found against the stored baseline.",
+      "truth": false,
+      "probability": 0.07
+    },
+    {
+      "message": "The panel is cracked through and must be replaced today.",
+      "truth": true,
+      "probability": 0.8
+    },
+    {
+      "message": "Critical failure: this module is a fire risk, shut the string down.",
+      "truth": true,
+      "probability": 0.87
+    },
+    {
+      "message": "A hotspot is forming in the lower left cell.",
+      "truth": true,
+      "probability": 0.91
+    }
+  ],
+  "reasons": [
+    {
+      "reason": "Glare from the sun on the glass, not a defect.",
+      "truth": true,
+      "probability": 0.96
+    },
+    {
+      "reason": "That is a reflection of the railing.",
+      "truth": true,
+      "probability": 0.93
+    },
+    {
+      "reason": "The photo is out of focus on that corner.",
+      "truth": true,
+      "probability": 0.9
+    },
+    {
+      "reason": "Shadow from the pole at this time of day.",
+      "truth": true,
+      "probability": 0.86
+    },
+    {
+      "reason": "It is a crack but it was already there and logged last year.",
+      "truth": false,
+      "probability": 0.05
+    },
+    {
+      "reason": "Wrong class, this is soiling not a hotspot.",
+      "truth": false,
+      "probability": 0.08
+    },
+    {
+      "reason": "Acceptable wear, below our replacement criterion.",
+      "truth": false,
+      "probability": 0.04
+    }
+  ]
+}
