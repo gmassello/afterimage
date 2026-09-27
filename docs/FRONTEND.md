@@ -27,7 +27,7 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
 | `landing.html` | Public product explanation, workflow, evaluation evidence, stack, limits, and entry points. |
 | `index.html` | Inspection workspace, four sample captures, and asset gallery. The asset ID is optional; its placeholder says an empty field asks the agent to recognise the asset. |
 | `activity.html` | Recent-run search and status filter, capped at 4 rows. |
-| `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action. The title is the localised `outcome_<status>` or `outcome_<branch>` copy, with the model's message beneath it, and the status pill uses `status_*`. The pending verdict and the next-sample link sit directly under the hero; like the queue, an interrupted verdict offers only its claimed action. The `classify_severity` card shows the annotated evidence image (`evidence_key`) as a figure linking to the full-size PNG. The deciding number is the decision whose branch the run ended on (`baseline_exists` for a `first_baseline`), falling back to the last one, and skips `policy.AUDIT_METRICS`, so a re-observation or Jev check never replaces the verdict it follows. |
+| `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action. The title is the localised `outcome_<status>` or `outcome_<branch>` copy, with the model's message beneath it, and the status pill uses `status_*`. The pending verdict and the next-sample link sit inside the hero's text column, under the pills, so a phone reaches them before the deciding-number panel; in the plain register neither carries the model's message; like the queue, an interrupted verdict offers only its claimed action. The `classify_severity` card shows the annotated evidence image (`evidence_key`) as a figure linking to the full-size PNG. The deciding number is the decision whose branch the run ended on (`baseline_exists` for a `first_baseline`), falling back to the last one, and skips `policy.AUDIT_METRICS`, so a re-observation or Jev check never replaces the verdict it follows. |
 | `queue.html` | Pending comparisons with approve and reject actions; the reject form carries an optional `reason` field (500 characters). An interrupted verdict shows only the claimed action and a note to repeat it. |
 | `asset.html` | Longitudinal timeline, severity trend, current baseline, and superseded baselines. |
 | `error.html` | Consistent browser error with a stable code, explanation, and recovery action when available. |
@@ -46,7 +46,7 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
   The chosen card gets `aria-pressed=true` and an accent border, a server-rendered `role=status`
   line says which sample loaded, and the form scrolls back into view.
 - Until the visitor's demo asset has a baseline, samples 2–4 carry `aria-disabled=true` and the
-  `sample_needs_reference` note, and `app.js` ignores clicks on them.
+  `sample_needs_reference` note; a click on one only writes `js_sample_locked` to the status line.
 - A demo asset walks a tour: `first_baseline` → sample 3, the approval → the asset history with
   `?next=sample-blurred` → sample 2, `recapture` → sample 4, `unrecognized_asset` → the asset
   history, which is the end frame. Approving from the trace's own CTA lands on the asset history;

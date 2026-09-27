@@ -829,8 +829,11 @@ def render_html(state: dict, events: list[dict], lang: str = DEFAULT_LANG,
     bbox, tag = _region(events)
     t = strings(lang, register)
     hero = _hero(summary, events, _decisions(events), t)
+    cta = _cta(summary, claimed)
     if register != "tech":
         hero["message"] = ""
+        if cta:
+            cta["message"] = ""
     return _render(
         "trace.html", t["title_trace"], "trace", lang, register,
         meta=f"run {run_id}" if run_id else "",
@@ -842,7 +845,7 @@ def render_html(state: dict, events: list[dict], lang: str = DEFAULT_LANG,
         cards=[_card(e, t) for e in events if e["type"] == "tool_call"],
         terminal=_terminal(events),
         comparison=_figures(baseline, capture, bbox, tag, aligned=aligned),
-        cta=_cta(summary, claimed),
+        cta=cta,
         next_sample=_next_sample(summary, t),
         footer={
             "run_id": run_id,
