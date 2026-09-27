@@ -402,7 +402,7 @@ def test_the_server_writes_the_state_the_live_region_announces():
         "image_keys": {}, "metrics": {},
     }])
     done = views.render_html(STATE, EVENTS)
-    assert "done \u00b7 unrecognized_asset" in done
+    assert "done \u00b7 This is not the asset in memory" in done
     assert "working \u00b7 1 tool call<" in views.render_html({}, EVENTS[:2])
     for page in (queue, done):
         assert "role='status' aria-live='polite'" in page
@@ -810,3 +810,15 @@ def test_the_headline_number_is_the_one_that_chose_the_branch():
 def test_the_pending_verdict_sits_right_under_the_hero():
     page = views.render_html({**STATE, "status": "awaiting_approval"}, EVENTS)
     assert page.index("<section class='cta'>") < page.index("<div class='flow'>")
+
+
+def test_samples_start_unpressed_and_have_a_status_line_to_speak_through():
+    page = views.index_page([], lang="es")
+    assert page.count("aria-pressed='false'") == len(views.SAMPLES)
+    assert "role='status' data-sample-status" in page
+    assert '"sampleLoaded": "Cargada: {sample}. Apret\\u00e1 inspeccionar."' in page
+
+
+def test_the_result_filter_is_named_for_what_it_filters():
+    page = views.index_page([{"asset_id": "panel-a7", "last_branch": "no_change"}])
+    assert "<label for='asset-result'>latest result</label>" in page

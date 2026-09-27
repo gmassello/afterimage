@@ -761,7 +761,8 @@ def _region(events: list[dict]) -> tuple[list | None, dict]:
 
 def _says(events: list[dict], run_state: str, summary: dict, t: dict) -> str:
     if run_state == trace.DONE:
-        ended = summary.get("branch") or summary.get("status") or t["state_finished"]
+        ended = (t.get(f"outcome_{summary.get('status')}") or t.get(f"outcome_{summary.get('branch')}")
+                 or summary.get("branch") or summary.get("status") or t["state_finished"])
         return f"{t['state_done']} \u00b7 {ended}"
     calls = sum(1 for event in events if event["type"] == "tool_call")
     return f"{t['state_working']} \u00b7 {counted(t, 'calls', calls)}"

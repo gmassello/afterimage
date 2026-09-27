@@ -43,6 +43,8 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
   limit. The server repeats all authoritative validation.
 - Sample buttons fetch bundled captures and place them into the same upload path as a local file.
   `/app?sample=<stem>` preselects one of them on load; any other value is ignored.
+  The chosen card gets `aria-pressed=true` and an accent border, a server-rendered `role=status`
+  line says which sample loaded, and the form scrolls back into view.
 - A demo asset's `first_baseline` trace offers a `next_sample` link to `/app?sample=sample-defect`.
   Approving from the trace's own CTA lands on the asset history; the queue's forms return to the queue.
 - Asset search and latest-branch filtering run entirely over the gallery already rendered in `/app`;

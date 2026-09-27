@@ -46,10 +46,8 @@ _EN = {
         "immediately and fills in as the agent works."
     ),
     "upload_hint_plain": Markup(
-        "Give the thing you are watching a name, and send a photo of it. Use the same name next "
-        "time and this becomes its history; a new name starts a new one. Lowercase letters, "
-        "numbers and hyphens, up to 64 characters, and a JPEG or PNG photo up to 6&nbsp;MB and 16 megapixels. The result opens "
-        "straight away and fills in while the agent looks."
+        "Pick a sample below or drop a JPEG or PNG up to 6&nbsp;MB. Naming it is optional: "
+        "Lowercase letters, numbers and hyphens."
     ),
     "label_asset_id": "asset id",
     "asset_id_placeholder": "e.g. panel-a7-north, or empty to recognise it",
@@ -68,6 +66,7 @@ _EN = {
     "asset_search": "Search assets",
     "asset_search_placeholder": "asset id or result",
     "asset_filter_all": "all results",
+    "asset_filter_label": "latest result",
     "asset_filter_empty": "No assets match those filters.",
 
     "landing_hero_kicker": "VISUAL INSPECTION · LONGITUDINAL MEMORY",
@@ -323,6 +322,7 @@ _EN = {
     "js_not_an_image": "not a decodable image",
     "err_too_many_pixels": "image larger than 16 megapixels — resize it and try again",
     "js_sample_failed": "the example could not be loaded — pick a file instead",
+    "js_sample_loaded": "Loaded: {sample}. Press inspect.",
     "js_run_start_failed": "the run could not be started",
     "js_poll_timeout": "the run did not answer in time — open activity to check it",
     "js_queue_timeout": "the queue stopped refreshing — reload the page to see it up to date",
@@ -366,10 +366,8 @@ _ES = {
         "enseguida y se completa a medida que el agente trabaja."
     ),
     "upload_hint_plain": Markup(
-        "Poné un nombre para la cosa que querés vigilar y mandá una foto. Usá el mismo nombre la "
-        "próxima vez y esto se vuelve su historia; un nombre nuevo empieza otra. Minúsculas, "
-        "números y guiones, hasta 64 caracteres, y una foto JPEG o PNG de hasta 6&nbsp;MB y 16 megapíxeles. El resultado se "
-        "abre enseguida y se completa mientras el agente mira."
+        "Elegí una muestra abajo o soltá un JPEG o PNG de hasta 6&nbsp;MB. Ponerle nombre es "
+        "opcional: minúsculas, números y guiones."
     ),
     "label_asset_id": "id del activo",
     "asset_id_placeholder": "ej. panel-a7-norte, o vacío para reconocerlo",
@@ -389,6 +387,7 @@ _ES = {
     "asset_search": "Buscar activos",
     "asset_search_placeholder": "id del activo o resultado",
     "asset_filter_all": "todos los resultados",
+    "asset_filter_label": "último resultado",
     "asset_filter_empty": "Ningún activo coincide con esos filtros.",
 
     "landing_hero_kicker": "INSPECCIÓN VISUAL · MEMORIA LONGITUDINAL",
@@ -656,6 +655,7 @@ _ES = {
     "js_not_an_image": "no es una imagen decodificable",
     "err_too_many_pixels": "imagen de más de 16 megapíxeles — reducila y probá de nuevo",
     "js_sample_failed": "no se pudo cargar el ejemplo — elegí un archivo",
+    "js_sample_loaded": "Cargada: {sample}. Apretá inspeccionar.",
     "js_run_start_failed": "no se pudo iniciar la corrida",
     "js_poll_timeout": "la corrida no respondió a tiempo — abrí actividad para revisarla",
     "js_queue_timeout": "la cola dejó de actualizarse — recargá la página para verla al día",
