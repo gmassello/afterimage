@@ -312,6 +312,8 @@ _EN = {
     "tip_human_approval": "Severe enough that nothing is written to memory until a person "
                           "approves it.",
     "tip_auto_write": "Mild enough for the agent to write to memory on its own.",
+    "tip_baseline_exists": "How many reference photos this asset already had. Zero means there "
+                           "was nothing to compare with yet, so this photo became the reference.",
     "tip_first_baseline": "The first capture of this asset. There was nothing to compare it "
                           "against.",
 
@@ -642,6 +644,8 @@ _ES = {
                           "que una persona lo apruebe.",
     "tip_auto_write": "Lo bastante leve como para que el agente lo escriba en memoria por su "
                       "cuenta.",
+    "tip_baseline_exists": "Cuántas fotos de referencia tenía ya este activo. Cero significa que "
+                           "todavía no había con qué comparar, así que esta foto pasó a ser la referencia.",
     "tip_first_baseline": "La primera captura de este activo. No había nada contra "
                           "qué compararla.",
 

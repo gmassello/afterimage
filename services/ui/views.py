@@ -546,11 +546,11 @@ def _pills(summary: dict, calls: list[dict], t: dict) -> list[dict]:
     return pills
 
 
-def _decider(decisions: list[dict], t: dict) -> dict | None:
+def _decider(decisions: list[dict], t: dict, branch: str | None = None) -> dict | None:
     decisions = [d for d in decisions if d["input_metric"] not in policy_module.AUDIT_METRICS]
     if not decisions:
         return None
-    final = decisions[-1]
+    final = next((d for d in reversed(decisions) if d["branch"] == branch), decisions[-1])
     return {
         "value": _fmt(final["value"]),
         "metric": final["input_metric"],
@@ -573,7 +573,7 @@ def _hero(summary: dict, events: list[dict], decisions: list[dict], t: dict) -> 
         "thresholds": counted(t, "thresholds", len(decisions)),
         "seconds": f"{seconds:.2f}",
         "pills": _pills(summary, calls, t),
-        "decider": _decider(decisions, t),
+        "decider": _decider(decisions, t, summary.get("branch")),
     }
 
 
