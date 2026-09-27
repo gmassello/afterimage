@@ -241,6 +241,32 @@ def test_queue_flow(client, tmp_path):
 
 
 @localstack
+def test_a_verdict_given_on_the_trace_lands_on_its_result(client, tmp_path):
+    from services.agent import hitl
+
+    asset_id = unique("api-from-trace")
+    store.put_asset(asset_id)
+    landings = {}
+    for verdict in ("approve", "reject"):
+        run_id = uuid.uuid4().hex[:12]
+        capture_key = images.put_image(asset_id, run_id, "capture", PANEL)
+        runs.write(tmp_path / run_id, runs.STATE, {"run_id": run_id, "asset_id": asset_id})
+        hitl.request_approval(tmp_path / run_id, {
+            "run_id": run_id,
+            "asset_id": asset_id,
+            "captured_at": f"2026-08-26T00:00:0{len(landings)}+00:00",
+            "metrics": {"quality": {"blur_variance": 300.0}},
+            "image_keys": {"capture": capture_key},
+            "message": "confirm the change",
+        })
+        answer = client.post(f"/queue/{run_id}/{verdict}", data={"from": "trace"})
+        assert answer.status_code == 303
+        landings[verdict] = (answer.headers["location"], run_id)
+    assert landings["approve"][0] == f"/assets/{asset_id}"
+    assert landings["reject"][0] == f"/traces/{landings['reject'][1]}"
+
+
+@localstack
 def test_images_endpoint(client):
     asset_id = unique("api-image")
     key = images.put_image(asset_id, "insp", "capture", PANEL)

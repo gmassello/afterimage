@@ -27,7 +27,7 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
 | `landing.html` | Public product explanation, workflow, evaluation evidence, stack, limits, and entry points. |
 | `index.html` | Inspection workspace, four sample captures, and asset gallery. The asset ID is optional; its placeholder says an empty field asks the agent to recognise the asset. |
 | `activity.html` | Recent-run search and status filter, capped at 4 rows. |
-| `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action; like the queue, an interrupted verdict offers only its claimed action. The `classify_severity` card shows the annotated evidence image (`evidence_key`) as a figure linking to the full-size PNG. The headline skips `policy.AUDIT_METRICS`, so a re-observation or Jev check never replaces the verdict it follows. |
+| `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action. The title is the localised `outcome_<status>` or `outcome_<branch>` copy, with the model's message beneath it, and the status pill uses `status_*`; like the queue, an interrupted verdict offers only its claimed action. The `classify_severity` card shows the annotated evidence image (`evidence_key`) as a figure linking to the full-size PNG. The headline skips `policy.AUDIT_METRICS`, so a re-observation or Jev check never replaces the verdict it follows. |
 | `queue.html` | Pending comparisons with approve and reject actions; the reject form carries an optional `reason` field (500 characters). An interrupted verdict shows only the claimed action and a note to repeat it. |
 | `asset.html` | Longitudinal timeline, severity trend, current baseline, and superseded baselines. |
 | `error.html` | Consistent browser error with a stable code, explanation, and recovery action when available. |
@@ -42,6 +42,9 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
 - The upload control supports file selection, drag and drop, preview, and the 6 MiB client-side
   limit. The server repeats all authoritative validation.
 - Sample buttons fetch bundled captures and place them into the same upload path as a local file.
+  `/app?sample=<stem>` preselects one of them on load; any other value is ignored.
+- A demo asset's `first_baseline` trace offers a `next_sample` link to `/app?sample=sample-defect`.
+  Approving from the trace's own CTA lands on the asset history; the queue's forms return to the queue.
 - Asset search and latest-branch filtering run entirely over the gallery already rendered in `/app`;
   they do not issue an API request.
 - The landing demo switches among the four bundled scenarios with an ARIA tablist. Arrow keys,

@@ -150,11 +150,12 @@ def demo_suffix(request: Request) -> str:
 
 
 @app.get("/app")
-def index(request: Request, lang: str = Depends(language), reading: str = Depends(register)):
+def index(request: Request, sample: str = "", lang: str = Depends(language),
+          reading: str = Depends(register)):
     suffix = demo_suffix(request)
     answer = HTMLResponse(index_page(
         store.list_assets(), lang=lang, register=reading,
-        sample_asset=f"{SAMPLE_ASSET}-{suffix}",
+        sample_asset=f"{SAMPLE_ASSET}-{suffix}", preselect=sample,
     ))
     answer.set_cookie(DEMO_COOKIE, suffix, max_age=CHOICE_MAX_AGE, samesite="lax")
     return answer
@@ -337,7 +338,8 @@ def _actor(request: Request) -> str:
 
 
 @app.post("/queue/{run_id}/{verdict}")
-def resolve_pending(request: Request, run_id: str, verdict: str, reason: str = Form("")):
+def resolve_pending(request: Request, run_id: str, verdict: str, reason: str = Form(""),
+                    origin: str = Form("", alias="from")):
     if verdict not in ("approve", "reject") or not RUN_ID_PATTERN.fullmatch(run_id):
         raise ApiError(404, "not found", "approval_not_found")
     try:
@@ -352,7 +354,12 @@ def resolve_pending(request: Request, run_id: str, verdict: str, reason: str = F
     except (hitl.AlreadyResolved, runs.ClaimInFlight):
         raise ApiError(409, "this run already has a verdict", "approval_already_resolved")
     _pending_in_memory.cache_clear()
-    return RedirectResponse("/queue", status_code=303)
+    if origin != "trace":
+        return RedirectResponse("/queue", status_code=303)
+    asset_id = str((runs.read(runs.runs_dir() / run_id, runs.STATE) or {}).get("asset_id") or "")
+    if verdict == "approve" and ASSET_ID_PATTERN.fullmatch(asset_id):
+        return RedirectResponse(f"/assets/{asset_id}", status_code=303)
+    return RedirectResponse(f"/traces/{run_id}", status_code=303)
 
 
 @app.get("/static/{name}")

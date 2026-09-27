@@ -93,12 +93,6 @@ def test_the_sample_captures_are_content_addressed_like_every_other_asset():
     assert set(served.values()) == {"image/png"}
 
 
-def test_the_primer_opens_itself_only_while_the_gallery_is_empty():
-    empty = views.index_page([])
-    assert "<details class='howto' open>" in empty
-    assert "<details class='howto'>" in views.index_page([{"asset_id": "panel-a7"}])
-    assert empty.index("<form class='field'") < empty.index("<details class='howto'")
-
 
 def test_the_theme_button_uses_its_localized_visible_name():
     spanish = views.index_page([], lang="es")

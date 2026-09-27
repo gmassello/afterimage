@@ -778,3 +778,19 @@ def test_a_rejection_can_carry_the_reviewer_reason():
     form = page.split("action='/queue/7f2ac91b04de/reject'>")[1].split("</form>")[0]
     assert "name='reason' maxlength='500'" in form
     assert "placeholder='why? e.g. glare on the glass (optional)'" in form
+
+
+def test_a_demo_reference_photo_titles_itself_and_offers_the_cracked_sample():
+    events = [_call("assess_quality", "quality_ok"), _finished("first_baseline")]
+    demo = views.render_html({"asset_id": "demo-panel-abc123"}, events, lang="es")
+    assert "<h1>Primera foto de este activo, guardada como referencia</h1>" in demo
+    assert ">completada<" in demo
+    assert "href='/app?sample=sample-defect'" in demo
+    other = views.render_html({"asset_id": "panel-a7-north"}, events)
+    assert "<h1>First photo of this asset, saved as its reference</h1>" in other
+    assert "/app?sample=" not in other
+
+
+def test_the_workspace_preselects_only_a_known_sample():
+    assert "data-preselect='sample-defect'" in views.index_page([], preselect="sample-defect")
+    assert "data-preselect" not in views.index_page([], preselect="../etc")
