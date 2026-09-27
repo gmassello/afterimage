@@ -606,8 +606,10 @@ Written as they were measured, not assembled at the end.
   picks the asset.
 - Baseline descriptors are cached per baseline in S3, but the `ANNIndex` over them is rebuilt on
   every identification, so its cost grows with the number of assets.
-- Jev is optional and non-deterministic, and `jev_floor` is a starting point: its recall and
-  precision at the floor must be measured with `make smoke-jev` before relying on the guard.
+- Jev is optional and non-deterministic. `make smoke-jev` on 27 September 2026 answered all 13
+  labelled sentences (`eval/results/jev-measured.json`) with recall and precision 1.0 at
+  `jev_floor` 0.8 for both questions, but one overstated message scored exactly 0.8, so the margin
+  is nil, and 13 sentences are a check, not a precision estimate.
 - The calibration gate aligns a synthetic reference pair. It catches a broken runtime or missing
   weights, not detector drift on real photographs.
 - The two ONNX files come from a single third-party repository, pinned to a commit and sha1-verified.
