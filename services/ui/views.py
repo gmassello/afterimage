@@ -363,7 +363,7 @@ def _asset_card(asset: dict) -> dict:
 
 def index_page(assets: list[dict], error: str = "", asset_id: str = "",
                lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER,
-               sample_asset: str = SAMPLE_ASSET) -> str:
+               sample_asset: str = SAMPLE_ASSET, preselect: str = "") -> str:
     t = strings(lang, register)
     return _render(
         "index.html", t["nav_assets"], "assets", lang, register,
@@ -374,6 +374,7 @@ def index_page(assets: list[dict], error: str = "", asset_id: str = "",
         samples=_samples(t, sample_asset),
         error=error,
         asset_id=asset_id,
+        preselect=preselect if preselect in {stem for stem, _ in SAMPLES} else "",
     )
 
 
@@ -535,7 +536,8 @@ def _pills(summary: dict, calls: list[dict], t: dict) -> list[dict]:
         branch = str(summary["branch"])
         pills.append({"label": branch, "on": True, "tip": _tip(t, branch)})
     if summary.get("status"):
-        pills.append({"label": str(summary["status"])})
+        status = str(summary["status"])
+        pills.append({"label": t.get(f"status_{status}", status)})
     detector = next(
         (c["metrics"]["detector"] for c in calls if c.get("metrics", {}).get("detector")), None
     )
@@ -560,10 +562,13 @@ def _decider(decisions: list[dict], t: dict) -> dict | None:
 def _hero(summary: dict, events: list[dict], decisions: list[dict], t: dict) -> dict:
     calls = [e for e in events if e["type"] == "tool_call"]
     seconds = sum(float(e.get("duration_ms", 0.0)) for e in calls) / 1000.0
+    outcome = t.get(f"outcome_{summary.get('status')}") or t.get(f"outcome_{summary.get('branch')}")
+    message = str(summary.get("message") or "")
     return {
         "asset_id": str(summary.get("asset_id") or t["unknown_asset"]),
         "captured_at": str(summary.get("captured_at") or ""),
-        "headline": str(summary.get("message") or summary.get("branch") or t["trace_headline"]),
+        "headline": outcome or message or str(summary.get("branch") or t["trace_headline"]),
+        "message": message if outcome else "",
         "calls": counted(t, "calls", len(calls)),
         "thresholds": counted(t, "thresholds", len(decisions)),
         "seconds": f"{seconds:.2f}",
@@ -772,6 +777,14 @@ def _cta(summary: dict, claimed: bool | None = None) -> dict | None:
     }
 
 
+def _next_sample(summary: dict, t: dict) -> dict | None:
+    if summary.get("branch") != policy_module.FIRST_BASELINE:
+        return None
+    if not str(summary.get("asset_id") or "").startswith(f"{SAMPLE_ASSET}-"):
+        return None
+    return {"url": "/app?sample=sample-defect", "label": t["next_sample"]}
+
+
 def _chain_line(events: list[dict], t: dict) -> str:
     broken = trace.broken_at(events)
     if broken is None:
@@ -799,6 +812,7 @@ def render_html(state: dict, events: list[dict], lang: str = DEFAULT_LANG,
         terminal=_terminal(events),
         comparison=_figures(baseline, capture, bbox, tag, aligned=aligned),
         cta=_cta(summary, claimed),
+        next_sample=_next_sample(summary, t),
         footer={
             "run_id": run_id,
             "asset_id": str(summary.get("asset_id") or ""),

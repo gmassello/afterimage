@@ -312,11 +312,6 @@ footer.bot { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--font-
 .empty .ring { flex: none; width: 56px; height: 56px; border-radius: 50%;
                border: 2px dashed var(--border); }
 
-.howto { padding: 16px 24px; border: 1px dashed var(--border); border-radius: var(--radius-lg); }
-.howto p { margin: 12px 0 0; }
-.howto > summary { font-family: var(--font-sans); font-weight: 500; font-size: 0.9375rem;
-                   letter-spacing: normal; color: var(--fg); }
-.howto > summary:hover { color: var(--accent); }
 
 .samples { display: flex; flex-direction: column; gap: 12px; padding-top: 16px;
            border-top: 1px solid var(--border); }

@@ -147,21 +147,6 @@ _EN = {
     "error_back_app": "Back to the application",
     "error_activity": "Open activity",
 
-    "help_summary": "New here? Start with this",
-    "help_what": "This is an inspection agent with a memory. You send it a photo of something "
-                 "you want watched — a solar panel, a wall, a machine — and it tells "
-                 "you what changed since the last time it saw that same thing.",
-    "help_baseline": "The first photo of an asset becomes its baseline: the reference every "
-                     "later photo is measured against. There is nothing to compare it to yet, "
-                     "so the agent just files it away.",
-    "help_decides": "From then on each photo ends in one of five answers: the photo is too poor "
-                    "to judge, this is not the asset I remember, nothing changed, the change is "
-                    "mild enough to record on its own, or the change is severe enough that a "
-                    "person has to look.",
-    "help_human": "That last one stops in the approval queue and nothing is written to memory "
-                  "until you approve it. Every answer carries the measurement that produced it, "
-                  "so you can always see why.",
-
     "samples_title": "no photo at hand?",
     "samples_hint": "Four captures of the same demo panel, in order. Each one lands on a "
                     "different answer. Pick one, then press inspect.",
@@ -262,6 +247,16 @@ _EN = {
     "no_verdict": "no verdict",
     "unknown_asset": "unknown asset",
     "trace_headline": "Inspection trace",
+    "outcome_first_baseline": "First photo of this asset, saved as its reference",
+    "outcome_no_change": "Nothing changed since the reference",
+    "outcome_auto_write": "A mild change, recorded on its own",
+    "outcome_human_approval": "A person has to look at this change",
+    "outcome_recapture": "This photo is too poor to judge",
+    "outcome_unrecognized_asset": "This is not the asset in memory",
+    "outcome_unidentified": "No stored asset matches this photo",
+    "outcome_approved": "A person approved this change and it was written to memory",
+    "outcome_rejected": "A person rejected this change; memory is unchanged",
+    "next_sample": "Next: 3 · the same panel, now cracked",
     "path_taken": "the path this run took",
     "path_so_far": "the path so far",
     "status_unstarted": "unstarted",
@@ -471,22 +466,6 @@ _ES = {
     "error_back_app": "Volver a la aplicación",
     "error_activity": "Abrir actividad",
 
-    "help_summary": "¿Primera vez? Empezá por acá",
-    "help_what": "Esto es un agente de inspección con memoria. Le mandás una foto de "
-                 "algo que querés vigilar — un panel solar, una pared, una "
-                 "máquina — y te dice qué cambió desde la última vez "
-                 "que vio esa misma cosa.",
-    "help_baseline": "La primera foto de un activo pasa a ser su baseline: la referencia contra "
-                     "la que se mide cada foto posterior. Todavía no hay con qué "
-                     "compararla, así que el agente simplemente la guarda.",
-    "help_decides": "De ahí en más cada foto termina en una de cinco respuestas: la "
-                    "foto es demasiado mala para juzgarla, este no es el activo que recuerdo, "
-                    "no cambió nada, el cambio es leve y lo anoto solo, o el cambio es "
-                    "grave y lo tiene que mirar una persona.",
-    "help_human": "Esa última frena en la cola de aprobación y no se escribe nada en "
-                  "memoria hasta que vos la apruebes. Cada respuesta viene con la medición "
-                  "que la produjo, así siempre podés ver por qué.",
-
     "samples_title": "¿no tenés una foto a mano?",
     "samples_hint": "Cuatro capturas del mismo panel de demo, en orden. Cada una cae en una "
                     "respuesta distinta. Elegí una y apretá inspeccionar.",
@@ -588,6 +567,16 @@ _ES = {
     "no_verdict": "sin veredicto",
     "unknown_asset": "activo desconocido",
     "trace_headline": "Traza de inspección",
+    "outcome_first_baseline": "Primera foto de este activo, guardada como referencia",
+    "outcome_no_change": "No cambió nada desde la referencia",
+    "outcome_auto_write": "Un cambio leve, anotado por su cuenta",
+    "outcome_human_approval": "Una persona tiene que mirar este cambio",
+    "outcome_recapture": "Esta foto es demasiado mala para juzgarla",
+    "outcome_unrecognized_asset": "Este no es el activo que está en memoria",
+    "outcome_unidentified": "Ningún activo guardado coincide con esta foto",
+    "outcome_approved": "Una persona aprobó este cambio y se escribió en memoria",
+    "outcome_rejected": "Una persona rechazó este cambio; la memoria no cambió",
+    "next_sample": "Siguiente: 3 · el mismo panel, ahora con una fisura",
     "path_taken": "el camino que tomó esta corrida",
     "path_so_far": "el camino hasta acá",
     "status_unstarted": "sin iniciar",

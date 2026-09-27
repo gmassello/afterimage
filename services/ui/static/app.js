@@ -180,6 +180,8 @@ if (zone) {
       }
     });
   });
+  const preselect = document.querySelector('.strip[data-preselect]')?.dataset.preselect;
+  if (preselect) document.querySelector(`.sample[data-name="${preselect}.png"]`)?.click();
 }
 
 const assetFilters = document.querySelector('[data-asset-filters]');

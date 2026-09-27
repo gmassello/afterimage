@@ -93,7 +93,7 @@ which is half of what this walkthrough checks.
 | **B** | `first_baseline` | `2-baseline.png` | trace ends `first_baseline`; the four stages that never ran read `not run · first_baseline`, not `not run · quality_ok`; the gallery gains a card with a thumbnail |
 | **C** | ACTION 1 · `recapture` | `1-blurred.png` | **`blur_variance 3.6589 < 100.0 -> recapture`**; `assess_quality` warn, the other four `not run`; the history gains **nothing** |
 | **D** | ACTION 4 · `human_approval` | `3-defect.png` | **`score 0.6798 >= 0.4 -> human_approval`**; `crop_and_rescan` reads `not run · change_confirmed`; the bounding box is drawn; `Waiting on a human` |
-| **E** | `reject`, from the trace's own CTA | — | the CTA carries the same two forms the queue does; `Reject` arms `Confirm?` exactly like the approve; after the redirect the queue is empty and the history gains **nothing** |
+| **E** | `reject`, from the trace's own CTA | — | the CTA carries the same two forms the queue does; `Reject` arms `Confirm?` exactly like the approve; the redirect returns to the same trace, now titled as rejected, and the history gains **nothing** |
 | **F** | the same capture again | `3-defect.png` | **`score 0.6798`, again** — identical bytes against a baseline E never moved, which is what proves the reject wrote nothing; back in the queue |
 | **G** | the queue | — | one entry, `0.6798` large and in warn; open `what it measured`; **first click arms `Confirm?` and stays armed, second click posts**; the queue empties |
 | **H** | the history | — | the new inspection, the baseline in force ringed and bordered, the previous one `superseded by` |
