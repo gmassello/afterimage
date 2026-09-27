@@ -21,6 +21,16 @@ deliberately fenced:
 The consequence worth stating plainly: the system's decisions do not depend on the model provider,
 its version or prompt phrasing. Swapping the model changes the phrasing of a run, not its outcome.
 
+A second, optional model gives a second opinion and never decides a branch. When
+`AI_GATEWAY_API_KEY` is set, Jev (`typesafe-ai/jev`, reached through Vercel AI Gateway) answers two
+typed questions with a probability: whether the message the orchestrating model wrote overstates the
+policy verdict, and whether a reviewer's rejection reason blames the capture rather than the asset.
+Each probability is compared with `jev_floor` in `services/agent/policy.py` and recorded in the
+trace. An overstating message is sent back to be rephrased — the branch it must name does not change
+— and a classified rejection only labels a human decision already taken. Jev is non-deterministic,
+so it is off in tests and in the evaluation; `make smoke-jev` measures it separately. It receives the
+message or reason text only, never an image or an asset ID.
+
 Nothing is sent to the model provider except the tool names, their arguments and the numeric metrics
 the perception tools return. Images are not sent to it; they stay in S3 and are read by the OpenCV
 tools running inside the container.

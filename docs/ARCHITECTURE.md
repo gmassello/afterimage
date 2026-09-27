@@ -8,7 +8,8 @@ runtime.
 
 Afterimage is a modular monolith shipped as one `arm64` container. One FastAPI process serves the
 HTML interface, HTTP endpoints, inspection loop, approval gate, and trace viewer. Perception is
-exposed to the loop through an MCP stdio subprocess, but it is not a separately deployed service.
+exposed to the loop through an in-process MCP session (the same server also runs over stdio for
+outside clients), but it is not a separately deployed service.
 
 ```mermaid
 flowchart LR
@@ -17,7 +18,8 @@ flowchart LR
     API --> Loop[Agent loop]
     Loop --> LLM[Scripted or Gemini driver]
     Loop --> Policy[Policy]
-    Loop --> MCP[MCP stdio server]
+    Loop -. optional .-> Jev[Jev via Vercel AI Gateway]
+    Loop --> MCP[in-process MCP server]
     MCP --> Perception[OpenCV perception]
     Loop --> Runs[Run artifacts]
     Loop --> Memory[Asset memory]
@@ -33,7 +35,7 @@ flowchart LR
 |---|---|---|
 | `services/api/` | HTTP validation, content negotiation, redirects, and route orchestration | Perception thresholds or image analysis |
 | `services/ui/` | View-model construction, translation, HTML templates, and browser assets | Persistence and branch decisions |
-| `services/agent/` | Tool sequencing, model adapter, policy evaluation, and human gate | Raw OpenCV implementation |
+| `services/agent/` | Tool sequencing, model adapter, policy evaluation, human gate, runtime calibration, and the optional Jev client | Raw OpenCV implementation |
 | `services/mcp_server/` | MCP tool contracts using storage keys | Product policy |
 | `services/perception/` | Numeric image measurements | Branch verdicts |
 | `services/memory/` | Asset history, baselines, images, and run-artifact storage | UI rendering |
@@ -57,10 +59,15 @@ sequenceDiagram
 
     Operator->>Browser: Enter /app and choose asset and capture
     Browser->>API: POST /inspections
+    API->>API: Calibration gate, 503 if not aligned
     API->>Memory: Store capture and run_started
     API-->>Browser: 303 /traces/{run_id}
     Browser->>API: POST /runs/{run_id}/execute
     API->>Loop: Resume claimed run
+    opt no asset ID
+        Loop->>MCP: identify_asset
+        Loop->>Policy: evaluate(identity, ...)
+    end
     Loop->>MCP: Run required perception tool
     MCP-->>Loop: Numeric metrics
     Loop->>Policy: evaluate(stage, metrics, policy)
@@ -78,12 +85,26 @@ sequenceDiagram
 run discovery lives at `GET /activity`. Both stay in the same FastAPI/Jinja2 process and share the
 same static assets, preferences, and storage adapters.
 
+When the upload names no asset, the capture is stored under `assets/_unassigned/` and the loop first
+calls `identify_asset`: an `ANNIndex` over the descriptors of every current baseline, where each
+capture keypoint votes for its nearest asset. The `identity` stage either names the asset, and the
+capture is copied under its prefix before the normal sequence runs, or ends the run as
+`unidentified`. Recognition never creates an asset, and alignment remains the geometric check on its
+guess.
+
 For an asset without a baseline, the loop runs quality assessment and either requests a recapture
 or creates the first baseline. For an existing asset, the enforced order is quality, initial
 alignment, diff, optional crop-and-rescan, and severity. Alignment starts with ALIKED and LightGlue
 when weights are available and may retry with ORB; without weights it starts with ORB and does not
 perform that retry. The driver can choose arguments and phrasing, but `NEXT_TOOL`, policy validation,
 and the final submit contract prevent it from skipping stages or changing the branch.
+
+Three checks follow a verdict without changing it. With `AI_GATEWAY_API_KEY` set, Jev is asked
+whether the submit message overstates the verdict (`phrasing` stage; a rejection sends the submit
+back to the model) and, after a rejection with a reason, whether the reviewer blamed the capture
+(`rejection` stage). After an approval, the `reobserve` stage reads memory back and records
+`baseline_verified` or `baseline_drift`. The HTTP layer also refuses inspections while the runtime
+calibration, a fixed synthetic alignment evaluated by the `alignment` stage, is not `aligned`.
 
 ## Data architecture
 
@@ -97,8 +118,11 @@ One DynamoDB partition represents an asset:
 | `pk=ASSET#<id>`, `sk=INSPECTION#<timestamp>#<id>` | Immutable inspection result, metrics, and verdict. |
 | `pk=ASSET#<id>`, `sk=BASELINE#<timestamp>` | Baseline record and supersession relationship. |
 
-Images use `assets/{asset_id}/{inspection_id}/{name}.png` in S3. A baseline is added and the
-previous one is marked as superseded; image objects are not overwritten.
+Images use `assets/{asset_id}/{inspection_id}/{name}.png` in S3, including the annotated
+`evidence.png`. A baseline is added and the previous one is marked as superseded; image objects are
+not overwritten. Recognition caches each baseline's descriptors beside its image as
+`descriptors-<detector>.npy`; captures uploaded without an asset ID live under
+`assets/_unassigned/`.
 
 ### Run artifacts
 
@@ -107,6 +131,7 @@ Runs are stored on the local filesystem or in S3 under `runs/{run_id}/`:
 - `events.json` is the logically append-only causal event stream and source for in-progress state.
 - `state.json` stores the terminal summary.
 - `pending.json` stores a finding waiting for human approval.
+- `verdict.json` is the write-once human decision, with the optional rejection reason.
 - `retry.json` on a failed run points to its replacement run, so concurrent or repeated retry
   requests converge on one result rather than creating a retry tree.
 
@@ -147,6 +172,8 @@ requests and the long inspection request. There is no external queue or independ
 - In-process image and asset caches are not bounded.
 - Two concurrent event appends on one run keep the last writer only.
 - Activity filters reach the 200 most recent runs, not the whole archive.
+- Recognition rebuilds its `ANNIndex` on every call; only the descriptors are cached.
+- Jev checks are optional, bounded by a 2-second timeout, and can never move an inspection branch.
 
 See [BACKEND.md](BACKEND.md) for contracts and failure behavior, [FRONTEND.md](FRONTEND.md) for the
 browser architecture, and [SECURITY.md](SECURITY.md) for trust boundaries.

@@ -143,13 +143,15 @@ def test_severe_change_awaits_human_and_resolve_writes(tmp_path):
     hitl.resolve(result.run_dir, approved=True)
     assert store.current_baseline(asset)["inspection_id"] == result.run_id
     assert not (result.run_dir / "pending.json").exists()
-    assert decisions_on_disk(result)[-1]["branch"] == "approved"
+    assert [d["branch"] for d in decisions_on_disk(result)[-2:]] == [
+        "approved", "baseline_verified",
+    ]
 
     events = trace.read_events(result.run_dir)
     assert any(e["type"] == "approval_requested" for e in events)
-    assert events[-1]["type"] == "decision"
-    assert events[-1]["input_metric"] == "human_approved"
-    assert events[-1]["branch"] == "approved"
+    assert events[-2]["type"] == "decision"
+    assert events[-2]["input_metric"] == "human_approved"
+    assert events[-2]["branch"] == "approved"
 
 
 @localstack
@@ -251,3 +253,67 @@ def test_a_baseline_image_that_expired_fails_the_run_naming_the_key(tmp_path):
     assert result.status == "failed"
     assert result.branch is None
     assert baseline_key in trace.read_events(result.run_dir)[-1]["message"]
+
+
+def unassigned_capture(image):
+    return images.put_image(loop.UNASSIGNED, uuid.uuid4().hex[:12], "capture", image)
+
+
+@localstack
+def test_a_capture_without_an_asset_is_identified_then_inspected(tmp_path):
+    known, other = unique("loop-known"), unique("loop-other")
+    seed_asset(known, PANEL)
+    seed_asset(other, solar_panel(seed=99, rows=4, cols=7, cell=80))
+    capture_key = unassigned_capture(shifted(with_crack(PANEL, 2, 4)))
+    llm = PolicyFollowingLLM(None, None, alignment.CLASSIC)
+
+    result = run_loop(
+        "", capture_key, llm, tmp_path, detector=alignment.CLASSIC, candidates=[known, other]
+    )
+
+    identity = result.decisions[0]
+    assert identity["branch"] == "identified"
+    assert identity["extra"] == {"asset_id": known}
+    assert result.branch == "human_approval"
+    state = hitl.runs.read(result.run_dir, "state.json")
+    assert state["asset_id"] == known
+    assert state["capture_key"].startswith(f"assets/{known}/{result.run_id}/")
+    severity = next(
+        e for e in trace.read_events(result.run_dir) if e.get("tool") == "classify_severity"
+    )
+    assert images.exists(severity["metrics"]["evidence_key"])
+
+
+@localstack
+def test_a_capture_nothing_matches_stops_before_touching_memory(tmp_path):
+    capture_key = unassigned_capture(PANEL)
+    llm = PolicyFollowingLLM(None, None, alignment.CLASSIC)
+
+    result = run_loop("", capture_key, llm, tmp_path, detector=alignment.CLASSIC, candidates=[])
+
+    assert result.branch == "unidentified"
+    assert [d["input_metric"] for d in result.decisions] == ["votes"]
+    assert hitl.runs.read(result.run_dir, "state.json")["message"] == loop.UNIDENTIFIED_MESSAGE
+
+
+@localstack
+def test_the_second_opinion_sends_an_overstated_message_back_and_never_blocks(
+    tmp_path, monkeypatch
+):
+    asset = unique("loop-guard")
+    baseline_key = seed_asset(asset, PANEL)
+    capture_key = upload_capture(asset, shifted(PANEL))
+    answers = iter([(0.95, None), (None, "HTTP 403")])
+    monkeypatch.setattr(loop.jev, "configured", lambda: True)
+    monkeypatch.setattr(loop.jev, "overstates", lambda message, verdict: next(answers))
+
+    result = run_loop(
+        asset, capture_key, PolicyFollowingLLM(capture_key, baseline_key, alignment.CLASSIC),
+        tmp_path, detector=alignment.CLASSIC,
+    )
+
+    assert result.branch == "no_change"
+    phrasing = [d["branch"] for d in result.decisions if d["input_metric"] == "overstates"]
+    assert phrasing == ["phrasing_rejected"]
+    guard = [e for e in trace.read_events(result.run_dir) if e.get("tool") == loop.JEV_GUARD]
+    assert [e.get("error") for e in guard] == [None, "HTTP 403"]

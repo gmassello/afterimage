@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white&style=flat" alt="python: 3.12">
   <img src="https://img.shields.io/badge/AWS_Lambda-arm64-FF9900?logo=awslambda&logoColor=white&style=flat" alt="AWS Lambda: arm64">
   <img src="https://img.shields.io/badge/license-MIT-black?style=flat" alt="license: MIT">
+  <a href="https://github.com/gmassello/afterimage/actions/workflows/ci.yml"><img src="https://github.com/gmassello/afterimage/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI: the suite with a 90% coverage floor, the published numbers against a fresh eval, the ORB ablation and a smoke test of the Lambda image"></a>
   <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/"><img src="https://img.shields.io/badge/demo-live%20%C2%B7%20200%20in%200.58s-success?style=flat" alt="demo: live, 200 in 0.58 s"></a>
 </p>
 
@@ -38,6 +39,15 @@ Developer documentation: [functional guide](docs/FUNCTIONAL.md) ·
   <sub><a href="https://youtu.be/zUFR96a33IM">Watch the 5-minute walkthrough</a> · <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/">try the live endpoint</a></sub>
 </p>
 
+### Three minutes
+
+| | |
+|---|---|
+| **See the memory decide** | [Open the workspace](https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/app), pick a sample and watch the trace: the capture is aligned to the stored baseline of the same asset and only the difference is scored. Leave the asset id empty and the agent first recognises which asset the photo shows. |
+| **See that it is not asserted** | Every card in the trace carries the metric, the threshold and the branch it produced, and the ablation below scores the same 29 scenarios with ORB alone and with no memory at all. |
+| **See the code that decides** | [`services/agent/policy.py`](services/agent/policy.py) holds every threshold; [`services/perception/alignment.py`](services/perception/alignment.py) and [`services/perception/recognition.py`](services/perception/recognition.py) are the OpenCV 5 APIs doing the work. |
+| **See what does not work** | [Where it fails](#where-it-fails) and [Honest limits](#honest-limits). |
+
 ---
 
 Built for the [OpenCV AI Competition 2026](https://opencv26.devpost.com/) — Agentic Vision path ([the submission](https://devpost.com/software/afterimage-ibp376)). Every branch below is decided in code by `services/agent/policy.py` and recorded with the numeric value that triggered it, so any run can be replayed from its trace.
@@ -58,7 +68,10 @@ Both live in [`services/perception/alignment.py`](services/perception/alignment.
 - Gates its own input — a blurred or badly framed capture is sent back for a recapture instead of scored.
 - Anchors each capture to the stored baseline of the same asset with OpenCV 5 `Features` (ALIKED + LightGlue), or refuses the asset when alignment fails.
 - Diffs against memory and zooms in on its own when a region is uncertain, rather than reporting a maybe.
-- Escalates a severe finding to a human approval queue before anything is written to memory.
+- Recognises which asset an unlabelled photo shows: ALIKED descriptors of every current baseline go into an OpenCV 5 `ANNIndex`, each keypoint of the capture votes for its nearest asset, and alignment then verifies the winner geometrically. A split vote ends the run and asks the operator instead of guessing.
+- Escalates a severe finding to a human approval queue before anything is written to memory, draws the classified region and its label onto the evidence with OpenCV 5 `FontFace`, and after an approval reads memory back to confirm the new baseline is the one it wrote.
+- Refuses to inspect when its own calibration fails: `/health` aligns a fixed reference pair on start, and an out-of-tolerance result takes the service out of rotation.
+- Optionally asks Jev (`typesafe-ai/jev` through Vercel AI Gateway), a typed-decision model, whether the operator message claims more than the verdict supports and whether a reviewer's rejection blames the capture. Both answers are recorded against a floor in `policy.py`; neither can move a branch, and with no key nothing leaves the machine.
 - Emits every decision as a trace event carrying the metric, the threshold and the branch it produced, hash-chained to the event before it — `GET /traces/{run_id}` names the event where an edit broke the chain. The chain proves no step was edited on its own, not that the file as a whole was not rewritten; see [docs/SECURITY.md](docs/SECURITY.md).
 
 The loop is the product, not the development process: an unusable capture is sent back, an unrecognised asset is refused rather than guessed, and a severe finding waits for a human before anything is written.
@@ -85,17 +98,35 @@ A failed run remains immutable and can be retried from recent activity, and a ru
 |---|---|---|
 | `recapture-partial-frame-synthetic` | unrecognized_asset | `inlier_ratio 0.0602 vs 0.3` |
 | `recapture-partial-frame-real-arapaho` | unrecognized_asset | `inlier_ratio 0.1232 vs 0.3` |
-| `hotspot-real-plain` | recapture / NONE | `clipped_bright_ratio 0.3086 vs 0.3` |
+| `hotspot-real-plain` | recapture / MISSED | `clipped_bright_ratio 0.3086 vs 0.3` |
 | `delamination-real-packed` | auto_write | `score 0.3412 vs 0.4` |
 | `soiling-real-forest` | human_approval / hotspot | `area_ratio 0.076 vs 0.25` |
 
 Each of the five is traced to a root cause in [the evaluation](docs/EVALUATION.md) — a coverage gate that cannot take one global default, an exposure gate firing before severity is ever assessed, a severity score that ignores the class the classifier just produced, and a soiling rule whose area threshold was calibrated on the synthetic panel and does not survive real texture. The two partial-frame rows are the same root cause seen twice: once on a generated panel and once on a photograph.
 
+### What the memory and the learned features buy
+
+The same 29 scenarios, scored three ways: the full agent; with ALIKED + LightGlue switched off so every capture is aligned by ORB (`make eval ARGS="--detector classic"`); and with no memory at all, so no capture ever meets a baseline (`--no-memory`). CI re-scores the ORB column on every push and fails if it drifts from [`eval/results/orb-only`](eval/results/orb-only/summary.md).
+
+| Figure | Full agent | ORB only | No memory |
+|---|---:|---:|---:|
+| `passed` | 24 / 29 | 22 / 29 | 5 / 29 |
+| `branch macro F1` | 0.8624 | 0.8068 | 0.1346 |
+| `defect macro F1` | 0.8542 | 0.7907 | 0.0 |
+| `defects found` | 12 / 14 | 11 / 14 | 0 / 14 |
+| `median inlier_ratio` | 0.9987 | 0.8610 | — |
+| `mean IoU` | 0.7875 | 0.7167 | — |
+
+Without memory the agent has nothing to compare against, so every capture that passes the quality gate becomes a first baseline and no defect is ever found — that column is the floor by construction, not a tuned result. The learned features are worth two real photographs: with ORB, a faint spot on a real module is lost to a worse alignment and a delamination is located in the wrong place. On the rotated and scaled synthetic panels ORB still clears its own lower threshold, but its median `inlier_ratio` there is 0.3929 against 0.9975.
+
 ## How the loop works
 
 ```mermaid
 flowchart TD
-  C[capture] --> Q{assess_quality}
+  C[capture] -- no asset id --> I{identify_asset}
+  I -- vote share below 0.5 --> X[ask the operator]
+  I --> Q
+  C --> Q{assess_quality}
   Q -- blur_variance below 100 --> R[request recapture]
   Q --> A{align_to_baseline}
   A -- inlier_ratio below 0.90 --> O{retry with ORB}
@@ -108,6 +139,9 @@ flowchart TD
   D -- mean_delta 35 or above --> S{classify_severity}
   S -- score below 0.4 --> W[write to memory]
   S -- score 0.4 or above --> H[human approval]
+  H -- approved --> V{re-read memory}
+  V -- baseline is the one written --> B[baseline verified]
+  V -- anything else --> F[baseline drift]
 ```
 
 <sub>Every arrow is a threshold in `policy.py`, and every run records the value that took it</sub>
@@ -118,6 +152,15 @@ Perception runs in an arm64 OpenCV 5 container on Lambda (Graviton): capture qua
 |---|---|
 | <img src="docs/img/trace.png" alt="Per-run trace: the five pipeline stages as a rail, each with the branch it took, the stage the run never reached and why, and the number that decided the verdict" width="420"> | <img src="docs/img/history.png" alt="Asset history: the severity of every inspection plotted against the approval threshold, then each one scored against the threshold that was in force, with the sentence that decided it, and the current baseline" width="420"> |
 | One span per tool call, with the value that triggered the branch. | Every inspection of an asset, and which capture is the baseline. |
+
+## Honest limits
+
+- The evaluation's own limits — injected defects, a small suite, one domain — are in [the evaluation](docs/EVALUATION.md#limits-of-this-evaluation); the system's are in [section 9 of the technical report](docs/TECHNICAL_REPORT.md#9-limitations).
+- Asset recognition is retrieval plus geometric verification. No dedicated evaluation set measures it.
+- Assets that look identical split the vote and end `unidentified`; the operator picks the asset.
+- Descriptors are cached per baseline, but the `ANNIndex` over them is rebuilt on every identification.
+- Jev is optional and non-deterministic; measure its floor with `make smoke-jev` before relying on it.
+- Calibration aligns a synthetic pair: it catches a broken runtime or missing weights, not drift on real photographs.
 
 ## Quickstart
 
@@ -147,8 +190,14 @@ Docker with Compose v2 (arm64 host or emulation) and `make`. Nothing else instal
    make eval   # writes eval/results/latest/
    ```
 
+5. Smoke-test the Lambda image: `/health` must report calibration `aligned` and the landing must render
+
+   ```bash
+   make smoke
+   ```
+
 > [!TIP]
-> `make demo` runs a scripted driver. To let Gemini orchestrate the same loop over MCP, add `GOOGLE_API_KEY` to the environment and run `docker-compose run --rm app python -m services.agent.demo --live`. Either way the branch verdicts are computed in code.
+> `make demo` runs a scripted driver. To let Gemini orchestrate the same loop over MCP, add `GOOGLE_API_KEY` to the environment and run `docker-compose run --rm app python -m services.agent.demo --live`. Either way the branch verdicts are computed in code. With `AI_GATEWAY_API_KEY` set, the optional Jev checks run as well; `make smoke-jev` measures them on labelled sentences.
 
 ## The dataset
 
@@ -169,14 +218,14 @@ GOOGLE_API_KEY=... make deploy   # ECR + docker buildx arm64 + CloudFormation, i
 | Endpoint | What it serves |
 |---|---|
 | `/` | Public landing: product, workflow, measured evidence, stack and limits |
-| `/app` | Asset list, capture upload and four sample captures that need no file of your own |
+| `/app` | Asset list, capture upload (the asset id is optional: leave it empty and the agent recognises the asset) and four sample captures that need no file of your own |
 | `/activity` | Search and status filtering over the latest 50 runs |
 | `/assets/{id}` | Inspection timeline and current baseline |
-| `/queue` | Human approval queue, with the compared pair |
+| `/queue` | Human approval queue, with the compared pair; a rejection can carry a written reason |
 | `/traces/{run_id}` | Per-run trace, JSON or HTML; fills in live while the run works |
 | `/runs/{run_id}/execute` | Runs the agent loop for a trace the upload already opened |
 | `/runs/{run_id}/retry` | Idempotently opens the replacement for a terminal failed run |
-| `/health` | Health check |
+| `/health` | `{"ok", "calibration"}` from aligning a fixed reference pair; 503 when calibration is not `aligned` |
 
 <details>
 <summary>Deploy internals — one-time OIDC bootstrap and repo configuration</summary>
@@ -191,7 +240,7 @@ aws cloudformation deploy --template-file infra/github-oidc.yaml \
     --stack-name afterimage-github-oidc --capabilities CAPABILITY_NAMED_IAM
 ```
 
-Then set `secrets.AWS_ROLE_ARN` (the `RoleArn` output), `secrets.GOOGLE_API_KEY` and `vars.AWS_REGION`, and run Actions → Deploy. The deploy prints the public URL.
+Then set `secrets.AWS_ROLE_ARN` (the `RoleArn` output), `secrets.GOOGLE_API_KEY`, optionally `secrets.AI_GATEWAY_API_KEY`, and `vars.AWS_REGION`, and run Actions → Deploy. The deploy prints the public URL.
 
 </details>
 

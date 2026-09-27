@@ -51,6 +51,8 @@ The supported workflow uses Docker Compose and `make`:
 - `make verify-runtime` confirms the required OpenCV 5 runtime.
 - `make demo` runs the scripted driver through the four action branches. To use Gemini, set `GOOGLE_API_KEY` and run `docker compose run --rm app python -m services.agent.demo --live`.
 - `make eval` scores the 29 reproducible scenarios and updates `eval/results/latest/`; additional options can be passed through `ARGS`.
+- `make smoke` builds and runs the Lambda image and requires `/health` calibration `aligned` and the landing `<title>afterimage`.
+- `make smoke-jev` measures the optional Jev checks at `jev_floor` on labelled sentences; needs `AI_GATEWAY_API_KEY`.
 - `make deploy` deploys through ECR, buildx for `arm64`, and CloudFormation; it requires `GOOGLE_API_KEY`.
 
 Run everything in the `arm64` container. There is no local `cv2`, so plain host-side `pytest` does not work. Neural-path tests and the `dev`, `test`, `demo`, `eval`, and `deploy` workflows require the downloaded weights. To run one test:
@@ -66,7 +68,7 @@ Before submitting a change, run the checks relevant to it; for code changes, pre
 One FastAPI application in `services/api/app.py` serves the UI and runs the agent loop inside the request. It is deployed as a single `arm64` Lambda container behind a Function URL.
 
 - `services/perception/` contains pure NumPy/OpenCV functions for quality, alignment, diffing, and severity. They return raw metrics and never make decisions. Alignment uses OpenCV 5 `Features` with ALIKED and LightGlue ONNX, falling back to ORB when `weights.neural_weights_available()` reports missing weights.
-- `services/mcp_server/server.py` exposes the five perception tools over MCP stdio using S3 keys instead of arrays. This is the only surface visible to the LLM.
+- `services/mcp_server/server.py` exposes the six perception tools (including `identify_asset`) over MCP using S3 keys instead of arrays; the loop opens an in-process MCP session to it, and `python -m services.mcp_server.server` serves the same tools over stdio. This is the only surface visible to the LLM.
 - `services/agent/policy.py` is the only place where branches are decided. `Policy` owns every threshold, and `evaluate(stage, metrics, policy)` returns a `decision()` record with the metric, value, threshold, and branch. No other code may compare a metric to a constant.
 - `services/agent/loop.py` orchestrates execution. The LLM selects arguments and phrasing; the loop enforces the next tool through `NEXT_TOOL` and rejects a `submit` whose branch differs from the last policy verdict. Without `GOOGLE_API_KEY`, it uses `scripted.PolicyFollowingLLM` so tests and evaluation remain deterministic.
 - `services/memory/` uses one DynamoDB table with `pk=ASSET#id` and `sk` values `META`, `INSPECTION#ts#id`, or `BASELINE#ts`, returning an asset's history in one query. `META` stores the latest inspection's capture key, timestamp, label, and branch, allowing the `/` gallery to use one scan without per-asset queries. Run `python -m services.memory.backfill [--dry-run]` once to fill summaries for older assets. Images live in S3 at `assets/{asset_id}/{inspection_id}/{name}.png`; baselines are superseded, never overwritten. `runs.py` stores run artifacts locally or in S3 under `runs/` when `AFTERIMAGE_RUNS_S3=1`.
@@ -74,7 +76,7 @@ One FastAPI application in `services/api/app.py` serves the UI and runs the agen
 - `services/agent/hitl.py` implements the human gate. A severe finding writes `pending.json` instead of committing; approval commits the inspection and promotes the baseline.
 - `services/ui/` contains autoescaped Jinja2 templates and hashed static assets, rendered by `views.py` and served through the API.
 
-Environment variables are `AFTERIMAGE_TABLE`, `AFTERIMAGE_BUCKET`, `AFTERIMAGE_WEIGHTS_DIR`, `AFTERIMAGE_RUNS_DIR`, `AFTERIMAGE_RUNS_S3`, `AFTERIMAGE_GEMINI_MODEL`, and `GOOGLE_API_KEY`. Override any `Policy` field with `AFTERIMAGE_<FIELD_NAME_UPPER>` through `Policy.from_env()`.
+Environment variables are `AFTERIMAGE_TABLE`, `AFTERIMAGE_BUCKET`, `AFTERIMAGE_WEIGHTS_DIR`, `AFTERIMAGE_RUNS_DIR`, `AFTERIMAGE_RUNS_S3`, `AFTERIMAGE_GEMINI_MODEL`, `GOOGLE_API_KEY`, and the optional `AI_GATEWAY_API_KEY` (Jev checks through Vercel AI Gateway; `AFTERIMAGE_JEV_ZERO_RETENTION=1` requests zero data retention). Override any `Policy` field with `AFTERIMAGE_<FIELD_NAME_UPPER>` through `Policy.from_env()`.
 
 ## Coding Style & Naming Conventions
 

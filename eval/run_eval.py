@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,6 +17,7 @@ from services.perception import alignment
 NO_DEFECT = "NONE"
 MISSED = "MISSED"
 CLASSIFICATION_ERROR = "ERROR"
+DETECTORS = {"neural": alignment.NEURAL, "classic": alignment.CLASSIC}
 
 
 def _severity_label(events) -> str | None:
@@ -44,17 +46,20 @@ def _deciding_number(decisions) -> str:
     return f"{last['input_metric']} {last['value']} vs {last['threshold']}"
 
 
-def run_scenario(scenario: dict, runs_dir: Path) -> dict:
+def run_scenario(
+    scenario: dict, runs_dir: Path, detector: str | None = None, memory: bool = True
+) -> dict:
     baseline, capture, truth_bbox = scenarios_module.materialise(scenario)
     asset = f"eval-{scenario['id']}-{uuid.uuid4().hex[:6]}"
+    detector = detector or alignment.default_detector()
     baseline_key = None
-    if scenario.get("seed_baseline", True):
+    if memory and scenario.get("seed_baseline", True):
         baseline_key = seed_baseline(asset, baseline)
     else:
         store.put_asset(asset)
     capture_key = images.put_image(asset, "capture", "capture", capture)
-    llm = PolicyFollowingLLM(capture_key, baseline_key, alignment.default_detector())
-    result = asyncio.run(loop.run(asset, capture_key, llm, runs_dir=runs_dir))
+    llm = PolicyFollowingLLM(capture_key, baseline_key, detector)
+    result = asyncio.run(loop.run(asset, capture_key, llm, runs_dir=runs_dir, detector=detector))
     events = trace.read_events(result.run_dir)
     expected = scenario["expect"]
     path = [decision["branch"] for decision in result.decisions]
@@ -211,8 +216,17 @@ def main() -> None:
     parser.add_argument("--scenarios", default=None, help="path to a scenarios manifest")
     parser.add_argument("--out", default="eval/results/latest", help="directory for results")
     parser.add_argument("--filter", default=None, help="only run scenarios whose id contains this")
+    parser.add_argument(
+        "--detector", choices=sorted(DETECTORS), default=None,
+        help="force one alignment detector instead of the weights-based default",
+    )
+    parser.add_argument(
+        "--no-memory", action="store_true",
+        help="seed no baseline, so every capture meets an asset with no history",
+    )
     args = parser.parse_args()
 
+    os.environ.pop("AI_GATEWAY_API_KEY", None)
     store.ensure_table()
     images.ensure_bucket()
     out = Path(args.out)
@@ -227,7 +241,10 @@ def main() -> None:
     records = []
     for index, scenario in enumerate(scenarios, 1):
         try:
-            record = run_scenario(scenario, out / "runs")
+            record = run_scenario(
+                scenario, out / "runs",
+                detector=DETECTORS.get(args.detector), memory=not args.no_memory,
+            )
         except Exception as error:
             record = _failed_record(scenario, error)
         records.append(record)

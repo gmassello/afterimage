@@ -1,7 +1,7 @@
 # End-to-end walkthrough
 
 The suite in `services/` asserts that the markup and the JavaScript exist. It never clicks anything.
-This is the walkthrough that does: sixteen inspection paths plus the public shell, activity,
+This is the walkthrough that does: twenty-one inspection paths plus the public shell, activity,
 failure, and recovery contracts in a real browser, run before a video take and before a deploy.
 
 It is a checklist, not a runner. A browser runner would mean Node in an image that installs Python
@@ -75,7 +75,7 @@ printf 'not an image\n' > .scratchpad/e2e/8-not-an-image.txt
 
 `.scratchpad/` is already in `.gitignore`.
 
-## The sixteen paths
+## The twenty-one paths
 
 Order matters. A fresh `asset_id` always lands on the `first_baseline` branch in
 `services.agent.loop.run`,
@@ -140,6 +140,20 @@ is what `/app` is meant to look like when someone arrives.
 |---|---|---|---|
 | **N** | `first_baseline` + ACTION 1 | `1-blurred.png` | the one branch where a brand-new asset writes nothing at all: the trace closes on `recapture` with the same `blur_variance 3.6589`, the four stages that never ran read `not run · recapture`, and the gallery gains a card with **no thumbnail, no pill and `no inspection summary yet`** — `services.api.app.create_inspection` called `put_asset`, but the loop never called `put_inspection`. `/assets/e2e-ghost` answers 200 with `no history yet` |
 
+### Recognition, evidence, and the checks after a verdict
+
+These ride on the paths above rather than on an asset of their own.
+
+| | Path | Upload | Assertion |
+|---|---|---|---|
+| **Q** | the evidence image, during D | — | the `classify_severity` card shows a figure captioned as drawn with OpenCV 5 `FontFace`: the aligned capture with the region boxed and a label reading `<label> · <score> · Δ<brightness>`, `·` and `Δ` rendered as glyphs rather than `?`; the figure links to `evidence.png` under `/images/` |
+| **R** | reject with a reason, in E | — | type `glare on the glass` in the reason field before `Reject`; the trace's human decision carries `reason` in its `extra`; with `AI_GATEWAY_API_KEY` set a `jev_rejection` tool call follows with branch `rejected_capture_artefact`, and without the key there is no such call |
+| **S** | approve → re-observation, in G | — | after `human_approved 1.0 >= 1.0 -> approved` the trace gains one `baseline_consistent 1.0 >= 1.0 -> baseline_verified` decision, and only one if the verdict is repeated; the trace headline still reads the approval, not the re-observation |
+| **T** | upload without an asset id → `identified` | `7-synth-same.png`, id empty | the trace opens with `identify_asset`; `vote_share` at or above `0.5` → `identified` naming `e2e-synthetic`; the run then continues as M did and ends `no_change` on `e2e-synthetic`; the gallery gains no new asset |
+| **U** | upload without an asset id → not guessed | `6-synth-foreign.png`, id empty | either `identify_asset` ends the run `unidentified` (`votes` below `20` or `vote_share` below `0.5`) with the message asking the operator to choose the asset, or the vote names an asset and alignment refuses it as `unrecognized_asset`, as in L. Either way no asset is created and no inspection is written |
+
+Run T between M and K, while the `e2e-synthetic` baseline is still the plain panel.
+
 Run N last. The card it leaves is the one broken-looking thing in the gallery, and nothing after it
 should have it in frame.
 
@@ -155,6 +169,21 @@ should have it in frame.
 
 Retry is available only for a terminal `failed` run. An active, completed, pending, or unknown target
 must not create a replacement; a failed run already retried must resolve to the existing one.
+
+## Release check
+
+On submission day, against the deployed Function URL rather than the local stack, check content,
+not status codes: a 200 can still be the wrong page.
+
+```bash
+URL=https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws
+curl -s "$URL/health" | grep -Eq '"branch": ?"aligned"' && echo "calibration aligned"
+curl -s "$URL/" | grep -q '<title>afterimage' && echo "landing served"
+```
+
+Both lines must print. A missing first line means the deployed image or its weights cannot align
+the reference pair, and every upload is answering 503 `calibration_failed`. `make smoke` runs the
+same two assertions against a locally built Lambda image.
 
 ## What only the browser can check
 
@@ -242,5 +271,6 @@ For this pass, the browser run and measured findings are recorded in
 | `rescan → no_change` (`services.agent.policy.evaluate`) | needs a change small enough to survive the crop and then vanish; no eval scenario reaches it either, so it is a product gap, not a front-end one |
 | `baseline: historical` (`services.memory.store.promote_baseline`) | needs a capture approved after a newer one already promoted. Three uploads and an interleaved approval for one pill |
 | `WRONG_TOOL`, `WRONG_BRANCH`, `PREMATURE_SUBMIT`, `NUDGE` | unreachable without `GOOGLE_API_KEY`: `scripted.PolicyFollowingLLM` cannot emit them by construction |
+| `phrasing_rejected` | needs `AI_GATEWAY_API_KEY` and a driver that overstates; the scripted driver's messages restate the verdict. `make smoke-jev` measures the guard on labelled sentences instead |
 | `AFTERIMAGE_RUNS_S3=1` | this walkthrough always runs traces and the queue off the local disk |
 | no JavaScript, `prefers-reduced-motion` | neither can be toggled from browser control; the CSS fallbacks are covered by `services/ui/tests/` |

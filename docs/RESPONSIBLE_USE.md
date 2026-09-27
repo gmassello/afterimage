@@ -27,6 +27,13 @@ it, so any run can be replayed from its trace.
 
 On a severe finding the run stops at `awaiting_approval` and **nothing is written to memory** until
 someone resolves it (`services/agent/hitl.py`). Both approval and rejection are recorded in the trace.
+A rejection can carry a short written reason, which is kept with the decision. After an approval the
+system reads memory back and records whether the baseline it now holds is the one it was told to
+write (`baseline_verified` or `baseline_drift`).
+
+The same restraint applies before a run starts. An upload without an asset ID is matched against
+the stored baselines, and when the vote does not clearly favour one asset the run ends as
+`unidentified` and asks the operator to choose. It never guesses an asset into existence.
 
 Two honest qualifications:
 
@@ -35,6 +42,8 @@ Two honest qualifications:
   [`SECURITY.md`](SECURITY.md).
 - The gate fires on a policy threshold, not on model judgement. Raising or lowering
   `severity_score_approve` changes how much a human sees; the model cannot change it either way.
+  The optional Jev checks (see [`AI_DISCLOSURE.md`](AI_DISCLOSURE.md)) only label a message or a
+  rejection reason; they cannot open or close the gate.
 
 ## Bounded by construction, not by trust
 

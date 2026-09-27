@@ -15,9 +15,21 @@ CHANGE_CONFIRMED = "change_confirmed"
 HUMAN_APPROVAL = "human_approval"
 AUTO_WRITE = "auto_write"
 FIRST_BASELINE = "first_baseline"
+IDENTIFIED = "identified"
+UNIDENTIFIED = "unidentified"
+BASELINE_VERIFIED = "baseline_verified"
+BASELINE_DRIFT = "baseline_drift"
+PHRASING_OK = "phrasing_ok"
+PHRASING_REJECTED = "phrasing_rejected"
+REJECTED_CAPTURE = "rejected_capture_artefact"
+REJECTED_FINDING = "rejected_asset_finding"
 
 SEVERITY_METRIC = "score"
 HUMAN_GATE_METRIC = "human_approved"
+REOBSERVE_METRIC = "baseline_consistent"
+PHRASING_METRIC = "overstates"
+REJECTION_METRIC = "capture_artefact"
+AUDIT_METRICS = (REOBSERVE_METRIC, PHRASING_METRIC, REJECTION_METRIC)
 
 
 @dataclass(frozen=True)
@@ -36,6 +48,10 @@ class Policy:
     rescan_area_ratio_min: float = 0.02
     severity_full_scale_delta: float = 64.0
     severity_score_approve: float = 0.40
+    identity_match_ratio: float = 0.80
+    identity_votes_min: float = 20.0
+    identity_vote_share_min: float = 0.50
+    jev_floor: float = 0.80
 
     @classmethod
     def from_env(cls) -> "Policy":
@@ -121,12 +137,44 @@ def _evaluate_severity(m: dict, p: Policy) -> dict:
     return decision("score", m["score"], p.severity_score_approve, branch)
 
 
+def _evaluate_identity(m: dict, p: Policy) -> dict:
+    if m["votes"] < p.identity_votes_min:
+        return decision("votes", m["votes"], p.identity_votes_min, UNIDENTIFIED)
+    if m["vote_share"] < p.identity_vote_share_min:
+        return decision("vote_share", m["vote_share"], p.identity_vote_share_min, UNIDENTIFIED)
+    return decision(
+        "vote_share", m["vote_share"], p.identity_vote_share_min, IDENTIFIED,
+        asset_id=m["asset_id"],
+    )
+
+
+def _evaluate_reobserve(m: dict, p: Policy) -> dict:
+    branch = BASELINE_VERIFIED if m[REOBSERVE_METRIC] >= 1.0 else BASELINE_DRIFT
+    return decision(REOBSERVE_METRIC, m[REOBSERVE_METRIC], 1.0, branch, **m.get("extra", {}))
+
+
+def _evaluate_phrasing(m: dict, p: Policy) -> dict:
+    value = m[PHRASING_METRIC]
+    branch = PHRASING_REJECTED if value >= p.jev_floor else PHRASING_OK
+    return decision(PHRASING_METRIC, value, p.jev_floor, branch)
+
+
+def _evaluate_rejection(m: dict, p: Policy) -> dict:
+    value = m[REJECTION_METRIC]
+    branch = REJECTED_CAPTURE if value >= p.jev_floor else REJECTED_FINDING
+    return decision(REJECTION_METRIC, value, p.jev_floor, branch)
+
+
 _STAGES = {
     "quality": _evaluate_quality,
     "alignment": _evaluate_alignment,
     "diff": _evaluate_diff,
     "rescan": _evaluate_rescan,
     "severity": _evaluate_severity,
+    "identity": _evaluate_identity,
+    "reobserve": _evaluate_reobserve,
+    "phrasing": _evaluate_phrasing,
+    "rejection": _evaluate_rejection,
 }
 
 

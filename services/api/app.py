@@ -9,7 +9,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from services.agent import hitl, loop
+from services.agent import calibration, hitl, loop
 from services.memory import images, runs, store
 from services.observability import trace
 from services.observability.render import load_run
@@ -39,6 +39,7 @@ CHOICES = ((LANG_COOKIE, "lang", LANGS), (REGISTER_COOKIE, "register", REGISTERS
 # ponytail: the Function URL rejects bodies over 6 MB anyway; this guard is for local uvicorn
 MAX_UPLOAD_BYTES = 6 * 1024 * 1024
 PENDING_WINDOW_SECONDS = 15
+MAX_REASON_CHARS = 500
 
 logger = logging.getLogger(__name__)
 app = FastAPI(title="afterimage")
@@ -92,7 +93,11 @@ async def internal_error(request: Request, error: Exception):
 
 @app.get("/health")
 def health():
-    return {"ok": True}
+    healthy = calibration.healthy()
+    return JSONResponse(
+        {"ok": healthy, "calibration": calibration.calibration()},
+        status_code=200 if healthy else 503,
+    )
 
 
 def wants_html(request: Request) -> bool:
@@ -175,7 +180,7 @@ def asset_history(asset_id: str, lang: str = Depends(language),
 
 
 async def _accept_capture(asset_id: str, image: UploadFile | None, t: dict):
-    if not ASSET_ID_PATTERN.fullmatch(asset_id):
+    if asset_id and not ASSET_ID_PATTERN.fullmatch(asset_id):
         raise ApiError(400, t["err_asset_id"], "invalid_asset_id")
     if image is None:
         raise ApiError(400, t["err_image_required"], "image_required")
@@ -211,8 +216,13 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
             ),
             status_code=rejected.status_code,
         )
-    store.put_asset(asset_id)
-    capture_key = images.put_image(asset_id, uuid.uuid4().hex[:12], "capture", capture)
+    if not calibration.healthy():
+        raise ApiError(503, strings(lang, reading)["err_calibration"], "calibration_failed")
+    if asset_id:
+        store.put_asset(asset_id)
+    capture_key = images.put_image(
+        asset_id or loop.UNASSIGNED, uuid.uuid4().hex[:12], "capture", capture
+    )
     started = loop.start(asset_id, capture_key, runs_dir=runs.runs_dir())
     return RedirectResponse(f"/traces/{started['run_id']}", status_code=303)
 
@@ -327,7 +337,7 @@ def _actor(request: Request) -> str:
 
 
 @app.post("/queue/{run_id}/{verdict}")
-def resolve_pending(request: Request, run_id: str, verdict: str):
+def resolve_pending(request: Request, run_id: str, verdict: str, reason: str = Form("")):
     if verdict not in ("approve", "reject") or not RUN_ID_PATTERN.fullmatch(run_id):
         raise ApiError(404, "not found", "approval_not_found")
     try:
@@ -335,6 +345,7 @@ def resolve_pending(request: Request, run_id: str, verdict: str):
             runs.runs_dir() / run_id,
             approved=verdict == "approve",
             actor=_actor(request),
+            reason=reason.strip()[:MAX_REASON_CHARS] or None,
         )
     except FileNotFoundError:
         raise ApiError(404, "nothing pending for this run", "approval_not_found")

@@ -15,6 +15,7 @@ click==8.5.0
 coverage==7.16.1
 cryptography==50.0.1
 distro==1.9.0
+execnet==2.1.2
 fastapi==0.141.1
 google-auth==2.58.0
 google-genai==2.20.0
@@ -50,6 +51,7 @@ Pygments==2.21.0
 PyJWT==2.14.0
 pytest==9.1.1
 pytest-cov==7.1.0
+pytest-xdist==3.8.0
 python-dateutil==2.9.0.post0
 python-multipart==0.0.32
 referencing==0.37.0

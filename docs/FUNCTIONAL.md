@@ -18,12 +18,13 @@ a safety certification, autonomous maintenance system, or field-validated diagno
 
 | Concept | Meaning |
 |---|---|
-| Asset | The physical object identified by a stable, operator-supplied ID. |
+| Asset | The physical object identified by a stable, operator-supplied ID. The ID may be left empty on upload for the agent to recognise an existing asset. |
 | Capture | The uploaded PNG or JPEG being inspected. |
 | Inspection | The persisted result, metrics, label, branch, and capture for one accepted run. |
 | Run | One execution of the inspection loop, including its trace and terminal state. |
 | Baseline | The accepted reference image against which the next capture is aligned and compared. |
 | Pending approval | A severe finding that cannot update memory until a human approves it. |
+| Evidence | The aligned capture with the classified region boxed and labelled, shown on the severity step of the trace. |
 | Retry | A new run opened from a failed run, reusing its asset and capture without changing the original trace. |
 
 Baselines are superseded rather than overwritten. The asset history therefore records which image
@@ -32,13 +33,16 @@ was the reference at each point in time.
 ## Operator journey
 
 1. Open the public landing page at `/` to understand the product, evidence, and limits.
-2. Enter the inspection workspace at `/app` and provide an asset ID.
+2. Enter the inspection workspace at `/app` and provide an asset ID, or leave it empty to let the
+   agent recognise which stored asset the photo shows.
 3. Upload a capture or choose one of the included sample images. The samples write to a demo asset
    of your own, so each visitor walks the four branches over their own memory.
 4. Confirm the image and start the inspection.
 5. Follow the live trace while the loop assesses quality, alignment, change, and severity.
 6. Act on the terminal result. Severe findings appear in the approval queue; accepted findings
-   appear in the asset history.
+   appear in the asset history. When rejecting, optionally say why (for example, glare on the
+   glass); the reason is kept with the decision. After an approval the trace records whether memory
+   now holds the baseline that was written.
 7. Use `/activity` to find recent runs by asset, run ID, branch, status, or message. A failed run can
    be retried from its trace without changing or replaying the original record.
 
@@ -51,6 +55,7 @@ through `POST /runs/{run_id}/execute`.
 | Outcome | What it means | Effect on memory |
 |---|---|---|
 | `first_baseline` | The asset had no baseline and the first capture passed quality checks. | Stores the inspection and promotes the capture. |
+| `unidentified` | No asset ID was given and no stored asset matched the capture clearly enough. | Stores nothing and creates no asset; choose the asset and upload again. |
 | `recapture` | The image is too blurred, dark, bright, clipped, or otherwise unsuitable. | Stores no inspection and leaves the baseline unchanged. |
 | `unrecognized_asset` | The capture cannot be aligned reliably with the stored baseline. | Stores no inspection and leaves the baseline unchanged. |
 | `no_change` | The aligned capture contains no material change. | Stores the inspection without promoting a new baseline. |
@@ -88,6 +93,9 @@ plain language are the defaults.
 - A trace provides causal evidence for the run and a hash chain that detects ordinary editing,
   reordering, or removal in the middle of the event stream. It is not a signed audit log.
 - The public deployment has no login and is intended as a bounded demonstration.
+- Inspections are refused while the service's own calibration check fails.
+- Recognition can only choose among assets that already have a baseline; two identical-looking
+  assets end `unidentified` rather than guessed.
 - Published effectiveness applies only to the committed evaluation dataset and must not be
   presented as field accuracy.
 

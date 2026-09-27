@@ -27,6 +27,7 @@ jobs:
         run: ./deploy.sh
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
 
       - name: Why the stack failed
         if: failure()

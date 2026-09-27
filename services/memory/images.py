@@ -1,4 +1,6 @@
+import io
 import os
+from collections import OrderedDict
 from functools import lru_cache
 
 import boto3
@@ -9,8 +11,18 @@ from botocore.exceptions import ClientError
 BUCKET = os.environ.get("AFTERIMAGE_BUCKET", "afterimage")
 MAX_IMAGE_PIXELS = 16_000_000
 
-# ponytail: unbounded per-process cache; fine for per-run server processes, add eviction for a long-lived API
-_cache: dict[str, np.ndarray] = {}
+# ponytail: the tools run inside the long-lived API process, so the cache keeps the most recent
+# CACHE_MAX_IMAGES arrays and evicts the oldest; size it by bytes if captures grow past a few MP
+CACHE_MAX_IMAGES = 32
+_cache: OrderedDict[str, np.ndarray] = OrderedDict()
+
+
+def _remember(key: str, image: np.ndarray) -> np.ndarray:
+    _cache[key] = image
+    _cache.move_to_end(key)
+    while len(_cache) > CACHE_MAX_IMAGES:
+        _cache.popitem(last=False)
+    return image
 
 
 class ImageTooLarge(ValueError):
@@ -42,7 +54,7 @@ def _png(image: np.ndarray, what: str) -> bytes:
 def put_image(asset_id: str, inspection_id: str, name: str, image: np.ndarray) -> str:
     key = f"assets/{asset_id}/{inspection_id}/{name}.png"
     _s3().put_object(Bucket=BUCKET, Key=key, Body=_png(image, name))
-    _cache[key] = image
+    _remember(key, image)
     return key
 
 
@@ -129,6 +141,25 @@ def exists(key: str) -> bool:
 
 def get_image(key: str) -> np.ndarray:
     if key in _cache:
+        _cache.move_to_end(key)
         return _cache[key]
-    image = _cache[key] = decode(get_png(key))
-    return image
+    return _remember(key, decode(get_png(key)))
+
+
+def sibling_key(key: str, name: str) -> str:
+    asset_id, inspection_id = ids_from_key(key)
+    return f"assets/{asset_id}/{inspection_id}/{name}"
+
+
+def put_array(key: str, array: np.ndarray) -> None:
+    buffer = io.BytesIO()
+    np.save(buffer, array, allow_pickle=False)
+    _s3().put_object(Bucket=BUCKET, Key=key, Body=buffer.getvalue())
+
+
+def get_array(key: str) -> np.ndarray | None:
+    try:
+        body = _s3().get_object(Bucket=BUCKET, Key=key)["Body"].read()
+    except _s3().exceptions.NoSuchKey:
+        return None
+    return np.load(io.BytesIO(body), allow_pickle=False)

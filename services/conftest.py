@@ -11,6 +11,11 @@ localstack = pytest.mark.skipif(
 )
 
 
+@pytest.fixture(autouse=True)
+def no_second_opinion(monkeypatch):
+    monkeypatch.delenv("AI_GATEWAY_API_KEY", raising=False)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def memory_backends():
     if "AWS_ENDPOINT_URL" not in os.environ:

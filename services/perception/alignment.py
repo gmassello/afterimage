@@ -1,3 +1,4 @@
+import threading
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -18,6 +19,18 @@ RANSAC_REPROJECTION_THRESHOLD = 3.0
 VALID_MASK_EROSION_KERNEL = np.ones((9, 9), np.uint8)
 
 
+def usac_params() -> cv2.UsacParams:
+    params = cv2.UsacParams()
+    params.sampler = cv2.SAMPLING_UNIFORM
+    params.score = cv2.SCORE_METHOD_MAGSAC
+    params.loMethod = cv2.LOCAL_OPTIM_SIGMA
+    params.final_polisher = cv2.MAGSAC
+    params.threshold = RANSAC_REPROJECTION_THRESHOLD
+    params.confidence = 0.995
+    params.maxIterations = 2000
+    return params
+
+
 @dataclass(frozen=True)
 class AlignmentResult:
     homography: np.ndarray | None
@@ -32,6 +45,9 @@ class AlignmentResult:
     mean_reprojection_error: float | None
 
 
+NEURAL_LOCK = threading.Lock()
+
+
 @lru_cache(maxsize=1)
 def _aliked():
     return cv2.ALIKED.create(str(aliked_path()))
@@ -43,20 +59,22 @@ def _lightglue():
 
 
 def _match_neural(query: np.ndarray, train: np.ndarray):
-    detector = _aliked()
-    query_keypoints, query_descriptors = detector.detectAndCompute(query, None)
-    train_keypoints, train_descriptors = detector.detectAndCompute(train, None)
-    if query_descriptors is None or train_descriptors is None:
-        return query_keypoints, train_keypoints, []
+    with NEURAL_LOCK:
+        detector = _aliked()
+        query_keypoints, query_descriptors = detector.detectAndCompute(query, None)
+        train_keypoints, train_descriptors = detector.detectAndCompute(train, None)
+        if query_descriptors is None or train_descriptors is None:
+            return query_keypoints, train_keypoints, []
 
-    matcher = _lightglue()
-    matcher.setPairInfo(
-        cv2.KeyPoint.convert(query_keypoints),
-        cv2.KeyPoint.convert(train_keypoints),
-        (query.shape[1], query.shape[0]),
-        (train.shape[1], train.shape[0]),
-    )
-    return query_keypoints, train_keypoints, matcher.match(query_descriptors, train_descriptors)
+        matcher = _lightglue()
+        matcher.setPairInfo(
+            cv2.KeyPoint.convert(query_keypoints),
+            cv2.KeyPoint.convert(train_keypoints),
+            (query.shape[1], query.shape[0]),
+            (train.shape[1], train.shape[0]),
+        )
+        matches = matcher.match(query_descriptors, train_descriptors)
+    return query_keypoints, train_keypoints, matches
 
 
 def _match_classic(query: np.ndarray, train: np.ndarray):
@@ -88,9 +106,7 @@ def align_to_baseline(
         destination = np.asarray(
             cv2.KeyPoint.convert(baseline_keypoints, [m.trainIdx for m in matches])
         ).reshape(-1, 1, 2)
-        homography, mask = cv2.findHomography(
-            source, destination, cv2.USAC_MAGSAC, RANSAC_REPROJECTION_THRESHOLD
-        )
+        homography, mask = cv2.findHomography(source, destination, usac_params())
 
     if homography is None or mask is None or source is None or destination is None:
         return AlignmentResult(

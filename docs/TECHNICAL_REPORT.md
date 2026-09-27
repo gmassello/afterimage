@@ -145,7 +145,7 @@ flowchart TB
             LWA["Lambda Web Adapter 0.9.1"]
             API["FastAPI — services.api.app"]
             LOOP["Agent loop — services.agent.loop<br/>policy evaluated in code"]
-            MCPS["MCP server — five perception tools"]
+            MCPS["MCP server — six perception tools"]
             CV["OpenCV 5.0.0 headless<br/>ALIKED + LightGlue ONNX in /opt/models"]
             LWA --> API --> LOOP --> MCPS --> CV
         end
@@ -178,15 +178,15 @@ function call, and the whole system is one deployable artefact.
 | `GET /` | public product landing, evidence and limits |
 | `GET /app` | assets, upload form and bundled sample captures |
 | `GET /activity` | search and status filtering over the latest 50 runs |
-| `POST /inspections` | upload a capture, open its trace, redirect to it |
+| `POST /inspections` | upload a capture, open its trace, redirect to it; an empty `asset_id` asks the agent to recognise the asset; 503 `calibration_failed` while calibration is out of tolerance |
 | `POST /runs/{run_id}/execute` | run the agent loop for an opened trace |
 | `POST /runs/{run_id}/retry` | idempotently open a replacement for a terminal failed run |
 | `GET /assets/{asset_id}` | the longitudinal history of one asset |
-| `GET /queue` · `POST /queue/{run_id}/{approve\|reject}` | the human gate |
+| `GET /queue` · `POST /queue/{run_id}/{approve\|reject}` | the human gate; a rejection may carry a `reason` of up to 500 characters |
 | `GET /traces/{run_id}` | the per-run trace, JSON or a readable page |
 | `GET /static/{name}` | the stylesheet and the script, content-hashed and cached for a year |
 | `GET /images/{key}` | stored captures, aligned images and masks |
-| `GET /health` | liveness, and the target of the warmer |
+| `GET /health` | `{"ok", "calibration"}`: the calibration decision, 503 when it is not `aligned`; also the target of the warmer |
 
 Expected failures use one contract across both audiences. A browser request receives a themed HTML
 page with the status, stable error code and an available recovery action; a non-HTML client receives
@@ -196,21 +196,38 @@ if the request is repeated.
 
 ## 5. The OpenCV 5 implementation
 
-Five tools, each returning **numeric metrics and no verdict at all**. This separation is the
+Six tools, each returning **numeric metrics and no verdict at all**. This separation is the
 foundation of everything in section 6: thresholds live in the policy, so an OpenCV value visibly
 changing a decision is a fact you can point at rather than something inferred from a prompt.
 
 | Tool | OpenCV 5 primitives | Metrics returned |
 |---|---|---|
+| `identify_asset` | `cv2.ALIKED.create` (or `cv2.ORB.create(4000)`) descriptors of every current baseline, cached in S3 as `descriptors-<detector>.npy` beside the baseline image; `cv2.ANNIndex.create` (Euclidean for ALIKED, Hamming for ORB), `build`, `knnSearch` | `asset_id`, `votes`, `vote_share`, `runner_up`, `runner_up_votes`, `query_keypoints`, `candidates` |
 | `assess_quality` | `cv2.Laplacian(..., CV_64F).var()`, `cv2.Canny` + `cv2.findContours` + `cv2.boundingRect` | `blur_variance`, `mean_brightness`, `clipped_dark_ratio`, `clipped_bright_ratio`, `coverage_ratio` |
-| `align_to_baseline` | `cv2.ALIKED.create` + `cv2.LightGlueMatcher.create` (neural) or `cv2.ORB.create(4000)` + `cv2.BFMatcher(NORM_HAMMING)` (fallback); `cv2.findHomography(..., cv2.USAC_MAGSAC, 3.0)`; `cv2.warpPerspective`; `cv2.erode` | `keypoints_query`, `keypoints_train`, `matches`, `inliers`, `inlier_ratio`, `mean_reprojection_error` |
+| `align_to_baseline` | `cv2.ALIKED.create` + `cv2.LightGlueMatcher.create` (neural) or `cv2.ORB.create(4000)` + `cv2.BFMatcher(NORM_HAMMING)` (fallback); `cv2.findHomography(src, dst, cv2.UsacParams)` configured as MAGSAC with a 3.0 px threshold; `cv2.warpPerspective`; `cv2.erode` | `keypoints_query`, `keypoints_train`, `matches`, `inliers`, `inlier_ratio`, `mean_reprojection_error` |
 | `diff_against_memory` | `cv2.createCLAHE`, `cv2.absdiff`, `cv2.GaussianBlur`, `cv2.threshold`, `cv2.connectedComponentsWithStats` | `changed_ratio`, and per region `area_px`, `area_ratio`, `mean_delta`, `bbox` |
 | `crop_and_rescan` | the same diff pipeline plus `cv2.resize(..., INTER_CUBIC)` | full-frame `area_px` and `area_ratio`, plus crop-relative `zoom_area_ratio` |
 | `classify_severity` | `cv2.cvtColor(..., COLOR_BGR2HSV)`, `cv2.absdiff` | `score` and the features `brightness_delta`, `saturation_delta`, `hue_shift`, `spatial_uniformity`, `mean_delta`, `area_ratio` |
+| `classify_severity` evidence | `cv2.rectangle`, `cv2.FontFace("sans")`, `cv2.getTextSize` and the UTF-8 `cv2.putText` overload that takes a `FontFace` | `evidence_key`: the aligned capture with the region boxed and labelled `label · score · Δbrightness`, stored as `evidence.png` |
 
 The `Features` module is used substantively, not decoratively: ALIKED keypoints matched by LightGlue
 are what anchor a capture to the baseline of the same asset, and without that anchoring the diff in
 the next step is meaningless.
+
+Where each OpenCV 5 API sits:
+
+| OpenCV 5 API | Module | File | What it does here |
+|---|---|---|---|
+| `cv2.ALIKED.create` | `Features` | `services/perception/alignment.py` | learned keypoints and descriptors on the capture and on the baseline; the same descriptors feed recognition |
+| `cv2.LightGlueMatcher.create` + `setPairInfo` | `Features` | `services/perception/alignment.py` | matches ALIKED keypoints with attention over the image pair |
+| `cv2.ANNIndex.create` + `knnSearch` | `Features` (Annoy-based) | `services/perception/recognition.py` | approximate nearest neighbours over the descriptors of every current baseline; each capture keypoint votes for the asset its nearest neighbour belongs to |
+| `cv2.FontFace` + UTF-8 `cv2.putText` | `imgproc` | `services/perception/evidence.py` | draws `label · score · Δbrightness` on the evidence image, including the non-ASCII `·` and `Δ` |
+| `cv2.UsacParams` + `cv2.findHomography` | the `calib3d` family | `services/perception/alignment.py` | uniform sampler, MAGSAC score, sigma local optimisation and MAGSAC polisher, threshold 3.0, confidence 0.995, 2000 iterations — the same estimator the old `USAC_MAGSAC` flag selected, spelled out |
+
+ALIKED, `LightGlueMatcher`, `ANNIndex` and the `FontFace` overload of `putText` have no OpenCV 4
+equivalent: 4.x has no learned detector or matcher in `Features2D`, no built-in ANN index outside
+FLANN, and a `putText` limited to the Hershey fonts and ASCII. `UsacParams` already exists in 4.x;
+it is here because it makes the estimator's settings explicit, not because it is new.
 
 ### Three things measured against the binary, not the documentation
 
@@ -239,7 +256,12 @@ Graviton from the first commit. Nothing here needs CUDA.
 
 ```mermaid
 flowchart TD
-    UP["POST /inspections<br/>capture written to S3"] --> HAS{"is there a baseline<br/>for this asset?"}
+    UP["POST /inspections<br/>capture written to S3"] --> ID0{"asset id given?"}
+    ID0 -->|"yes"| HAS{"is there a baseline<br/>for this asset?"}
+    ID0 -->|"no"| ID["identify_asset<br/>ANNIndex vote over every baseline"]
+    ID --> IDD{"votes below 20 or<br/>vote_share below 0.5"}
+    IDD -->|"yes"| UI(["UNIDENTIFIED<br/>the operator picks the asset"])
+    IDD -->|"no, identified"| HAS
 
     HAS -->|"no"| Q0["assess_quality"]
     Q0 --> Q0D{"quality gates"}
@@ -272,6 +294,9 @@ flowchart TD
 
     HA --> QUEUE["GET /queue"] --> RESOLVE["POST /queue/RUN_ID/approve"]
     RESOLVE --> COMMIT["hitl.resolve<br/>put_inspection + promote_baseline"]
+    COMMIT --> RO{"re-read memory:<br/>is the stored baseline the one written?"}
+    RO -->|"yes"| BV(["BASELINE_VERIFIED"])
+    RO -->|"no"| BD(["BASELINE_DRIFT"])
     COMMIT -.->|"is the baseline the next inspection is measured against"| UP
     AW -.-> UP
     FB -.-> UP
@@ -289,6 +314,24 @@ Four branches change what the system *does*, not just what it reports:
    where the agent chooses to gather more evidence rather than guess.
 4. **Stop and ask a human** when severity crosses the approval threshold. Nothing is written to
    memory until a person answers.
+
+Two branches bracket those four. Before the loop, when the upload names no asset, `identify_asset`
+votes the capture's descriptors against every current baseline and the `identity` stage either
+names the asset — the capture is copied under that asset's prefix and the loop carries on, with
+alignment as the geometric check on the guess — or ends the run as `unidentified` and asks the
+operator. It never creates an asset. After an approval, `hitl.reobserve` reads memory back and the
+`reobserve` stage records `baseline_verified` or `baseline_drift`, once, next to the human decision.
+
+Two more checks are optional and only run when `AI_GATEWAY_API_KEY` is set. They ask Jev
+(`typesafe-ai/jev` through Vercel AI Gateway), a model that answers typed questions with a
+probability. Before a `submit` is accepted, the `phrasing` stage asks whether the operator message
+overstates the last verdict; at or above `jev_floor` it is `phrasing_rejected` and the submit goes back
+to the model to rephrase. After a rejection with a written reason, the `rejection` stage records
+whether the reviewer blamed the capture (`rejected_capture_artefact`) or the finding
+(`rejected_asset_finding`). Both are recorded as `tool_call` events (`jev_guard`, `jev_rejection`);
+neither can move an inspection branch, and a timeout or error is recorded and the run carries on.
+The metrics these three stages record — `baseline_consistent`, `overstates`, `capture_artefact` — are
+`policy.AUDIT_METRICS`: checks that follow a verdict, which the trace headline skips.
 
 ### Why the LLM cannot cheat
 
@@ -325,6 +368,10 @@ The full policy, with every default:
 | `rescan_area_ratio_min` | 0.02 | `zoom_area_ratio` after the zoom | rescan |
 | `severity_full_scale_delta` | 64.0 | divisor that turns `mean_delta` into `score` | severity |
 | `severity_score_approve` | 0.40 | `score` | severity |
+| `identity_match_ratio` | 0.80 | nearest-asset distance against the nearest keypoint of a different asset, per capture keypoint | identity |
+| `identity_votes_min` | 20 | `votes` for the winning asset | identity |
+| `identity_vote_share_min` | 0.50 | `vote_share` of the winning asset | identity |
+| `jev_floor` | 0.80 | `overstates`, `capture_artefact` (Jev probabilities) | phrasing, rejection |
 
 Each is overridable per deployment through `AFTERIMAGE_<FIELD>` environment variables. They are
 values in one frozen dataclass (`services/agent/policy.py`), not constants scattered through the
@@ -415,7 +462,10 @@ Lambda's own "MB" is mebibytes, which is why a peak of 1,891 against 2,048 is 92
 97% a decimal reading would give. And the share of invocations that paid an init, 4.3%, is flattered
 by the warmer's own synthetic calls being in the denominator; the honest version of that claim is
 that no request which paid an init was ever an inspection — the longest was 295 ms. The 22.8 s is
-the figure no warmer can move, being ALIKED, LightGlue and the diff running on a CPU.
+the figure no warmer can move, being ALIKED, LightGlue and the diff running on a CPU. It was
+measured when each inspection still spawned the MCP server as a stdio subprocess, which paid the
+`mcp` import and a fresh ONNX load every time; the loop now talks to the server in process, so this
+figure is an upper bound until it is measured again after the next deploy.
 
 The per-inspection cost is 22.79 billed seconds × 2 GB × $0.0000133334 per GB-second (arm64,
 us-east-1), plus $0.0000002 for the request; that rate is read from the Price List API rather than
@@ -469,6 +519,12 @@ network and no tokens.
 
 `eval/tests/test_published_numbers.py` parses this page and `docs/EVALUATION.md` and fails the suite
 if either disagrees with `eval/results/latest/results.json`. A number here cannot go stale silently.
+
+The same scenarios are also scored with each of the two components the thesis rests on removed —
+ORB in place of ALIKED + LightGlue, and no memory at all — in the
+[ablation](EVALUATION.md#ablation-memory-and-learned-features). Without memory no defect is found,
+by construction; with ORB two real photographs fail and the median `inlier_ratio` of aligned
+captures drops from 0.9987 to 0.8610. CI re-scores the ORB column on every push.
 
 ### Two open questions the evaluation closed
 
@@ -545,6 +601,15 @@ Written as they were measured, not assembled at the end.
 - 29 scenarios is a small sample — one scenario moves accuracy by 3.4 points.
 - Tests and the default demo drive the loop with a scripted policy-following model; `--live` runs the
   same loop against Gemini. Branch verdicts are computed in code either way.
+- Asset recognition is retrieval plus geometric verification, and no dedicated evaluation set
+  measures it. Two assets that look identical split the vote and end `unidentified`; the operator
+  picks the asset.
+- Baseline descriptors are cached per baseline in S3, but the `ANNIndex` over them is rebuilt on
+  every identification, so its cost grows with the number of assets.
+- Jev is optional and non-deterministic, and `jev_floor` is a starting point: its recall and
+  precision at the floor must be measured with `make smoke-jev` before relying on the guard.
+- The calibration gate aligns a synthetic reference pair. It catches a broken runtime or missing
+  weights, not detector drift on real photographs.
 - The two ONNX files come from a single third-party repository, pinned to a commit and sha1-verified.
   Integrity is covered; availability is not. Nothing mirrors those bytes — OpenCV's own DNN test data
   points at the same URL — so if that repository disappears, `make weights` and every target that
@@ -559,6 +624,7 @@ make test      # the suite, inside the container, with a 90% coverage floor
 make verify-runtime  # OpenCV 5 on aarch64, with ALIKED and LightGlueMatcher in the binary
 make lint      # ruff
 make typecheck # mypy
+make smoke     # build the Lambda image, require /health aligned and the landing title
 make demo      # drive all four action branches locally
 make eval      # regenerate every number in section 8
 ```

@@ -25,6 +25,8 @@ jobs:
         run: make build
       - name: The runtime is OpenCV 5 on arm64
         run: make verify-runtime
+      - name: The Lambda image serves and passes its calibration
+        run: ./smoke.sh
       - name: Lint
         run: make lint
       - name: Type check
@@ -45,3 +47,7 @@ jobs:
         run: make eval ARGS="--out eval/results/ci"
       - name: The published numbers match a fresh run
         run: python3 eval/compare_results.py eval/results/latest eval/results/ci
+      - name: Score the dataset again with ORB alone
+        run: make eval ARGS="--detector classic --out eval/results/ci-orb"
+      - name: The published ORB ablation matches a fresh run
+        run: python3 eval/compare_results.py eval/results/orb-only eval/results/ci-orb

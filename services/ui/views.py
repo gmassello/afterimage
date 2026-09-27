@@ -99,6 +99,14 @@ _TONE = {
     policy_module.CROP_AND_RESCAN: "warn",
     policy_module.HUMAN_APPROVAL: "warn",
     policy_module.UNRECOGNIZED_ASSET: "bad",
+    policy_module.IDENTIFIED: "ok",
+    policy_module.BASELINE_VERIFIED: "ok",
+    policy_module.PHRASING_OK: "ok",
+    policy_module.REJECTED_CAPTURE: "warn",
+    policy_module.REJECTED_FINDING: "warn",
+    policy_module.UNIDENTIFIED: "bad",
+    policy_module.BASELINE_DRIFT: "bad",
+    policy_module.PHRASING_REJECTED: "bad",
 }
 
 
@@ -537,6 +545,7 @@ def _pills(summary: dict, calls: list[dict], t: dict) -> list[dict]:
 
 
 def _decider(decisions: list[dict], t: dict) -> dict | None:
+    decisions = [d for d in decisions if d["input_metric"] not in policy_module.AUDIT_METRICS]
     if not decisions:
         return None
     final = decisions[-1]
@@ -694,7 +703,12 @@ def _card(event: dict, t: dict) -> dict:
         "error": event.get("error"),
         "verdict": policy["branch"] if policy else None,
         "verdict_tip": _tip(t, policy["branch"]) if policy else None,
+        "evidence": _evidence(event.get("metrics", {}).get("evidence_key")),
     }
+
+
+def _evidence(key: str | None) -> str | None:
+    return f"/images/{key}" if key else None
 
 
 def _terminal(events: list[dict]) -> list[dict]:

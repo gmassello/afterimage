@@ -3,11 +3,16 @@ services:
     image: localstack/localstack:4.9.2
     ports:
       - "4566:4566"
+    environment:
+      - SERVICES=s3,dynamodb
+      - EAGER_SERVICE_LOADING=1
+    volumes:
+      - localstack-packages:/var/lib/localstack
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:4566/_localstack/health | grep -q '\"dynamodb\": \"running\"'"]
       interval: 2s
       timeout: 5s
-      retries: 25
+      retries: 150
       start_period: 5s
 
   app:
@@ -33,4 +38,8 @@ services:
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DEFAULT_REGION=us-east-1
       - GOOGLE_API_KEY
+      - AI_GATEWAY_API_KEY
       - AFTERIMAGE_GEMINI_MODEL
+
+volumes:
+  localstack-packages:

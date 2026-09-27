@@ -1,8 +1,9 @@
+import numpy as np
 from mcp.server.mcpserver import MCPServer
 
 from services.agent.policy import Policy
-from services.memory import images
-from services.perception import alignment, diffing, quality, severity
+from services.memory import images, store
+from services.perception import alignment, diffing, evidence, quality, recognition, severity
 
 server = MCPServer("afterimage")
 
@@ -34,6 +35,48 @@ def _diff_payload(result: diffing.DiffResult) -> dict:
             }
             for region in result.regions
         ],
+    }
+
+
+def _baseline_descriptors(image_key: str, detector: str) -> np.ndarray | None:
+    key = images.sibling_key(image_key, f"descriptors-{detector.replace('+', '-')}.npy")
+    stored = images.get_array(key)
+    if stored is not None:
+        return stored
+    described = recognition.describe(images.get_image(image_key), detector)
+    if described is not None:
+        images.put_array(key, described)
+    return described
+
+
+# ponytail: descriptors are cached per baseline in S3, so identification costs one detector pass
+# plus one small read per asset, and the ANNIndex is rebuilt on every call; persist the index
+# itself (ANNIndex.save/load) once the fleet outgrows a few hundred assets
+@server.tool()
+def identify_asset(image_key: str, detector: str, candidates: list[str] | None = None) -> dict:
+    wanted = set(candidates) if candidates is not None else None
+    described = {}
+    for asset in store.list_assets():
+        asset_id = asset["asset_id"]
+        if wanted is not None and asset_id not in wanted:
+            continue
+        baseline = store.current_baseline(asset_id)
+        if baseline is not None and images.exists(baseline["image_key"]):
+            described[asset_id] = _baseline_descriptors(baseline["image_key"], detector)
+    result = recognition.identify(
+        recognition.describe(images.get_image(image_key), detector),
+        described,
+        Policy.from_env().identity_match_ratio,
+    )
+    return {
+        "detector": detector,
+        "asset_id": result.asset_id,
+        "votes": result.votes,
+        "vote_share": round(float(result.vote_share), 4),
+        "runner_up": result.runner_up,
+        "runner_up_votes": result.runner_up_votes,
+        "query_keypoints": result.query_keypoints,
+        "candidates": result.candidates,
     }
 
 
@@ -105,9 +148,9 @@ def crop_and_rescan(aligned_key: str, baseline_key: str, bbox: list[float]) -> d
 @server.tool()
 def classify_severity(aligned_key: str, baseline_key: str, bbox: list[float], area_ratio: float) -> dict:
     box = _bbox(bbox)
-    aligned, baseline = (
-        diffing.crop_region(images.get_image(key), box) for key in (aligned_key, baseline_key)
-    )
+    full = images.get_image(aligned_key)
+    aligned = diffing.crop_region(full, box)
+    baseline = diffing.crop_region(images.get_image(baseline_key), box)
     if aligned.size == 0 or baseline.size == 0:
         raise ValueError(f"bbox is outside image bounds: {bbox!r}")
     result = severity.classify_severity(
@@ -116,10 +159,15 @@ def classify_severity(aligned_key: str, baseline_key: str, bbox: list[float], ar
         float(area_ratio),
         full_scale_delta=Policy.from_env().severity_full_scale_delta,
     )
+    asset_id, inspection_id = images.ids_from_key(aligned_key)
+    annotated = evidence.annotate(
+        full, box, f"{result.label} · score {result.score:.2f} · Δ{result.features['brightness_delta']:+.0f}"
+    )
     return {
         "label": result.label,
         "score": float(result.score),
         "features": {name: float(value) for name, value in result.features.items()},
+        "evidence_key": images.put_image(asset_id, inspection_id, "evidence", annotated),
     }
 
 

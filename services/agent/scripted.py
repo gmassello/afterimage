@@ -30,6 +30,10 @@ class PolicyFollowingLLM:
         self.aligned_key = None
         self.valid_mask_key = None
 
+    def bind(self, capture_key, baseline_key):
+        self.capture_key = capture_key
+        self.baseline_key = baseline_key
+
     def generate(self, system, history, tools):
         latest = _last_verdict(history)
         if latest is None:

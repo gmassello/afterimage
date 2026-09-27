@@ -298,7 +298,7 @@ def test_both_upload_fields_carry_a_label():
     for field, label in (("asset-id", "asset id"), ("capture", "capture")):
         assert f"<label for='{field}'>{label}</label>" in page
         assert f"id='{field}'" in page
-    assert "placeholder='e.g. panel-a7-north'" in page
+    assert "placeholder='e.g. panel-a7-north, or empty to recognise it'" in page
 
 
 def test_a_rejected_upload_keeps_the_asset_id_already_typed():
@@ -751,3 +751,30 @@ def test_the_landing_counts_its_metrics_up_once_they_are_seen():
     assert "document.querySelector('.landing-metrics')" in JS
     assert "tween(cell, cell.textContent.trim(), 900" in JS
     assert "typeLines(); };" in JS
+
+
+def test_the_severity_card_links_the_annotated_evidence():
+    key = "assets/panel/abcdef123456/evidence.png"
+    card = views._card({"tool": "classify_severity", "metrics": {
+        "label": "crack", "score": 0.6, "evidence_key": key,
+    }}, EN)
+    assert card["evidence"] == f"/images/{key}"
+    assert views._card({"tool": "assess_quality", "metrics": {}}, EN)["evidence"] is None
+
+
+def test_the_headline_number_skips_the_checks_that_follow_a_verdict():
+    decisions = [
+        {"input_metric": "score", "value": 0.6, "threshold": 0.4, "branch": "human_approval"},
+        {"input_metric": "overstates", "value": 0.1, "threshold": 0.8, "branch": "phrasing_ok"},
+        {"input_metric": "baseline_consistent", "value": 1.0, "threshold": 1.0,
+         "branch": "baseline_verified"},
+    ]
+    assert views._decider(decisions, EN)["metric"] == "score"
+    assert views._decider(decisions[1:], EN) is None
+
+
+def test_a_rejection_can_carry_the_reviewer_reason():
+    page = views.queue_page([_queued("7f2ac91b04de", 0.5)])
+    form = page.split("action='/queue/7f2ac91b04de/reject'>")[1].split("</form>")[0]
+    assert "name='reason' maxlength='500'" in form
+    assert "placeholder='why? e.g. glare on the glass (optional)'" in form

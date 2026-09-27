@@ -199,3 +199,53 @@ def test_the_video_script_only_speaks_measured_figures():
     assert spoken, "the video script no longer states any measured figure"
     unknown = sorted(n for n in spoken if n not in artefact and n not in ON_CAMERA)
     assert not unknown, f"the video states figures nothing measured: {unknown}"
+
+
+ABLATIONS = {
+    "Full agent": RESULTS,
+    "ORB only": Path("eval/results/orb-only/results.json"),
+    "No memory": Path("eval/results/no-memory/results.json"),
+}
+ALIGNED_BRANCHES = ("aligned",)
+
+
+def _median_inlier_ratio(scenarios):
+    values = sorted(
+        d["value"] for s in scenarios for d in s["decisions"]
+        if d["input_metric"] == "inlier_ratio" and d["branch"] in ALIGNED_BRANCHES
+    )
+    if not values:
+        return "—"
+    middle = len(values) // 2
+    median = values[middle] if len(values) % 2 else (values[middle - 1] + values[middle]) / 2
+    return f"{median:.4f}"
+
+
+def _ablation_rows(results):
+    summary, scenarios = results["summary"], results["scenarios"]
+    return {
+        "passed": f"{summary['passed']} / {summary['scenarios']}",
+        "branch macro F1": str(summary["branch"]["macro"]["f1"]),
+        "defect macro F1": str(summary["defect"]["macro"]["f1"]),
+        "defects found": str(sum(
+            1 for s in scenarios if s["expected_defect"] != NO_DEFECT and s["defect"] == s["expected_defect"]
+        )) + f" / {sum(1 for s in scenarios if s['expected_defect'] != NO_DEFECT)}",
+        "median inlier_ratio": _median_inlier_ratio(scenarios),
+        "mean IoU": str(summary["localisation"]["mean_iou"] or "—"),
+    }
+
+
+@pytest.mark.parametrize("page", [README, PAGE])
+def test_the_ablation_table_matches_its_three_artefacts(page):
+    runs = {name: json.loads(path.read_text()) for name, path in ABLATIONS.items()}
+    table = re.search(r"\| Figure \| Full agent \| ORB only \| No memory \|\n\|[-| :]+\|\n((?:\|.*\|\n)+)", page.read_text())
+    assert table, f"{page} no longer carries the ablation table"
+    published = {
+        cells[0].strip("` "): [cell.strip() for cell in cells[1:]]
+        for cells in (row.strip("|").split("|") for row in table.group(1).strip().splitlines())
+    }
+    expected = {
+        label: [_ablation_rows(runs[name])[label] for name in ABLATIONS]
+        for label in _ablation_rows(runs["Full agent"])
+    }
+    assert published == expected

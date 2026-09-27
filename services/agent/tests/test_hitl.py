@@ -77,5 +77,76 @@ def test_a_failure_after_the_commit_resumes_the_approval_instead_of_allowing_a_r
         hitl.resolve(run_dir, approved=False)
     assert hitl.resolve(run_dir, approved=True)["branch"] == hitl.APPROVED
     assert len(commits) == 2
-    assert [d["branch"] for d in _decisions(run_dir)] == [hitl.APPROVED]
+    human = [d for d in _decisions(run_dir) if d["input_metric"] == "human_approved"]
+    assert [d["branch"] for d in human] == [hitl.APPROVED]
     assert not (run_dir / "pending.json").exists()
+
+
+def test_a_rejection_keeps_the_reviewer_reason(tmp_path, monkeypatch):
+    monkeypatch.delenv("AI_GATEWAY_API_KEY", raising=False)
+    run_dir = tmp_path / "abcdef123456"
+    _pending(run_dir)
+
+    record = hitl.resolve(run_dir, approved=False, actor="ops", reason="glare on the glass")
+
+    assert record["extra"] == {"actor": "ops", "reason": "glare on the glass"}
+    assert hitl.runs.read(run_dir, "verdict.json")["reason"] == "glare on the glass"
+    assert not [e for e in trace.read_events(run_dir) if e["type"] == "tool_call"]
+
+
+@pytest.mark.parametrize("answer,branch,error", [
+    ((0.93, None), "rejected_capture_artefact", None),
+    ((0.2, None), "rejected_asset_finding", None),
+    ((None, "HTTP 403"), None, "HTTP 403"),
+])
+def test_the_reason_is_classified_once_when_a_second_opinion_is_configured(
+    tmp_path, monkeypatch, answer, branch, error
+):
+    run_dir = tmp_path / "abcdef123456"
+    _pending(run_dir)
+    monkeypatch.setattr(hitl.jev, "configured", lambda: True)
+    monkeypatch.setattr(hitl.jev, "capture_artefact", lambda reason: answer)
+
+    hitl.resolve(run_dir, approved=False, reason="glare on the glass")
+    hitl.classify_rejection(run_dir, "glare on the glass")
+
+    spans = [e for e in trace.read_events(run_dir) if e.get("tool") == hitl.JEV_REJECTION]
+    assert len(spans) == 1
+    assert (spans[0].get("policy") or {}).get("branch") == branch
+    assert spans[0].get("error") == error
+
+
+@pytest.mark.parametrize("promoted,current,stored,branch,observed", [
+    (True, "abcdef123456", True, "baseline_verified", "promoted"),
+    (False, "newer000000", True, "baseline_verified", "historical"),
+    (True, "newer000000", True, "baseline_drift", "historical"),
+    (True, "abcdef123456", False, "baseline_drift", "missing"),
+])
+def test_reobservation_compares_what_memory_holds_with_what_was_written(
+    monkeypatch, promoted, current, stored, branch, observed
+):
+    key = "assets/panel-gate/abcdef123456/capture.png"
+    monkeypatch.setattr(hitl.store, "history", lambda asset_id: [
+        {"sk": "BASELINE#2026-09-12", "inspection_id": "abcdef123456", "image_key": key},
+    ])
+    monkeypatch.setattr(hitl.store, "current_baseline", lambda asset_id: {"inspection_id": current})
+    monkeypatch.setattr(hitl.images, "exists", lambda image_key: stored)
+
+    verdict = hitl.reobserve("panel-gate", "abcdef123456", promoted)
+
+    assert verdict["branch"] == branch
+    assert verdict["extra"]["observed"] == observed
+
+
+def test_an_approval_records_the_reobservation_after_the_human_decision(tmp_path, monkeypatch):
+    run_dir = tmp_path / "abcdef123456"
+    _pending(run_dir)
+    monkeypatch.setattr(hitl, "commit", lambda *args: True)
+    monkeypatch.setattr(hitl, "reobserve", lambda asset_id, inspection_id, promoted: {
+        "input_metric": "baseline_consistent", "value": 1.0, "threshold": 1.0,
+        "branch": "baseline_verified",
+    })
+
+    hitl.resolve(run_dir, approved=True)
+
+    assert [d["branch"] for d in _decisions(run_dir)] == ["approved", "baseline_verified"]

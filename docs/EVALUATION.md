@@ -215,6 +215,38 @@ Every value above is identical to the one the local container recorded for the s
 0.2596, to four decimals on all five. That is the second-channel check this stage owed: the numbers
 that drive the decisions do not move between where they are measured and where they are served.
 
+## Ablation: memory and learned features
+
+`make eval` scores the full agent. Two flags score the same 29 scenarios with one component removed:
+`--detector classic` aligns every capture with ORB + brute-force Hamming matching instead of
+ALIKED + LightGlue, and `--no-memory` seeds no baseline, so every capture meets an asset with no
+history. The artefacts live in `eval/results/orb-only/` and `eval/results/no-memory/`; CI re-scores
+the ORB column on every push and `compare_results.py` fails if it drifts. The test suite checks this
+table against all three artefacts.
+
+| Figure | Full agent | ORB only | No memory |
+|---|---:|---:|---:|
+| `passed` | 24 / 29 | 22 / 29 | 5 / 29 |
+| `branch macro F1` | 0.8624 | 0.8068 | 0.1346 |
+| `defect macro F1` | 0.8542 | 0.7907 | 0.0 |
+| `defects found` | 12 / 14 | 11 / 14 | 0 / 14 |
+| `median inlier_ratio` | 0.9987 | 0.8610 | — |
+| `mean IoU` | 0.7875 | 0.7167 | — |
+
+- **No memory** is the floor by construction. With no baseline the loop records `first_baseline`,
+  runs only the quality gate and commits the capture as the new reference; nothing is ever diffed,
+  so every injected defect is missed. The five scenarios that still pass are the ones whose correct
+  answer never needed a baseline: the recapture cases and the first-baseline case itself.
+- **ORB only** loses two real photographs. On `faint-spot-real-et-solar` the worse alignment leaves
+  residue that hides the faint spot, and the run ends in `no_change`; on
+  `delamination-real-bifacial` the region is located elsewhere (IoU 0.0) and classified as a crack.
+  `faint-spot-real-hannover-roof` still passes, but its IoU falls from 0.7216 to 0.2923.
+- The synthetic panels pass under ORB because the classic threshold is 0.30: the rotated and scaled
+  grid aligns at a median 0.3929, against 0.9975 with the learned features. The margin over the
+  threshold is what the learned features buy, and it is where a harder warp would fail first.
+- 29 scenarios cannot establish significance for a two-scenario gap; the alignment figures are the
+  stronger evidence.
+
 ## Limits of this evaluation
 
 - **The defects are injected, not natural.** That is what makes the ground truth exact, and it means

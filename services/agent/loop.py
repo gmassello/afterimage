@@ -1,20 +1,20 @@
 import asyncio
 import json
 import os
-import sys
 import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+from mcp import ClientSession
+from mcp.client._memory import InMemoryTransport
 
-from services.agent import hitl
+from services.agent import hitl, jev
 from services.agent import policy as policy_module
 from services.agent.llm import GeminiLLM
 from services.agent.policy import Policy
 from services.agent.scripted import PolicyFollowingLLM
+from services.mcp_server import server as tools_server
 from services.memory import images, runs, store
 from services.observability import trace
 from services.perception import alignment
@@ -32,6 +32,11 @@ SYSTEM = (
 )
 
 SUBMIT = "submit"
+IDENTIFY = "identify_asset"
+UNASSIGNED = "_unassigned"
+UNIDENTIFIED_MESSAGE = (
+    "No stored asset matched this capture closely enough; choose the asset and upload it again."
+)
 SUBMIT_TOOL = {
     "name": SUBMIT,
     "description": "Finish the inspection with the branch mandated by the last policy verdict.",
@@ -71,6 +76,11 @@ WRONG_BRANCH = (
     "Call submit again with the mandated branch."
 )
 WRONG_TOOL = "The policy verdict mandates calling {expected!r} next."
+OVERSTATED = (
+    "The message claims more than the verdict supports (overstates {value} >= {threshold}). "
+    "Call submit again with a message that states only what the verdict says."
+)
+JEV_GUARD = "jev_guard"
 LAST_CHANCE = (
     "You are almost out of turns. Call submit NOW with the branch of the last policy verdict."
 )
@@ -136,8 +146,11 @@ async def run(
     max_turns: int = 12,
     runs_dir: str | Path = "runs",
     started: dict | None = None,
+    detector: str | None = None,
+    candidates: list[str] | None = None,
 ) -> RunResult:
     pol = policy or Policy.from_env()
+    detector = detector or alignment.default_detector()
     if started is None:
         started = start(asset_id, capture_key, runs_dir)
     run_id, captured_at = started["run_id"], started["ts"]
@@ -199,16 +212,8 @@ async def run(
             return finish(trace.AWAITING_APPROVAL, branch, message)
         return finish("completed", branch, message)
 
-    baseline = store.current_baseline(asset_id)
-    if baseline is not None and not images.exists(baseline["image_key"]):
-        return finish("failed", None, f"the baseline image is gone: {baseline['image_key']}")
-    params = StdioServerParameters(
-        command=sys.executable,
-        args=["-m", "services.mcp_server.server"],
-        env=dict(os.environ),
-    )
     async with (
-        stdio_client(params) as (read, write),
+        InMemoryTransport(tools_server.server) as (read, write),
         ClientSession(read, write) as session,
     ):
         await session.initialize()
@@ -226,6 +231,49 @@ async def run(
             span["metrics"] = payload
             return payload, span
 
+        async def guard(message: str) -> str | None:
+            verdicts = [d for d in decisions if d["input_metric"] != policy_module.PHRASING_METRIC]
+            if not jev.configured() or not verdicts:
+                return None
+            began = time.perf_counter()
+            probability, error = await asyncio.to_thread(jev.overstates, message, verdicts[-1])
+            span = {
+                "tool": JEV_GUARD,
+                "args": {"message": message},
+                "duration_ms": round((time.perf_counter() - began) * 1000, 1),
+            }
+            if probability is None:
+                trace.emit(run_dir, "tool_call", **span, error=error)
+                return None
+            metrics = {policy_module.PHRASING_METRIC: probability}
+            verdict = record(
+                policy_module.evaluate("phrasing", metrics, pol), {**span, "metrics": metrics}
+            )
+            if verdict["branch"] == policy_module.PHRASING_OK:
+                return None
+            return OVERSTATED.format(value=verdict["value"], threshold=verdict["threshold"])
+
+        if not asset_id:
+            args: dict = {"image_key": capture_key, "detector": detector}
+            if candidates is not None:
+                args["candidates"] = candidates
+            metrics, span = await call(IDENTIFY, args)
+            if "error" in metrics:
+                return finish("failed", None, metrics["error"])
+            verdict = record(policy_module.evaluate("identity", metrics, pol), span)
+            if verdict["branch"] == policy_module.UNIDENTIFIED:
+                return finish("completed", policy_module.UNIDENTIFIED, UNIDENTIFIED_MESSAGE)
+            asset_id = verdict["extra"]["asset_id"]
+            capture_key = images.put_image(
+                asset_id, run_id, "capture", images.get_image(capture_key)
+            )
+            image_keys["capture"] = capture_key
+            state.update(asset_id=asset_id, capture_key=capture_key)
+
+        baseline = store.current_baseline(asset_id)
+        if baseline is not None and not images.exists(baseline["image_key"]):
+            return finish("failed", None, f"the baseline image is gone: {baseline['image_key']}")
+
         if baseline is None:
             record(policy_module.decision(
                 "baseline_exists", 0.0, 1.0, policy_module.FIRST_BASELINE
@@ -241,13 +289,14 @@ async def run(
             return finish("completed", policy_module.FIRST_BASELINE)
 
         baseline_key = image_keys["baseline"] = baseline["image_key"]
-        detector = alignment.default_detector()
         if llm is None:
             llm = (
                 GeminiLLM()
                 if os.environ.get("GOOGLE_API_KEY")
                 else PolicyFollowingLLM(capture_key, baseline_key, detector)
             )
+        elif isinstance(llm, PolicyFollowingLLM):
+            llm.bind(capture_key, baseline_key)
         listed = (await session.list_tools()).tools
         tools = [
             {"name": t.name, "description": t.description or "", "input_schema": t.input_schema}
@@ -278,12 +327,17 @@ async def run(
             responses: list[tuple[str, dict]] = []
             if len(turn.calls) == 1 and turn.calls[0].name == SUBMIT:
                 got = turn.calls[0].args.get("branch")
+                message = turn.calls[0].args.get("message", "")
                 if expected_branch is not None and got == expected_branch:
-                    return conclude(got, turn.calls[0].args.get("message", ""))
-                responses.append((
-                    SUBMIT,
-                    {"error": WRONG_BRANCH.format(expected=expected_branch, got=got)},
-                ))
+                    objection = await guard(message)
+                    if objection is None:
+                        return conclude(got, message)
+                    responses.append((SUBMIT, {"error": objection}))
+                else:
+                    responses.append((
+                        SUBMIT,
+                        {"error": WRONG_BRANCH.format(expected=expected_branch, got=got)},
+                    ))
             else:
                 for tool_call in turn.calls:
                     if tool_call.name == SUBMIT:

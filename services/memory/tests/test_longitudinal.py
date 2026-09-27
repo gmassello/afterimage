@@ -1,4 +1,5 @@
 import os
+import uuid
 
 import pytest
 
@@ -16,7 +17,7 @@ from services.perception.panels import (
 from services.perception.quality import assess_quality
 from services.perception.severity import CRACK, classify_severity
 
-ASSET = "panel-a7"
+ASSET = f"panel-a7-{uuid.uuid4().hex[:6]}"
 CRACK_CELL = (2, 4)
 FIRST = "2026-03-01T09:00:00Z"
 SECOND = "2026-06-01T09:00:00Z"
