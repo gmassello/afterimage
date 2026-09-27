@@ -52,7 +52,7 @@ _EN = {
         "straight away and fills in while the agent looks."
     ),
     "label_asset_id": "asset id",
-    "asset_id_placeholder": "e.g. panel-a7-north",
+    "asset_id_placeholder": "e.g. panel-a7-north, or empty to recognise it",
     "label_capture": "capture",
     "drop_hint": "or drop one here",
     "inspect": "inspect",
@@ -232,6 +232,8 @@ _EN = {
     "thresholds_many": "{n} thresholds",
 
     "alt_baseline": "baseline in memory",
+    "alt_evidence": "the aligned capture with the classified region boxed and labelled",
+    "fig_evidence": "evidence, drawn with OpenCV 5 FontFace",
     "alt_capture": "capture under inspection",
     "fig_baseline": "baseline",
     "fig_capture": "capture",
@@ -246,6 +248,7 @@ _EN = {
     "compare_label": "Wipe between the baseline and the capture",
     "approve_write": "Approve write",
     "reject": "Reject",
+    "reject_reason": "why? e.g. glare on the glass (optional)",
     "what_it_measured": "what it measured",
     "every_number_raw": "every number, as raw json",
     "tries": "tries",
@@ -331,6 +334,8 @@ _EN = {
     "err_asset_id_plain": "the name can only use lowercase letters, numbers and hyphens, up to 64 "
                           "characters",
     "err_image_required": "an image file is required",
+    "err_calibration": "the self-check on the reference image failed, so no inspection is accepted "
+                       "until it passes",
 }
 
 _ES = {
@@ -370,7 +375,7 @@ _ES = {
         "abre enseguida y se completa mientras el agente mira."
     ),
     "label_asset_id": "id del activo",
-    "asset_id_placeholder": "ej. panel-a7-norte",
+    "asset_id_placeholder": "ej. panel-a7-norte, o vacío para reconocerlo",
     "label_capture": "captura",
     "drop_hint": "o soltá una acá",
     "inspect": "inspeccionar",
@@ -553,6 +558,8 @@ _ES = {
     "thresholds_many": "{n} umbrales",
 
     "alt_baseline": "baseline en memoria",
+    "alt_evidence": "la captura alineada con la región clasificada recuadrada y rotulada",
+    "fig_evidence": "evidencia, dibujada con FontFace de OpenCV 5",
     "alt_capture": "captura bajo inspección",
     "fig_baseline": "baseline",
     "fig_capture": "captura",
@@ -567,6 +574,7 @@ _ES = {
     "compare_label": "Desplazá entre el baseline y la captura",
     "approve_write": "Aprobar escritura",
     "reject": "Rechazar",
+    "reject_reason": "¿por qué? ej. reflejo en el vidrio (opcional)",
     "what_it_measured": "qué midió",
     "every_number_raw": "todos los números, en json crudo",
     "tries": "intentos",
@@ -663,6 +671,8 @@ _ES = {
     "err_asset_id_plain": "el nombre solo admite minúsculas, números y guiones, hasta 64 "
                           "caracteres",
     "err_image_required": "hace falta un archivo de imagen",
+    "err_calibration": "falló la autoverificación con la imagen de referencia, así que no se "
+                       "aceptan inspecciones hasta que pase",
 }
 
 TEXT = {"en": _EN, "es": _ES}

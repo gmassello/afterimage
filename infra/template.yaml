@@ -11,6 +11,11 @@ Parameters:
     NoEcho: true
     Default: ''
     Description: Gemini API key. Empty falls back to the deterministic scripted driver.
+  AiGatewayApiKey:
+    Type: String
+    NoEcho: true
+    Default: ''
+    Description: Vercel AI Gateway key for the Jev second opinion on messages and rejection reasons. Empty turns it off.
 
 Resources:
   ApiFunction:
@@ -29,6 +34,7 @@ Resources:
           AFTERIMAGE_BUCKET: !Ref Bucket
           AFTERIMAGE_RUNS_S3: '1'
           GOOGLE_API_KEY: !Ref GoogleApiKey
+          AI_GATEWAY_API_KEY: !Ref AiGatewayApiKey
       FunctionUrlConfig:
         AuthType: NONE
       PermissionsBoundary: !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${AWS::StackName}-permissions-boundary'

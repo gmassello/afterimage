@@ -132,5 +132,44 @@ def test_unknown_stage_raises():
 def test_dispatch_tables_stay_consistent():
     from services.agent import loop
 
-    assert set(loop.STAGE_OF.values()) == set(pol._STAGES)
+    outside_the_tool_chain = {"identity", "reobserve", "phrasing", "rejection"}
+    assert set(loop.STAGE_OF.values()) | outside_the_tool_chain == set(pol._STAGES)
     assert set(loop.NEXT_TOOL.values()) <= set(loop.STAGE_OF)
+
+
+def identity(votes=120, vote_share=0.9):
+    return {"asset_id": "panel-a", "votes": votes, "vote_share": vote_share}
+
+
+def test_a_clear_vote_identifies_the_asset_it_names():
+    decision = evaluate("identity", identity(), Policy())
+    assert decision["branch"] == pol.IDENTIFIED
+    assert decision["extra"] == {"asset_id": "panel-a"}
+
+
+@pytest.mark.parametrize("metrics,metric", [
+    (identity(votes=5), "votes"),
+    (identity(vote_share=0.4), "vote_share"),
+])
+def test_too_few_or_too_split_votes_leave_the_capture_unidentified(metrics, metric):
+    decision = evaluate("identity", metrics, Policy())
+    assert decision["branch"] == pol.UNIDENTIFIED
+    assert decision["input_metric"] == metric
+
+
+@pytest.mark.parametrize("value,branch", [(1.0, pol.BASELINE_VERIFIED), (0.0, pol.BASELINE_DRIFT)])
+def test_reobservation_reports_whether_memory_holds_what_was_written(value, branch):
+    extra = {"expected": "promoted", "observed": "promoted"}
+    decision = evaluate("reobserve", {pol.REOBSERVE_METRIC: value, "extra": extra}, Policy())
+    assert decision["branch"] == branch
+    assert decision["extra"] == extra
+
+
+@pytest.mark.parametrize("stage,metric,high,low", [
+    ("phrasing", pol.PHRASING_METRIC, pol.PHRASING_REJECTED, pol.PHRASING_OK),
+    ("rejection", pol.REJECTION_METRIC, pol.REJECTED_CAPTURE, pol.REJECTED_FINDING),
+])
+def test_the_second_opinion_counts_only_above_its_floor(stage, metric, high, low):
+    policy = Policy(jev_floor=0.8)
+    assert evaluate(stage, {metric: 0.85}, policy)["branch"] == high
+    assert evaluate(stage, {metric: 0.6}, policy)["branch"] == low

@@ -25,10 +25,10 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
 | Template | Visible behavior |
 |---|---|
 | `landing.html` | Public product explanation, workflow, evaluation evidence, stack, limits, and entry points. |
-| `index.html` | Inspection workspace, four sample captures, and asset gallery. |
+| `index.html` | Inspection workspace, four sample captures, and asset gallery. The asset ID is optional; its placeholder says an empty field asks the agent to recognise the asset. |
 | `activity.html` | Recent-run search and status filter, capped at 50 rows. |
-| `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action; like the queue, an interrupted verdict offers only its claimed action. |
-| `queue.html` | Pending comparisons with approve and reject actions; an interrupted verdict shows only the claimed action and a note to repeat it. |
+| `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action; like the queue, an interrupted verdict offers only its claimed action. The `classify_severity` card shows the annotated evidence image (`evidence_key`) as a figure linking to the full-size PNG. The headline skips `policy.AUDIT_METRICS`, so a re-observation or Jev check never replaces the verdict it follows. |
+| `queue.html` | Pending comparisons with approve and reject actions; the reject form carries an optional `reason` field (500 characters). An interrupted verdict shows only the claimed action and a note to repeat it. |
 | `asset.html` | Longitudinal timeline, severity trend, current baseline, and superseded baselines. |
 | `error.html` | Consistent browser error with a stable code, explanation, and recovery action when available. |
 | `base.html` | Document shell, initial theme selection, navigation, and static assets. |
@@ -94,6 +94,9 @@ choice locally.
 
 `services/ui/static/app.css` provides the layout, light and dark tokens, responsive rules, visible
 focus styles, high-contrast decision states, tooltip behavior, and reduced-motion alternatives.
+Decision tones come from a branch map in `services/ui/views.py`: `identified`, `baseline_verified` and
+`phrasing_ok` render as `ok`; `rejected_capture_artefact` and `rejected_asset_finding` as `warn`;
+`unidentified`, `baseline_drift` and `phrasing_rejected` as `bad`.
 The tokens at the top of the stylesheet are copied verbatim from `docs/DESIGN.md`, and a test
 fails if they drift. Inter and JetBrains Mono are self-hosted and attributed in `NOTICE`.
 The trace renders a terminal of decisions, one line per tool call, that types itself in; the

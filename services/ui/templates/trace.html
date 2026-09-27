@@ -24,6 +24,7 @@
 {%- for card in cards %}<div class='card'><div class='head'><span class='name'>{{ card.name }}</span><span class='ms'>{{ card.ms }} ms</span></div>
 {%- if card.question %}<p class='hint'>{{ card.question }}</p>{% endif -%}
 {{- c.bar(card.bar) -}}
+{%- if card.evidence %}<figure class='evidence'><a href='{{ card.evidence }}'><img src='{{ card.evidence }}' loading='lazy' decoding='async' alt='{{ t.alt_evidence }}'></a><figcaption>{{ t.fig_evidence }}</figcaption></figure>{% endif -%}
 {%- if card.facts %}<div class='kv'>{% for fact in card.facts %}<span>{{ fact.key }}</span><span class='v'>{{ fact.value }}</span>{% endfor %}</div>{% endif -%}
 {%- if card.error %}<div class='err'>{{ card.error }}</div>{% elif card.verdict %}<div class='verdict'>&rarr; {{ card.verdict }}</div>
 {%- if card.verdict_tip %}<p class='hint says-what'>{{ card.verdict_tip }}</p>{% endif %}{% endif -%}

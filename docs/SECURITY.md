@@ -27,7 +27,8 @@ In `services/api/app.py`:
 | `MAX_UPLOAD_BYTES` | 6 MB; a larger body is rejected with 413 |
 | Image decoding | only PNG and JPEG are accepted; dimensions above 16 MP are rejected before OpenCV decodes them |
 | Unknown ids | answered with 404 rather than 400, so the endpoint does not confirm what exists |
-| Approval verdicts | restricted to `approve` and `reject` |
+| Approval verdicts | restricted to `approve` and `reject`; the optional rejection `reason` is trimmed to 500 characters (`MAX_REASON_CHARS`) and rendered autoescaped |
+| Calibration gate | `POST /inspections` answers 503 `calibration_failed` while the runtime self-check is not `aligned`, so a broken image or missing weights cannot score captures |
 
 Templates are rendered by Jinja2 with autoescaping on (`services/ui/views.py`), and static assets are
 served content-addressed from the same origin — no third-party script or font is fetched by the page.
@@ -50,9 +51,10 @@ genesis link.
   a role only to Lambda.
 - **The function itself** runs under the same permissions boundary, with only the DynamoDB reads and
   writes plus the S3 object and listing actions used by the application (`infra/template.yaml`).
-- **The API key** for the model provider is a `NoEcho` CloudFormation parameter. `deploy.sh` never
-  puts it on a command line: it writes a `mktemp` parameter file, passes it as `file://`, and removes
-  it on a shell trap.
+- **The API keys** for the model provider and for Vercel AI Gateway (`AiGatewayApiKey`, optional and
+  empty by default) are `NoEcho` CloudFormation parameters. `deploy.sh` never puts them on a command
+  line: it writes a `mktemp` parameter file, passes it as `file://`, and removes it on a shell trap.
+  The Deploy workflow reads the gateway key from `secrets.AI_GATEWAY_API_KEY`.
 - **No credentials live in git history.** The history was swept for key patterns and credential
   filenames; the only match is `AWS_SECRET_ACCESS_KEY=test`, the LocalStack dummy.
 
@@ -70,6 +72,17 @@ genesis link.
   characters. It is enough to tell two actors apart in a public trace. Note what it is not: the hash
   is unsalted, so anyone who already holds a candidate list of addresses can confirm a match by
   brute force. It de-identifies a trace for a reader, it does not anonymise against a targeted check.
+
+## What leaves the machine for Jev
+
+The Jev checks run only when `AI_GATEWAY_API_KEY` is set; without it no request is made. With it,
+`services/agent/jev.py` sends Vercel AI Gateway one sentence per check: the operator message the
+agent wrote plus the verdict's branch, metric, value and threshold, or the text of a rejection
+reason. No image, image key or asset ID is sent. The request pins the provider (`typesafe-ai`), uses a
+2-second timeout and no retry. Setting `AFTERIMAGE_JEV_ZERO_RETENTION=1` asks the gateway for zero
+data retention; that is a paid gateway tier, and on a tier without it every call answers 403, which is
+recorded in the trace and otherwise ignored. A rejection reason is also stored in `verdict.json` and
+in the public trace, so it is as visible as any upload.
 
 ## What is deliberately absent
 

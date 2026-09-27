@@ -44,7 +44,7 @@ fi
 PARAMS_FILE=$(mktemp)
 trap 'rm -f "$PARAMS_FILE"' EXIT
 cat > "$PARAMS_FILE" <<EOF
-{"Parameters": {"ImageUri": "$REPO:$TAG", "GoogleApiKey": "$GOOGLE_API_KEY"}}
+{"Parameters": {"ImageUri": "$REPO:$TAG", "GoogleApiKey": "$GOOGLE_API_KEY", "AiGatewayApiKey": "${AI_GATEWAY_API_KEY:-}"}}
 EOF
 aws cloudformation deploy \
     --template-file "$ROOT/infra/template.yaml" \

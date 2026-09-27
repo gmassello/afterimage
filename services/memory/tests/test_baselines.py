@@ -1,7 +1,9 @@
+import uuid
+
 from services.conftest import localstack
 from services.memory import store
 
-ASSET = "panel-order"
+ASSET = f"panel-order-{uuid.uuid4().hex[:6]}"
 FIRST = "2026-09-12T09:00:00.000+00:00"
 SECOND = "2026-09-12T09:30:00.000+00:00"
 THIRD = "2026-09-12T10:00:00.000+00:00"
@@ -31,7 +33,7 @@ def test_an_older_capture_is_filed_without_moving_the_pointer():
 
 @localstack
 def test_repeating_a_promotion_still_supersedes_the_previous_baseline():
-    asset = "panel-retry"
+    asset = f"panel-retry-{uuid.uuid4().hex[:6]}"
     assert store.promote_baseline(asset, "insp-1", FIRST, "k1", 300.0) is True
     assert store.promote_baseline(asset, "insp-2", SECOND, "k2", 300.0) is True
     store._table().update_item(

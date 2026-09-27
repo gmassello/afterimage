@@ -10,13 +10,14 @@ package versions are owned by `requirements.txt` for the direct dependencies and
 | Layer | Technology | Role | Source of truth |
 |---|---|---|---|
 | Language | Python 3.12 | Application, evaluation, tooling, and deployment scripts | `Dockerfile` |
-| Computer vision | OpenCV headless 5.0.0.93, NumPy 2.5.2 | Quality, alignment, diffing, cropping, and severity features | `requirements.txt` |
+| Computer vision | OpenCV headless 5.0.0.93, NumPy 2.5.2 | Quality, alignment (`UsacParams` + `findHomography`), recognition (`ANNIndex`), diffing, cropping, severity features, and evidence annotation (`FontFace` + UTF-8 `putText`) | `requirements.txt` |
 | Learned features | ALIKED and LightGlue ONNX | Neural keypoint detection and matching | `services/perception/weights.py` |
 | Web | FastAPI 0.141.1, Uvicorn 0.52.4 | HTTP routing and ASGI runtime | `requirements.txt` |
 | Server rendering | Jinja2 3.1.6 | Autoescaped HTML templates | `requirements.txt` |
 | Browser | HTML, CSS, vanilla JavaScript | Interaction, polling, theme, and progressive enhancement | `services/ui/` |
-| Agent protocol | MCP 2.1.1 | Stdio boundary for the five perception tools | `requirements.txt` |
+| Agent protocol | MCP 2.1.1 | Stdio boundary for the six perception tools | `requirements.txt` |
 | Optional model | Google Gen AI SDK 2.20.0 | Gemini function calling and phrasing | `requirements.txt` |
+| Optional second opinion | Jev (`typesafe-ai/jev`) through Vercel AI Gateway, called with httpx 0.28.1 | Phrasing guard and rejection-reason classification; never a branch | `services/agent/jev.py`, `requirements.txt` |
 | AWS client | boto3 1.43.78 | DynamoDB and S3 access | `requirements.txt` |
 | Quality gates | pytest, pytest-cov, Ruff, mypy | Tests, coverage, lint, and type checking | `requirements.txt`, `pyproject.toml` |
 
@@ -44,7 +45,8 @@ table uses on-demand billing. These values must be verified in
 - `docker-compose.yml` runs the local application on port 8000 and LocalStack on port 4566.
 - `Makefile` owns the supported build, test, evaluation, demo, and deployment commands.
 - `.github/workflows/ci.yml` runs on native `ubuntu-24.04-arm` and executes the runtime, lint, type,
-  coverage, and test gates.
+  coverage, and test gates plus `./smoke.sh`; its eval job compares a fresh run with
+  `eval/results/latest/` and a classic-detector run with `eval/results/orb-only/`.
 - `.github/workflows/deploy.yml` is manual, authenticates to AWS through GitHub OIDC, and delegates
   deployment to `deploy.sh`.
 - `deploy.sh` downloads weights, maintains the ECR retention policy, builds for `linux/arm64`,
@@ -61,6 +63,8 @@ table uses on-demand billing. These values must be verified in
 | `AFTERIMAGE_RUNS_S3` | Enables S3-backed run artifacts. |
 | `AFTERIMAGE_GEMINI_MODEL` | Overrides the Gemini model name. |
 | `GOOGLE_API_KEY` | Enables the live Gemini driver. |
+| `AI_GATEWAY_API_KEY` | Enables the optional Jev checks through Vercel AI Gateway. Deployed through the `AiGatewayApiKey` stack parameter (NoEcho, default empty). |
+| `AFTERIMAGE_JEV_ZERO_RETENTION` | Set to `1` to request zero data retention from the gateway; a paid gateway tier, answered with 403 otherwise. |
 
 Every field in `services/agent/policy.py:Policy` can also be overridden with
 `AFTERIMAGE_<FIELD_NAME_UPPER>`. Without `GOOGLE_API_KEY`, the deterministic
@@ -78,5 +82,7 @@ Every field in `services/agent/policy.py:Policy` can also be overridden with
 | `make typecheck` | Runs mypy over `services/`. |
 | `make test` | Runs all tests with the 90% service coverage floor. |
 | `make demo` | Exercises the four main action branches with the scripted driver. |
-| `make eval` | Evaluates the committed scenarios and updates published results. |
+| `make eval` | Evaluates the committed scenarios and updates published results. `ARGS="--detector classic"` forces ORB; `ARGS="--no-memory"` seeds no baseline. |
+| `make smoke` | Builds and runs the Lambda image; requires `/health` calibration `aligned` and the landing title. |
+| `make smoke-jev` | Measures Jev's recall and precision at `jev_floor` on labelled sentences; needs `AI_GATEWAY_API_KEY`. |
 | `make deploy` | Builds and deploys the AWS stack. |

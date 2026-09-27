@@ -33,10 +33,47 @@ def png_bytes(image):
     return buffer.tobytes()
 
 
-def test_health(client):
+def test_health_reports_the_calibration_that_backs_it(client):
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"ok": True}
+    body = response.json()
+    assert body["ok"] is True
+    assert body["calibration"]["input_metric"] == "inlier_ratio"
+    assert body["calibration"]["branch"] == "aligned"
+
+
+def test_a_failed_calibration_takes_the_service_out_of_rotation(client, monkeypatch):
+    from services.api import app as api
+
+    failing = {"input_metric": "inlier_ratio", "value": 0.2, "threshold": 0.9,
+               "branch": "retry_classic"}
+    monkeypatch.setattr(api.calibration, "calibration", lambda: failing)
+    monkeypatch.setattr(api.calibration, "healthy", lambda: False)
+
+    assert client.get("/health").status_code == 503
+    refused = client.post(
+        "/inspections",
+        data={"asset_id": unique("api-uncalibrated")},
+        files={"image": ("panel.png", png_bytes(PANEL), "image/png")},
+    )
+    assert refused.status_code == 503
+    assert refused.json()["code"] == "calibration_failed"
+
+
+@localstack
+def test_an_upload_without_an_asset_is_parked_until_the_agent_names_it(client, tmp_path):
+    from services.agent import loop
+
+    response = client.post(
+        "/inspections", files={"image": ("panel.png", png_bytes(PANEL), "image/png")}
+    )
+    assert response.status_code == 303
+    run_id = response.headers["location"].rsplit("/", 1)[-1]
+    from services.observability import trace
+
+    started = trace.started_event(trace.read_events(tmp_path / run_id))
+    assert started["asset_id"] == ""
+    assert started["capture_key"].startswith(f"assets/{loop.UNASSIGNED}/")
 
 
 @localstack
@@ -160,7 +197,10 @@ def test_a_verdict_that_lost_the_race_is_refused(client, tmp_path):
         "image_keys": {"capture": f"assets/panel/{run_id}/capture.png"},
     }
     hitl.request_approval(tmp_path / run_id, payload)
-    assert client.post(f"/queue/{run_id}/reject").status_code == 303
+    assert client.post(
+        f"/queue/{run_id}/reject", data={"reason": "  glare on the glass  "}
+    ).status_code == 303
+    assert runs.read(tmp_path / run_id, runs.VERDICT)["reason"] == "glare on the glass"
     hitl.request_approval(tmp_path / run_id, payload)
     refused = client.post(f"/queue/{run_id}/approve")
     assert refused.status_code == 409
@@ -189,8 +229,9 @@ def test_queue_flow(client, tmp_path):
     assert run_id in queue.text
     resolved = client.post(f"/queue/{run_id}/approve")
     assert resolved.status_code == 303
-    approval = trace.read_events(tmp_path / run_id)[-1]
+    approval, observation = trace.read_events(tmp_path / run_id)[-2:]
     assert approval["input_metric"] == "human_approved"
+    assert observation["branch"] == "baseline_verified"
     assert approval["extra"]["actor"]
     assert run_id not in client.get("/queue").text
     assert client.post(f"/queue/{run_id}/approve").status_code == 404

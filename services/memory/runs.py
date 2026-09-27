@@ -165,8 +165,8 @@ def _summary(root: str | Path, run_id: str) -> dict | None:
         status = "running" if len(events) > 1 else "unstarted"
     return {
         "run_id": run_id,
-        "asset_id": started.get("asset_id", ""),
-        "capture_key": started.get("capture_key", ""),
+        "asset_id": state.get("asset_id") or started.get("asset_id", ""),
+        "capture_key": state.get("capture_key") or started.get("capture_key", ""),
         "captured_at": started.get("ts", ""),
         "updated_at": events[-1].get("ts", ""),
         "status": status,

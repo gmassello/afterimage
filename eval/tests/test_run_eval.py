@@ -11,7 +11,7 @@ SCENARIOS = [
 ]
 
 
-def fake_run_scenario(scenario, runs_dir):
+def fake_run_scenario(scenario, runs_dir, **options):
     if scenario["id"] == "boom":
         raise RuntimeError("s3 is down")
     return {
@@ -63,7 +63,7 @@ def test_a_failed_tool_call_keeps_its_branch_instead_of_raising():
 
 
 def test_an_abstention_on_a_real_defect_is_scored_as_missed(tmp_path, monkeypatch):
-    def run(scenario, runs_dir):
+    def run(scenario, runs_dir, **options):
         record = fake_run_scenario(scenario, runs_dir)
         if scenario["id"] == "missed":
             record.update(
@@ -91,3 +91,24 @@ def test_an_abstention_on_a_real_defect_is_scored_as_missed(tmp_path, monkeypatc
     assert "| `missed` | human_approval / hotspot | recapture / MISSED |" in (
         tmp_path / "summary.md"
     ).read_text()
+
+
+def test_the_ablation_flags_reach_every_scenario(tmp_path, monkeypatch):
+    seen = []
+
+    def run(scenario, runs_dir, **options):
+        seen.append(options)
+        return fake_run_scenario(scenario, runs_dir)
+
+    monkeypatch.setattr(run_eval.store, "ensure_table", lambda: None)
+    monkeypatch.setattr(run_eval.images, "ensure_bucket", lambda: None)
+    monkeypatch.setattr(run_eval.scenarios_module, "load", lambda path: SCENARIOS[1:])
+    monkeypatch.setattr(run_eval, "run_scenario", run)
+    monkeypatch.setattr(
+        sys, "argv",
+        ["run_eval", "--out", str(tmp_path), "--detector", "classic", "--no-memory"],
+    )
+
+    run_eval.main()
+
+    assert seen == [{"detector": run_eval.alignment.CLASSIC, "memory": False}]
