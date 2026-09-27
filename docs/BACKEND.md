@@ -27,7 +27,7 @@ lock and the decoded-image cache keeps the 32 most recent arrays.
 | `GET /health` | Returns `{"ok": bool, "calibration": decision}`. The calibration decision comes from `services/agent/calibration.py`, which aligns a synthetic panel against a shifted copy with the default detector and evaluates it with the `alignment` policy stage, once per process. Returns 503 when the branch is not `aligned`. It is also used by the production warmer. |
 | `GET /` | Renders the public product landing without reading asset memory. |
 | `GET /app` | Renders the upload form, sample captures, and asset gallery. |
-| `GET /activity?q=&status=` | Renders at most 50 recent runs, newest first. Filters apply to the 200 most recent runs, not to the whole archive. |
+| `GET /activity?q=&status=` | Renders at most 4 recent runs, newest first. Filters apply to the 200 most recent runs, not to the whole archive. |
 | `GET /assets/{asset_id}` | Renders the chronological history and current baseline. |
 | `POST /inspections` | Validates the asset ID and image, stores the capture, starts a trace, and redirects with 303. The asset ID may be empty: the capture is then stored under `assets/_unassigned/` and the loop starts with `identify_asset`. Returns 503 `calibration_failed` while calibration is out of tolerance. |
 | `POST /runs/{run_id}/execute` | Claims and executes the opened run; returns 404 for unknown runs and 409 when already claimed. HTML receives a 303 back to the trace, so the run also starts without JavaScript. |

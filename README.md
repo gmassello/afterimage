@@ -219,7 +219,7 @@ GOOGLE_API_KEY=... make deploy   # ECR + docker buildx arm64 + CloudFormation, i
 |---|---|
 | `/` | Public landing: product, workflow, measured evidence, stack and limits |
 | `/app` | Asset list, capture upload (the asset id is optional: leave it empty and the agent recognises the asset) and four sample captures that need no file of your own |
-| `/activity` | Search and status filtering over the latest 50 runs |
+| `/activity` | Search and status filtering over the latest runs, showing 4 |
 | `/assets/{id}` | Inspection timeline and current baseline |
 | `/queue` | Human approval queue, with the compared pair; a rejection can carry a written reason |
 | `/traces/{run_id}` | Per-run trace, JSON or HTML; fills in live while the run works |

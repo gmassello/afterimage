@@ -75,7 +75,7 @@ and chosen branch.
 |---|---|
 | `/` | Public explanation of the problem, workflow, measured evidence, stack, and limits. |
 | `/app` | Inspection workspace with upload form, sample captures, and an asset gallery filterable by ID or latest branch. |
-| `/activity` | Searchable and filterable list of the 50 most recent runs. |
+| `/activity` | Searchable and filterable list of the 4 most recent runs. |
 | `/traces/{run_id}` | Live progress, tool calls, deciding values, image comparison, and integrity status. |
 | `/queue` | Findings waiting for human approval or rejection. |
 | `/assets/{asset_id}` | Baseline and chronological inspection history for one asset. |
