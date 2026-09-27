@@ -7,6 +7,7 @@ const T = (() => {
     tooLarge: 'image larger than 6 MB',
     notAnImage: 'not a decodable image',
     sampleFailed: 'the example could not be loaded \u2014 pick a file instead',
+    sampleLoaded: 'Loaded: {sample}. Press inspect.',
     runStartFailed: 'the run could not be started',
     pollTimeout: 'the run did not answer in time \u2014 open activity to check it',
   };
@@ -174,6 +175,12 @@ if (zone) {
         picked.items.add(new File([body], button.dataset.name, { type: body.type }));
         input.files = picked.files;
         review();
+        document.querySelectorAll('.sample[data-sample]').forEach((other) => {
+          other.setAttribute('aria-pressed', String(other === button));
+        });
+        const status = document.querySelector('[data-sample-status]');
+        if (status) status.textContent = T.sampleLoaded.replace('{sample}', button.querySelector('.name').textContent);
+        zone.closest('form').scrollIntoView({ block: 'nearest' });
       } catch (e) {
         input.setCustomValidity(T.sampleFailed);
         input.reportValidity();

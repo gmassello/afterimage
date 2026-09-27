@@ -27,7 +27,7 @@ is [`design-preview.html`](design-preview.html) and uses these tokens verbatim.
     2. The uppercase eyebrow with wide tracking (14 px, 600, 2.52 px) used as the stage label
        above each step: `QUALITY`, `ALIGNMENT`, `DIFF`, `SEVERITY`.
 - **Originality changes**:
-  - The accent is afterimage's own violet (`#5d5294` light, `#9184d9` dark), not the lavender of
+  - The accent is afterimage's own violet (`#5d5294` light, `#968ade` dark), not the lavender of
     the base or the green of the secondary.
   - Mono is JetBrains Mono, not the system mono either source uses.
   - Light mode is the default. Neither source ships one; it is derived from the base's inverse
@@ -116,11 +116,11 @@ classes per theme.
   --subtle: #9194a5;
   --border: #262631;
   --border-strong: #6e7284;
-  --accent: #9184d9;
+  --accent: #968ade;
   --accent-hover: #b5abfc;
   --accent-soft: #2a2545;
   --on-accent: #0e0e14;
-  --ring: #9184d9;
+  --ring: #968ade;
   --ok: #6fce9f;
   --warn: #e8bd6b;
   --danger: #ffa198;

@@ -37,7 +37,7 @@ document.documentElement.classList.add('js');
 <main id='main-content'>{% block body %}{% endblock %}</main>
 {% block tail %}{% endblock %}
 </div></div>
-<script type='application/json' id='i18n'>{{ {'dark': t.theme_dark, 'light': t.theme_light, 'confirm': t.js_confirm, 'arm': t.js_arm, 'tooLarge': t.js_too_large, 'notAnImage': t.js_not_an_image, 'sampleFailed': t.js_sample_failed, 'runStartFailed': t.js_run_start_failed, 'pollTimeout': t.js_poll_timeout}|tojson }}</script>
+<script type='application/json' id='i18n'>{{ {'dark': t.theme_dark, 'light': t.theme_light, 'confirm': t.js_confirm, 'arm': t.js_arm, 'tooLarge': t.js_too_large, 'notAnImage': t.js_not_an_image, 'sampleFailed': t.js_sample_failed, 'sampleLoaded': t.js_sample_loaded, 'runStartFailed': t.js_run_start_failed, 'pollTimeout': t.js_poll_timeout}|tojson }}</script>
 <script src='{{ js_url }}'></script>
 {% block scripts %}{% endblock %}
 </body></html>

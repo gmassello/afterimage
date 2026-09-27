@@ -85,3 +85,6 @@ cambio" → approve → the asset history with the new baseline in force. Six cl
 Findings 4–5 are implemented as well: the deciding number is the decision whose branch the run ended
 on (`baseline_exists 0` for a reference photo, with a plain tip), and the **Waiting on a human** panel
 and the next-sample link sit directly under the hero instead of below the image comparison.
+
+Finding 6 is implemented too: `upload_hint_plain` is one sentence plus the id rule. At 320 × 640 the
+paragraph went from 288 px to 96 px and **inspect** from y=675, below the fold, to y=483.

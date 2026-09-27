@@ -56,11 +56,11 @@
   --subtle: #9194a5;
   --border: #262631;
   --border-strong: #6e7284;
-  --accent: #9184d9;
+  --accent: #968ade;
   --accent-hover: #b5abfc;
   --accent-soft: #2a2545;
   --on-accent: #0e0e14;
-  --ring: #9184d9;
+  --ring: #968ade;
   --ok: #6fce9f;
   --warn: #e8bd6b;
   --danger: #ffa198;
@@ -321,7 +321,7 @@ footer.bot { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--font-
           text-align: start; font: inherit; color: var(--fg); cursor: pointer;
           background: var(--bg); border: 1px solid var(--border);
           transition: border-color var(--dur-fast) var(--ease-out); }
-.sample:hover { border-color: var(--accent); }
+.sample:hover, .sample[aria-pressed=true] { border-color: var(--accent); }
 .sample img { flex: none; width: 72px; height: 48px; object-fit: cover; border-radius: var(--radius-xs); }
 .sample .meta { display: flex; flex-direction: column; align-items: start; gap: 4px;
                 min-width: 0; }
