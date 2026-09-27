@@ -67,6 +67,7 @@ _EN = {
     "asset_search_placeholder": "asset id or result",
     "asset_filter_all": "all results",
     "asset_filter_label": "latest result",
+    "repo_label": "Source code on GitHub",
     "asset_filter_empty": "No assets match those filters.",
 
     "landing_hero_kicker": "VISUAL INSPECTION · LONGITUDINAL MEMORY",
@@ -388,6 +389,7 @@ _ES = {
     "asset_search_placeholder": "id del activo o resultado",
     "asset_filter_all": "todos los resultados",
     "asset_filter_label": "último resultado",
+    "repo_label": "Código fuente en GitHub",
     "asset_filter_empty": "Ningún activo coincide con esos filtros.",
 
     "landing_hero_kicker": "INSPECCIÓN VISUAL · MEMORIA LONGITUDINAL",

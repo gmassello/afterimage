@@ -822,3 +822,9 @@ def test_samples_start_unpressed_and_have_a_status_line_to_speak_through():
 def test_the_result_filter_is_named_for_what_it_filters():
     page = views.index_page([{"asset_id": "panel-a7", "last_branch": "no_change"}])
     assert "<label for='asset-result'>latest result</label>" in page
+
+
+def test_the_repository_link_is_an_icon_with_a_spoken_name():
+    page = views.index_page([], lang="es")
+    assert "class='repo' href='https://github.com/gmassello/afterimage' aria-label='Código fuente en GitHub'>" in page
+    assert ">repo</a>" not in page
