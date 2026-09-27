@@ -107,6 +107,8 @@ nav.langs a, nav.regs a { color: var(--muted); padding: 4px 8px; border-radius: 
 nav.langs a { display: inline-flex; min-width: 24px; min-height: 24px;
               align-items: center; justify-content: center; }
 nav.langs .here, nav.regs .here { color: var(--accent); background: var(--accent-soft); }
+.repo { display: inline-flex; padding: 4px; color: var(--muted); border-radius: var(--radius-pill); }
+.repo:hover { color: var(--fg); }
 .runid, .runstate { font-family: var(--font-mono); font-size: 0.875rem; color: var(--muted); }
 .runstate { display: flex; gap: 4px; margin: 0; }
 .says-what { max-width: 46ch; }
