@@ -81,3 +81,7 @@ Findings 1–3 are implemented:
 Walked again in Spanish on `localhost:8000`: sample 1 → trace titled "Primera foto de este activo,
 guardada como referencia" → **Siguiente** → sample 3 preloaded → "Una persona tiene que mirar este
 cambio" → approve → the asset history with the new baseline in force. Six clicks from `/app`.
+
+Findings 4–5 are implemented as well: the deciding number is the decision whose branch the run ended
+on (`baseline_exists 0` for a reference photo, with a plain tip), and the **Waiting on a human** panel
+and the next-sample link sit directly under the hero instead of below the image comparison.

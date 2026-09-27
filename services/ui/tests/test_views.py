@@ -794,3 +794,19 @@ def test_a_demo_reference_photo_titles_itself_and_offers_the_cracked_sample():
 def test_the_workspace_preselects_only_a_known_sample():
     assert "data-preselect='sample-defect'" in views.index_page([], preselect="sample-defect")
     assert "data-preselect" not in views.index_page([], preselect="../etc")
+
+
+def test_the_headline_number_is_the_one_that_chose_the_branch():
+    decisions = [
+        {"input_metric": "baseline_exists", "value": 0.0, "threshold": 1.0,
+         "branch": "first_baseline"},
+        {"input_metric": "blur_variance", "value": 2483.1, "threshold": 100.0,
+         "branch": "quality_ok"},
+    ]
+    assert views._decider(decisions, EN, "first_baseline")["metric"] == "baseline_exists"
+    assert views._decider(decisions, EN, "unknown")["metric"] == "blur_variance"
+
+
+def test_the_pending_verdict_sits_right_under_the_hero():
+    page = views.render_html({**STATE, "status": "awaiting_approval"}, EVENTS)
+    assert page.index("<section class='cta'>") < page.index("<div class='flow'>")
