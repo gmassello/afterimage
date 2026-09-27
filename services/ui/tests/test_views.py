@@ -863,3 +863,20 @@ def test_steps_are_named_for_people_in_plain_and_by_tool_in_technical():
     plain = views._path(EVENTS, trace.DONE, EN)["steps"][0]["name"]
     tech = views._path(EVENTS, trace.DONE, strings("en", "tech"))["steps"][0]["name"]
     assert (plain, tech) == ("quality", "assess_quality")
+
+
+def test_the_next_step_sits_inside_the_hero_so_phones_see_it_first():
+    page = views.render_html({"asset_id": "demo-panel-abc123"},
+                             [_call("assess_quality", "quality_ok"), _finished("first_baseline")])
+    link = page.index("href='/app?sample=sample-defect'")
+    assert page.index("<section class='hero'>") < link < page.index("<div class='panel'>")
+
+
+def test_a_locked_sample_explains_itself_through_the_status_line():
+    assert '"sampleLocked": "Primero la 1: fija la referencia."' in views.index_page([], lang="es")
+
+
+def test_the_approval_panel_keeps_the_model_message_for_the_technical_register():
+    pending = {**STATE, "status": "awaiting_approval", "message": "confirm the crack"}
+    assert "confirm the crack" not in views.render_html(pending, EVENTS).split("<section class='cta'>")[1]
+    assert "confirm the crack" in views.render_html(pending, EVENTS, register="tech")

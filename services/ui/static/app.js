@@ -8,6 +8,7 @@ const T = (() => {
     notAnImage: 'not a decodable image',
     sampleFailed: 'the example could not be loaded \u2014 pick a file instead',
     sampleLoaded: 'Loaded: {sample}. Press inspect.',
+    sampleLocked: 'Sample 1 first: it sets the reference.',
     runStartFailed: 'the run could not be started',
     pollTimeout: 'the run did not answer in time \u2014 open activity to check it',
   };
@@ -167,7 +168,11 @@ if (zone) {
   });
   document.querySelectorAll('.sample[data-sample]').forEach((button) => {
     button.addEventListener('click', async () => {
-      if (button.getAttribute('aria-disabled') === 'true') return;
+      if (button.getAttribute('aria-disabled') === 'true') {
+        const status = document.querySelector('[data-sample-status]');
+        if (status) status.textContent = T.sampleLocked;
+        return;
+      }
       const id = document.getElementById('asset-id');
       if (id && !id.value) id.value = button.dataset.asset;
       try {
