@@ -41,5 +41,5 @@
 <footer class='bot'><span>GET /traces/{{ footer.run_id }}</span>
 {%- if footer.run_id %}<a href='/traces/{{ footer.run_id }}?format=json'>{{ t.raw_json }}</a>{% endif -%}
 {%- if footer.asset_id %}<a href='/assets/{{ footer.asset_id }}'>{{ t.asset_history }}</a>{% endif -%}
-<span>{{ footer.chain }}</span><span>{{ t.footer_thresholds }}</span></footer>
+{% if footer.chain %}<span>{{ footer.chain }}</span>{% endif %}<span>{{ t.footer_thresholds }}</span></footer>
 {% endblock %}

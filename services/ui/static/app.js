@@ -167,6 +167,7 @@ if (zone) {
   });
   document.querySelectorAll('.sample[data-sample]').forEach((button) => {
     button.addEventListener('click', async () => {
+      if (button.getAttribute('aria-disabled') === 'true') return;
       const id = document.getElementById('asset-id');
       if (id && !id.value) id.value = button.dataset.asset;
       try {

@@ -298,7 +298,7 @@ def test_both_upload_fields_carry_a_label():
     for field, label in (("asset-id", "asset id"), ("capture", "capture")):
         assert f"<label for='{field}'>{label}</label>" in page
         assert f"id='{field}'" in page
-    assert "placeholder='e.g. panel-a7-north, or empty to recognise it'" in page
+    assert "placeholder='panel-a7 (optional)'" in page
 
 
 def test_a_rejected_upload_keeps_the_asset_id_already_typed():
@@ -465,7 +465,7 @@ RAILS = {
 def test_the_rail_says_which_stages_never_ran_instead_of_promising_them(case):
     events, run_state, expected = RAILS[case]
     steps = views._path(events, run_state, EN)["steps"]
-    assert [step["name"] for step in steps] == list(views._ORDER)
+    assert [step["name"] for step in steps] == [EN[f"step_{tool}"] for tool in views._ORDER]
     assert [step["state"] for step in steps] == expected
 
 
@@ -828,3 +828,38 @@ def test_the_repository_link_is_an_icon_with_a_spoken_name():
     page = views.index_page([], lang="es")
     assert "class='repo' href='https://github.com/gmassello/afterimage' aria-label='Código fuente en GitHub'>" in page
     assert ">repo</a>" not in page
+
+
+def test_the_demo_samples_wait_for_the_reference_photo():
+    locked = views.index_page([], sample_ready=False)
+    assert locked.count("aria-disabled='true'") == len(views.SAMPLES) - 1
+    assert "after sample 1, which sets the reference" in locked
+    assert "aria-disabled" not in views.index_page([], sample_ready=True)
+
+
+def test_the_demo_tour_offers_the_next_step_after_every_branch():
+    demo = {"asset_id": "demo-panel-abc123"}
+    assert views._next_sample({**demo, "branch": "recapture"}, EN)["url"] == "/app?sample=sample-foreign"
+    assert views._next_sample({**demo, "branch": "unrecognized_asset"}, EN) == {
+        "url": "/assets/demo-panel-abc123", "label": "See this asset's history"}
+    assert views._next_sample({**demo, "branch": "no_change"}, EN) is None
+    assert views._next_sample({"asset_id": "panel-a7", "branch": "recapture"}, EN) is None
+
+
+def test_the_asset_history_continues_the_tour_only_when_asked():
+    page = views.asset_page("demo-panel-abc123", [], next_sample="sample-blurred")
+    assert "href='/app?sample=sample-blurred'>Next: 2 · the same panel, out of focus</a>" in page
+    assert "/app?sample=" not in views.asset_page("demo-panel-abc123", [], next_sample="../x")
+    assert "/app?sample=" not in views.asset_page("demo-panel-abc123", [])
+
+
+def test_a_running_trace_does_not_freeze_a_partial_chain_count():
+    running = views.render_html({}, EVENTS[:2])
+    assert "steps of this run close over each other" not in running
+    assert "steps of this run close over each other" in views.render_html(STATE, EVENTS)
+
+
+def test_steps_are_named_for_people_in_plain_and_by_tool_in_technical():
+    plain = views._path(EVENTS, trace.DONE, EN)["steps"][0]["name"]
+    tech = views._path(EVENTS, trace.DONE, strings("en", "tech"))["steps"][0]["name"]
+    assert (plain, tech) == ("quality", "assess_quality")

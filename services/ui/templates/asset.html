@@ -2,6 +2,7 @@
 {% import 'partials/components.html' as c with context %}
 {% block body %}
 <section class='col'><h1 class='kicker'>{{ asset_id }} &middot; {{ t.asset_kicker }}</h1>
+{%- if next_sample %}<section class='cta'><a class='btn ok' href='{{ next_sample.url }}'>{{ next_sample.label }}</a></section>{% endif -%}
 {%- if sparkline %}<figure class='spark'><svg viewBox='0 0 100 24' preserveAspectRatio='none' role='img' aria-label='{{ t.spark_label }}'><line class='mark' vector-effect='non-scaling-stroke' x1='0' y1='{{ sparkline.mark }}' x2='100' y2='{{ sparkline.mark }}'></line><polyline vector-effect='non-scaling-stroke' points='{% for p in sparkline.points %}{{ p.x }},{{ p.y }} {% endfor %}'></polyline>{% for p in sparkline.points %}<line vector-effect='non-scaling-stroke' class='{{ p.tone }}' x1='{{ p.x }}' y1='{{ p.y }}' x2='{{ p.x }}' y2='{{ p.y }}'></line>{% endfor %}</svg><figcaption>{{ t.spark_label }} &middot; {{ t.spark_caption_tail }}</figcaption></figure>{% endif -%}
 <div class='timeline'>
 {%- if entries -%}

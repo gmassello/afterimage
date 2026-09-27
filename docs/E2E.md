@@ -131,7 +131,9 @@ browser profile.
 | **O** | the strip fills the form | 1 then 2 | clicking a sample writes this browser's `demo-panel-<suffix>` into an empty asset id, lands the file in the real input and renders the preview from a blob URL — the same `review()` a drop goes through. Sample 1 ends `first_baseline`; sample 2 then reads **`blur_variance 3.6589 < 100.0 -> recapture`**, the same figure C gets from `1-blurred.png`, which is what proves the committed copy has not drifted from `video/img/` |
 | **P** | a sample the baseline will not recognise | 4 | `retry_classic` → `unrecognized_asset` against the baseline sample 1 left. The synthetic panel is a different image entirely, so this is the refusal reached without typing an id or opening a file picker |
 
-Run O before P, and both before N. They leave the demo asset in the gallery with a thumbnail, which
+On a fresh browser, samples 2–4 are locked with "after sample 1" until sample 1 has set the
+reference. From there the tour buttons walk 1 → 3 → approve → 2 → 4 → the asset history without
+the nav. Run O before P, and both before N. They leave the demo asset in the gallery with a thumbnail, which
 is what `/app` is meant to look like when someone arrives.
 
 ### Asset `e2e-ghost` — a new asset whose very first capture is unusable
