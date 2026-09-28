@@ -167,3 +167,55 @@ In plain Spanish:
   cerca, severidad";
 - the footer shows no chain line while a run is in flight;
 - the placeholder reads `panel-a7 (opcional)` in full, and the samples sit in a 2 × 2 grid.
+
+## Review 2026-09-27 (landing)
+
+Walked `localhost:8000/` in Chrome as a first-time judge, Spanish, plain register, at 1512 × 789.
+The landing is where a judge arrives from the submission link, so it decides whether `/app` is ever
+opened.
+
+### Current flow
+
+1. `/` opens on the hero: kicker, the title "La inspección que recuerda lo que vio.", one sentence,
+   and two buttons, **Abrir la aplicación** (`/app`) and **Ver cómo funciona** (`#how-it-works`), at
+   y=614, above the fold (`services/ui/templates/landing.html:10`).
+2. Beside it, an animated illustration of the four samples: a tablist of four scenarios, five stage
+   chips and a result line. The hint says to run one in the application
+   (`landing_demo_hint`, `services/ui/text.py:424`), but no scenario links anywhere.
+3. Below: four metrics (y=870), how it works (y=1132), memory (y=1614), the stack (y=2076) and a
+   final **Iniciar una inspección** (y=2608, `services/ui/templates/landing.html:150`).
+4. Either primary button opens `/app` empty: the judge still has to find sample 1 and press
+   **inspect**, the first moment of "what now?".
+
+### Findings
+
+| # | Finding | Heuristic / law | Evidence | Proposal | Impact | Effort |
+|---|---|---|---|---|---|---|
+| 16 | Both primary buttons open an empty workspace; the tour only starts after the judge finds sample 1 | Paradox of the Active User; Tesler's Law | `services/ui/templates/landing.html:10` and `:150` link to `/app` | Point both to `/app?sample=sample-baseline`, which the preselection already supports, and relabel `landing_primary_cta` to "Try it with the reference photo" / "Probalo con la foto de referencia" and `landing_final_cta` to the same verb. The landing then opens the tour one click from **inspect** | high — UX, video pacing | S |
+| 17 | The landing names the five stages differently from the trace the judge sees next | H4 consistency | `landing_stage_*` at `services/ui/text.py:432–436` ("Calidad, Alinear, Comparar, Revisar, Decidir") against `step_*_plain` ("calidad, alineación, cambio, mirada de cerca, severidad") | Render the landing chips from `step_<tool>` in `services/ui/templates/landing.html:35–36` and delete the `landing_stage_*` keys, so one vocabulary covers both pages | medium — UX | S |
+| 18 | The illustration's result line shows the raw branch id in plain Spanish ("resultado first_baseline") | H2 match with the real world | `landing_scenario_<n>_outcome` at `services/ui/text.py:129` and `:472`, rendered at `services/ui/templates/landing.html:74` | Render `outcome_<branch>` there (the title the trace uses), and keep the id only in the technical register | medium — UX | S |
+| 19 | The metrics speak statistics in the plain register: "exactitud de rama", "F1 macro de defecto", "IoU promedio" | H2; Von Restorff | `landing_metric_*` at `services/ui/text.py:444–448` have no `_plain` variant | Add `_plain` labels that keep the same numbers, which are gated elsewhere: "final answers that match the expected one", "defects named correctly", "how well the marked region overlaps the real one"; the current wording becomes `_tech` | medium — innovation and docs (the evidence reads as evidence) | S |
+| 20 | "Five perception tools" while the MCP server exposes six since `identify_asset` | UX writing (accuracy) | `landing_flow_lede` at `services/ui/text.py:109` and `:452`; `services/mcp_server/server.py:56` | "Six perception tools …" / "Seis herramientas …" | low — technique (a wrong count on the first page) | S |
+| 21 | The illustration invites running a scenario but offers no way to | H6 recognition over recall | `landing_demo_hint` at `services/ui/text.py:81` and `:424`; no link in the scenario panel | Covered by 16 for scenario 1. For 2–4, change the hint to "Try them in order in the app: the first photo sets the reference." so it matches the locked samples | low | S |
+
+### Proposed flow
+
+1. `/` → **Probalo con la foto de referencia** opens `/app` with sample 1 already loaded.
+2. **inspeccionar** → the tour from the second pass: Next: 3 → approve → Next: 2 → Next: 4 →
+   the asset history.
+
+Clicks from the landing to the end frame drop from 12 to 11, and the first one no longer lands on
+an empty form. The stage names, outcome titles and metric labels the judge reads on the landing are
+the same ones the trace uses a minute later.
+
+Findings 16–21 are implemented. Walked again in Chrome in plain Spanish:
+
+- **Probalo con la foto de referencia** opens `/app` with `sample-baseline.png` loaded and the status
+  line reading "Cargada: 1 · la foto de referencia. Apretá inspeccionar.";
+- the illustration's chips read "calidad, alineación, cambio, mirada de cerca, severidad" and its
+  result "Primera foto de este activo, guardada como referencia";
+- the metrics read "respuestas finales que coinciden con la esperada", "defectos bien nombrados" and
+  "coincidencia de la zona marcada con la real";
+- the lede counts six tools.
+
+The technical register keeps the tool ids, the branch ids and the statistical labels.
