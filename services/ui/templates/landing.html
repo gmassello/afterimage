@@ -7,7 +7,7 @@
     <h1 id='landing-title'>{{ t.landing_hero_title }}</h1>
     <p class='landing-hero-lede'>{{ t.landing_hero_lede }}</p>
     <div class='landing-actions'>
-      <a class='landing-button landing-button-primary' href='/app'>{{ t.landing_primary_cta }}</a>
+      <a class='landing-button landing-button-primary' href='/app?sample=sample-baseline'>{{ t.landing_primary_cta }}</a>
       <a class='landing-button' href='#how-it-works'>{{ t.landing_secondary_cta }}</a>
     </div>
   </div>
@@ -32,8 +32,6 @@
       {% endfor %}
     </div>
 
-    {% set stages = [t.landing_stage_quality, t.landing_stage_align, t.landing_stage_diff,
-                     t.landing_stage_rescan, t.landing_stage_severity] %}
     {% for sample in samples %}
     {% set scenario = loop.index %}
     <section class='landing-scenario-panel' id='landing-panel-{{ scenario }}' role='tabpanel'
@@ -71,7 +69,7 @@
       </ol>
       <div class='landing-outcome' role='status'>
         <span>{{ t.landing_demo_result }}</span>
-        <strong>{{ t['landing_scenario_' ~ scenario ~ '_outcome'] }}</strong>
+        <strong>{{ outcomes[scenario - 1] }}</strong>
       </div>
     </section>
     {% endfor %}
@@ -147,7 +145,7 @@
     <h2 id='landing-final-title'>{{ t.landing_final_title }}</h2>
     <p>{{ t.landing_final_lede }}</p>
   </div>
-  <a class='landing-button landing-button-primary' href='/app'>{{ t.landing_final_cta }}</a>
+  <a class='landing-button landing-button-primary' href='/app?sample=sample-baseline'>{{ t.landing_final_cta }}</a>
 </section>
 </div>
 {% endblock %}

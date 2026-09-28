@@ -637,8 +637,8 @@ def test_the_landing_renders_its_copy_instead_of_empty_slots():
         "landing_demo_kicker",
         "landing_demo_title",
         "landing_demo_hint",
-        "landing_scenario_1_outcome",
-        "landing_scenario_4_outcome",
+        "outcome_first_baseline",
+        "outcome_unrecognized_asset",
     )
     for key in keys:
         assert EN[key].split(".")[0] in page, key
@@ -880,3 +880,16 @@ def test_the_approval_panel_keeps_the_model_message_for_the_technical_register()
     pending = {**STATE, "status": "awaiting_approval", "message": "confirm the crack"}
     assert "confirm the crack" not in views.render_html(pending, EVENTS).split("<section class='cta'>")[1]
     assert "confirm the crack" in views.render_html(pending, EVENTS, register="tech")
+
+
+def test_the_landing_opens_the_tour_and_speaks_the_trace_vocabulary():
+    plain = views.landing_page()
+    assert plain.count("href='/app?sample=sample-baseline'") == 2
+    assert "<span class='landing-rail-name'>quality</span>" in plain
+    assert "<strong>First photo of this asset, saved as its reference</strong>" in plain
+    assert "final answers that match the expected one" in plain
+    assert "Six perception tools" in plain
+    tech = views.landing_page(register="tech")
+    assert "<span class='landing-rail-name'>assess_quality</span>" in tech
+    assert "<strong>first_baseline</strong>" in tech
+    assert "branch accuracy" in tech

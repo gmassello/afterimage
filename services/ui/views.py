@@ -205,6 +205,11 @@ def landing_page(metrics: list[dict] | None = None, lang: str = DEFAULT_LANG,
         narrow=False,
         landing_metrics=shown,
         samples=_samples(t),
+        stages=[_step_name(tool, t) for tool in _ORDER],
+        outcomes=[
+            branch if register == "tech" else t.get(f"outcome_{branch}", branch)
+            for branch in (t[f"landing_scenario_{n}_outcome"] for n in range(1, len(SAMPLES) + 1))
+        ],
         landing_js_url=_static_url(".js", "landing"),
     )
 
