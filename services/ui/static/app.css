@@ -179,6 +179,7 @@ figcaption { font-size: 0.8125rem; color: var(--muted); font-family: var(--font-
 .acts form { display: inline; }
 .acts form.reject { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .acts form.reject .input { min-width: 0; flex: 1 1 200px; }
+.acts form.reject label { font-size: 0.875rem; color: var(--muted); }
 .acts .say { flex: 0 0 100%; font-size: 0.875rem; color: var(--muted); }
 .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px;
        padding: 8px 14px; border-radius: var(--radius-md); font: 500 0.875rem/1.2 var(--font-sans);
@@ -470,7 +471,8 @@ header.top:has(~ main .landing-shell) { position: sticky; top: 0; z-index: 20;
 .landing-rail-done { border-color: var(--ok); }
 .landing-rail-warn { border-color: var(--warn); }
 .landing-rail-bad { border-color: var(--danger); }
-.landing-rail-skipped { opacity: .58; }
+.landing-rail-skipped, .landing-rail-skipped .landing-rail-index,
+.landing-rail-skipped .landing-rail-state { color: var(--subtle); }
 .landing-outcome { display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
   margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 .landing-outcome span { color: var(--muted); font: .75rem var(--font-mono); text-transform: uppercase;

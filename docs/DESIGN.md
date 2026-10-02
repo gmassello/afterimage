@@ -336,7 +336,7 @@ form reports errors.
 ### Approval panel
 
 - Approve (`ok` button) and a reject form side by side: an optional reason input (`.input`,
-  `maxlength="500"`, placeholder and `aria-label` from `text.py`) and a secondary reject button.
+  `maxlength="500"`) with a visible `small` `--muted` label and an example as placeholder, both from `text.py` and a secondary reject button.
 - The first click arms a confirmation and stays armed; the second posts. An interrupted verdict
   shows only its own action with a `small` hint. Results go to the status line.
 

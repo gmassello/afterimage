@@ -776,8 +776,19 @@ def test_the_headline_number_skips_the_checks_that_follow_a_verdict():
 def test_a_rejection_can_carry_the_reviewer_reason():
     page = views.queue_page([_queued("7f2ac91b04de", 0.5)])
     form = page.split("action='/queue/7f2ac91b04de/reject'>")[1].split("</form>")[0]
-    assert "name='reason' maxlength='500'" in form
-    assert "placeholder='why? e.g. glare on the glass (optional)'" in form
+    assert "<label for='reason-7f2ac91b04de'>reason (optional)</label>" in form
+    assert "id='reason-7f2ac91b04de' name='reason' maxlength='500'" in form
+    assert "placeholder='e.g. glare on the glass'" in form
+
+
+def test_the_landing_nav_leads_with_the_way_into_the_app():
+    assert views._nav("landing", EN)[0]["href"] == "/app"
+
+
+def test_skipped_rail_steps_are_dimmed_by_colour_not_opacity():
+    rule = CSS.split(".landing-rail-skipped .landing-rail-state {")[1].split("}")[0]
+    assert "color: var(--subtle)" in rule
+    assert "opacity" not in CSS.split(".landing-rail-skipped")[1].split("}")[0]
 
 
 def test_a_demo_reference_photo_titles_itself_and_offers_the_cracked_sample():
