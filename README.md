@@ -2,7 +2,7 @@
 
 <p align="center">
   <b>A visual inspection agent that remembers.</b><br>
-  It inspects physical assets from photos or video, decides on its own what to look at next, and compares every capture against the memory of the same asset to detect degradation over time.
+  It inspects physical assets from still photographs, decides on its own what to look at next, and compares every capture against the memory of the same asset to detect degradation over time.
 </p>
 
 <p align="center">
