@@ -239,9 +239,9 @@ must; nothing remaining blocks the demo.
 ### U20. Refresh the Devpost entry
 - **Goal:** the submission describes the current product (recognition, calibration gate, retry, tour, toggles) within the field limits, with every figure tied to its command.
 - **Covers:** R15
-- **Files:** `docs/DEVPOST.md` (not `docs/submission.md`: it collides with `docs/SUBMISSION.md` on case-insensitive filesystems)
+- **Files:** `docs/submission.md`, `docs/DELIVERY.md`
 - **Depends on:** U17
-- **Status:** todo — text ready in `docs/DEVPOST.md`; pasting it into the Devpost form is pending
+- **Status:** todo — text ready in `docs/submission.md`; pasting it into the Devpost form is pending
 - **Tests:**
   - happy: every figure in the entry → found in `eval/results/latest/results.json` or the report's measured section
   - edge: the video link → still the current cut after U19

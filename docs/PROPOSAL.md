@@ -400,7 +400,7 @@ If the vertical ends up being solar panels and you want something more literal, 
 
 ## 11. Submission checklist
 
-Submitted. Each line is evidenced in `docs/SUBMISSION.md`, which is the document to read for
+Submitted. Each line is evidenced in `docs/DELIVERY.md`, which is the document to read for
 the detail; this list is the competition's own wording, kept for the record.
 
 - [x] Repo accessible to the judges (public, or private with access granted)

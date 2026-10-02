@@ -16,7 +16,7 @@ Estado del codigo en una linea: 363 tests verdes (cobertura 92.44%, `make test` 
 |---|---|---|---|
 | Repo y CI | `gmassello/afterimage` @ `0c8bf01` | pusheado; CI verde | 2026-10-01 `gh run list --commit` |
 | Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `0c8bf01` (deploy manual, run 36945127410) | 2026-10-01 `<title>afterimage`, `app.3d4b30ef.css` con la escala nueva, `/health` calibration `aligned` 0.9975 |
-| Submission | https://devpost.com/software/afterimage-ibp376 | publicada el 7 Sep, desactualizada (dice video, cinco tools, 23 escenarios); texto nuevo en `docs/DEVPOST.md` | 2026-10-01 lectura de la pagina publica |
+| Submission | https://devpost.com/software/afterimage-ibp376 | publicada el 7 Sep, desactualizada (dice video, cinco tools, 23 escenarios); texto nuevo en `docs/submission.md` | 2026-10-01 lectura de la pagina publica |
 | Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no verificada | — |
 | PR upstream | no aplica | — | — |
 | Segundo checkout | no aplica | — | — |
@@ -28,8 +28,8 @@ Estado del codigo en una linea: 363 tests verdes (cobertura 92.44%, `make test` 
 | Hecho | Valor real | Comando que lo produce | Copias |
 |---|---|---|---|
 | Cantidad de tests | 363 | `make test` | ninguna publicada |
-| Escenarios / pasan | 29 / 24 | `make eval` → `eval/results/latest/results.json` | README, EVALUATION, TECHNICAL_REPORT, `docs/DEVPOST.md` (ancladas por `test_published_numbers`, salvo DEVPOST) |
-| Tools MCP | 6 | `services/mcp_server/server.py` | README, landing, `docs/DEVPOST.md`, descripcion del repo en GitHub (corregida 2026-10-01) |
+| Escenarios / pasan | 29 / 24 | `make eval` → `eval/results/latest/results.json` | README, EVALUATION, TECHNICAL_REPORT, `docs/submission.md` (ancladas por `test_published_numbers`, salvo la ficha) |
+| Tools MCP | 6 | `services/mcp_server/server.py` | README, landing, `docs/submission.md`, descripcion del repo en GitHub (corregida 2026-10-01) |
 
 ## Lo que no cierra
 
@@ -41,7 +41,7 @@ Estado del codigo en una linea: 363 tests verdes (cobertura 92.44%, `make test` 
 
 ## No romper esto al volver
 
-- `docs/submission.md` y `docs/SUBMISSION.md` son el mismo archivo en macOS: la ficha vive en `docs/DEVPOST.md`.
+- `docs/submission.md` (la ficha) y el checklist viejo `docs/DELIVERY.md` estaban como `SUBMISSION.md`: en macOS ese nombre pisa la ficha, no recrearlo.
 - `test_the_stylesheet_carries_the_design_system_tokens_verbatim` exige que `app.css` empiece con el bloque css de `docs/DESIGN.md` §3: un token nuevo va en los dos.
 - Cifras de evaluacion: solo via `make eval`; `test_published_numbers` y el job `eval` de CI fallan si se escriben a mano.
 - `make test` y `make dev` necesitan el daemon de Docker (`colima start`).
