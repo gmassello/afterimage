@@ -14,8 +14,8 @@ Estado del codigo en una linea: 363 tests verdes (cobertura 92.44%, `make test` 
 
 | Superficie | Donde | Estado | Verificado |
 |---|---|---|---|
-| Repo y CI | `gmassello/afterimage` @ `4b2fa42` | pusheado; CI verde | 2026-10-02 `gh run list --commit` |
-| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `4b2fa42` (deploy manual, run 37065878527), con los tres fixes de UX | 2026-10-02 `<title>afterimage`, `app.21ee4dad.css`, nav con "open app" primero, label del motivo en `/queue`, `/health` calibration `aligned` 0.9975 |
+| Repo y CI | `gmassello/afterimage` @ `901467f` | pusheado; CI verde | 2026-10-02 `gh run list --commit` |
+| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `901467f` (deploy manual, run 37069246099): carrusel con tres juegos de muestras | 2026-10-02 `/app` con 3 juegos y 12 muestras, los 8 PNG nuevos `200 image/png`, `/health` calibration `aligned` 0.9975 |
 | Submission | https://devpost.com/software/afterimage-ibp376 | publicada el 7 Sep, desactualizada (dice video, cinco tools, 23 escenarios); texto nuevo en `docs/submission.md` | 2026-10-01 lectura de la pagina publica |
 | Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no verificada | — |
 | PR upstream | no aplica | — | — |
