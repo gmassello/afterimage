@@ -1,4 +1,5 @@
-afterimage bundles three third-party assets: one font and two ONNX model files.
+afterimage bundles third-party assets: fonts, two ONNX model files and sample
+photographs derived from Wikimedia Commons images.
 
 models/aliked-n16rot-top1k-640.onnx (sha1 41faa7bf5d7eb68a2851471ba03aa20c9db30e4c)
 is the ALIKED keypoint detector, published by Shiaoming/ALIKED under the
@@ -15,6 +16,25 @@ the licenses above are the ones of the original models it re-exports. OpenCV
 lists the same two files and the same two sha1 digests for its own DNN test
 data, in opencv_extra/testdata/dnn/download_models.py on the 5.x branch, and
 points at this same repository rather than hosting the bytes itself. They are copied into the deployed image at /opt/models.
+
+services/ui/static/sample-b-baseline.png, sample-b-blurred.png and
+sample-b-defect.png are derived from "Solar panels in Ogiinuur.jpg" by Chinneeb
+(https://commons.wikimedia.org/wiki/File:Solar_panels_in_Ogiinuur.jpg), licensed
+under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0). They are
+resized, blurred or given a synthetic hot spot by video/make_demo_images.py and
+are distributed under the same license.
+
+services/ui/static/sample-c-baseline.png, sample-c-blurred.png and
+sample-c-defect.png are derived from "Dornbirn-Solar panel Jetion JTI 195
+Jetion Solar-01ASD.jpg" by Asurnipal
+(https://commons.wikimedia.org/wiki/File:Dornbirn-Solar_panel_Jetion_JTI_195_Jetion_Solar-01ASD.jpg),
+licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0).
+They are resized, blurred or given synthetic delamination by
+video/make_demo_images.py and are distributed under the same license.
+
+The crack set (sample-baseline/blurred/defect.png) derives from a CC0 photograph,
+and every sample-*-foreign.png is a synthetic panel; eval/dataset/SOURCES.md lists
+every source photograph.
 
 services/ui/static/inter.woff2 is the latin subset of the Inter variable font,
 served from the same origin so no request leaves for a font CDN. It is licensed

@@ -843,7 +843,7 @@ def test_the_repository_link_is_an_icon_with_a_spoken_name():
 
 def test_the_demo_samples_wait_for_the_reference_photo():
     locked = views.index_page([], sample_ready=False)
-    assert locked.count("aria-disabled='true'") == len(views.SAMPLES) - 1
+    assert locked.count("aria-disabled='true'") == len(views.SAMPLES) - len(views.SAMPLE_GROUPS)
     assert "after sample 1, which sets the reference" in locked
     assert "aria-disabled" not in views.index_page([], sample_ready=True)
 
@@ -862,6 +862,30 @@ def test_the_asset_history_continues_the_tour_only_when_asked():
     assert "href='/app?sample=sample-blurred'>Next: 2 · the same panel, out of focus</a>" in page
     assert "/app?sample=" not in views.asset_page("demo-panel-abc123", [], next_sample="../x")
     assert "/app?sample=" not in views.asset_page("demo-panel-abc123", [])
+
+
+def test_each_demo_set_tours_its_own_asset_and_names_its_defect():
+    hotspot = {"asset_id": "demo-panel-b-abc123"}
+    first = views._next_sample({**hotspot, "branch": "first_baseline"}, EN)
+    assert first == {"url": "/app?sample=sample-b-defect",
+                     "label": "Next: 3 · the same panel, now with a hot spot"}
+    assert views._next_sample({**hotspot, "branch": "recapture"}, EN)["url"] == "/app?sample=sample-b-foreign"
+    assert views.sample_group("demo-panel-abc123") == ("crack", "sample")
+    assert views.sample_group("demo-panel-c-abc123") == ("delamination", "sample-c")
+    assert views.sample_group("panel-a7") is None
+
+
+def test_the_demo_sets_sit_in_a_carousel_and_lock_one_by_one():
+    page = views.index_page([], sample_suffix="abc123", sample_ready=(True, False, True),
+                            preselect="sample-c-defect")
+    assert page.count("<section class='group'") == len(views.SAMPLE_GROUPS)
+    assert "data-carousel-step='-1'" in page and "data-carousel-step='1'" in page
+    assert "role='status' data-carousel-count>Set 1 of 3 · crack<" in page
+    assert "data-carousel data-preselect='sample-c-defect'" in page
+    assert page.count("aria-disabled='true'") == len(views.SAMPLE_ROLES) - 1
+    hotspot = page.split("aria-label='Set 2 of 3 · hot spot'")[1].split("</section>")[0]
+    assert hotspot.count("aria-disabled='true'") == len(views.SAMPLE_ROLES) - 1
+    assert "data-asset='demo-panel-b-abc123'" in hotspot
 
 
 def test_a_running_trace_does_not_freeze_a_partial_chain_count():

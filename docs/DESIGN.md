@@ -327,6 +327,17 @@ form reports errors.
   change, `cursor: not-allowed`; a tap explains why in the status line instead of starting a run.
 - Loading and error: carried by the form's submit button and status line.
 
+### Sample carousel
+
+- Three sets of four sample captures, one `<section class='group'>` each, in a track with
+  `overflow-x: auto`, `scroll-snap-type: x mandatory`, hidden scrollbar and each set at 100 % of
+  the track width. Smooth scrolling only under `prefers-reduced-motion: no-preference`.
+- Above it: ‹ and › as `btn sm` (32 × 32) around a centred `small` `--muted` count
+  ("Set 2 of 3 · hot spot") with `role="status"`.
+- Disabled end (`aria-disabled="true"` on ‹ at the first set, › at the last): `--subtle` text,
+  `cursor: not-allowed`. Focus: ring on the buttons and on the track, which takes the arrow keys.
+- Each set locks on its own until its demo asset has a reference.
+
 ### Next step of the tour
 
 - A single `ok` button inside the trace hero, directly under the verdict, so a phone reaches it

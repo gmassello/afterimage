@@ -28,7 +28,7 @@ lock and the decoded-image cache keeps the 32 most recent arrays.
 | `GET /` | Renders the public product landing without reading asset memory. |
 | `GET /app` | Renders the upload form, sample captures, and asset gallery. |
 | `GET /activity?q=&status=` | Renders at most 4 recent runs, newest first. Filters apply to the 200 most recent runs, not to the whole archive. |
-| `GET /assets/{asset_id}?next=` | Renders the chronological history and current baseline. `next`, when it names a bundled sample (`sample-defect`, `sample-blurred`, `sample-foreign`), adds a link that continues the demo tour. |
+| `GET /assets/{asset_id}?next=` | Renders the chronological history and current baseline. `next`, when it names a bundled sample of any set (`sample-defect`, `sample-b-blurred`, `sample-c-foreign`, …), adds a link that continues the demo tour. |
 | `POST /inspections` | Validates the asset ID and image, stores the capture, starts a trace, and redirects with 303. The asset ID may be empty: the capture is then stored under `assets/_unassigned/` and the loop starts with `identify_asset`. Returns 503 `calibration_failed` while calibration is out of tolerance. |
 | `POST /runs/{run_id}/execute` | Claims and executes the opened run; returns 404 for unknown runs and 409 when already claimed. HTML receives a 303 back to the trace, so the run also starts without JavaScript. |
 | `POST /runs/{run_id}/retry` | For a terminal failed run, idempotently opens its replacement. A run interrupted before it finished is closed as failed after 15 minutes of silence and then retried the same way. HTML receives a 303; JSON receives the new run contract. |

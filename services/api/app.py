@@ -16,7 +16,7 @@ from services.observability.render import load_run
 from services.observability.trace import RUN_ID_PATTERN, broken_at
 from services.ui.text import DEFAULT_LANG, DEFAULT_REGISTER, LANGS, REGISTERS, strings
 from services.ui.views import (
-    SAMPLE_ASSET,
+    SAMPLE_GROUPS,
     THUMB_WIDTH,
     activity_page,
     asset_page,
@@ -25,6 +25,8 @@ from services.ui.views import (
     landing_page,
     queue_page,
     render_html,
+    sample_asset,
+    sample_group,
     static_asset,
 )
 
@@ -144,9 +146,12 @@ def landing(lang: str = Depends(language), reading: str = Depends(register)):
     return HTMLResponse(landing_page(lang=lang, register=reading))
 
 
-def _demo(request: Request) -> tuple[str, bool]:
-    sample_asset = f"{SAMPLE_ASSET}-{demo_suffix(request)}"
-    return sample_asset, store.current_baseline(sample_asset) is not None
+def _demo(request: Request) -> tuple[str, tuple[bool, ...]]:
+    suffix = demo_suffix(request)
+    return suffix, tuple(
+        store.current_baseline(sample_asset(prefix, suffix)) is not None
+        for _, prefix in SAMPLE_GROUPS
+    )
 
 
 def demo_suffix(request: Request) -> str:
@@ -157,13 +162,12 @@ def demo_suffix(request: Request) -> str:
 @app.get("/app")
 def index(request: Request, sample: str = "", lang: str = Depends(language),
           reading: str = Depends(register)):
-    sample_asset, ready = _demo(request)
+    suffix, ready = _demo(request)
     answer = HTMLResponse(index_page(
         store.list_assets(), lang=lang, register=reading,
-        sample_asset=sample_asset, preselect=sample, sample_ready=ready,
+        sample_suffix=suffix, preselect=sample, sample_ready=ready,
     ))
-    answer.set_cookie(DEMO_COOKIE, sample_asset.rsplit("-", 1)[1], max_age=CHOICE_MAX_AGE,
-                      samesite="lax")
+    answer.set_cookie(DEMO_COOKIE, suffix, max_age=CHOICE_MAX_AGE, samesite="lax")
     return answer
 
 
@@ -213,7 +217,7 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
     except ApiError as rejected:
         if not wants_html(request):
             raise
-        sample_asset, ready = _demo(request)
+        suffix, ready = _demo(request)
         return HTMLResponse(
             index_page(
                 store.list_assets(),
@@ -221,7 +225,7 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
                 asset_id=asset_id,
                 lang=lang,
                 register=reading,
-                sample_asset=sample_asset,
+                sample_suffix=suffix,
                 sample_ready=ready,
             ),
             status_code=rejected.status_code,
@@ -367,7 +371,8 @@ def resolve_pending(request: Request, run_id: str, verdict: str, reason: str = F
         return RedirectResponse("/queue", status_code=303)
     asset_id = str((runs.read(runs.runs_dir() / run_id, runs.STATE) or {}).get("asset_id") or "")
     if verdict == "approve" and ASSET_ID_PATTERN.fullmatch(asset_id):
-        tour = "?next=sample-blurred" if asset_id.startswith(f"{SAMPLE_ASSET}-") else ""
+        group = sample_group(asset_id)
+        tour = f"?next={group[1]}-blurred" if group else ""
         return RedirectResponse(f"/assets/{asset_id}{tour}", status_code=303)
     return RedirectResponse(f"/traces/{run_id}", status_code=303)
 

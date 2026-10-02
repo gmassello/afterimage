@@ -267,10 +267,11 @@ def test_a_verdict_given_on_the_trace_lands_on_its_result(client, tmp_path):
 
 
 @localstack
-def test_approving_a_demo_finding_continues_the_tour(client, tmp_path):
+@pytest.mark.parametrize("prefix", ["sample", "sample-b"])
+def test_approving_a_demo_finding_continues_the_tour(client, tmp_path, prefix):
     from services.agent import hitl
 
-    asset_id = f"demo-panel-{uuid.uuid4().hex[:6]}"
+    asset_id = views.sample_asset(prefix, uuid.uuid4().hex[:6])
     store.put_asset(asset_id)
     run_id = uuid.uuid4().hex[:12]
     capture_key = images.put_image(asset_id, run_id, "capture", PANEL)
@@ -284,16 +285,16 @@ def test_approving_a_demo_finding_continues_the_tour(client, tmp_path):
         "message": "confirm the change",
     })
     answer = client.post(f"/queue/{run_id}/approve", data={"from": "trace"})
-    assert answer.headers["location"] == f"/assets/{asset_id}?next=sample-blurred"
+    assert answer.headers["location"] == f"/assets/{asset_id}?next={prefix}-blurred"
     page = client.get(answer.headers["location"]).text
-    assert "href='/app?sample=sample-blurred'" in page
+    assert f"href='/app?sample={prefix}-blurred'" in page
 
 
 @localstack
 def test_a_fresh_demo_asset_locks_every_sample_but_the_first(client):
     client.cookies.set("demo", uuid.uuid4().hex[:6])
     page = client.get("/app").text
-    assert page.count("aria-disabled='true'") == len(views.SAMPLES) - 1
+    assert page.count("aria-disabled='true'") == len(views.SAMPLES) - len(views.SAMPLE_GROUPS)
 
 
 @localstack
@@ -424,7 +425,7 @@ def test_a_rejected_upload_explains_itself_in_the_language_of_the_page(client):
 
 
 def test_the_sample_captures_are_served_like_every_other_static_asset(client):
-    for stem, _ in views.SAMPLES:
+    for stem in views.SAMPLES:
         name = next(n for n in views._assets() if n.startswith(stem + "."))
         response = client.get(f"/static/{name}")
         assert response.status_code == 200
@@ -636,6 +637,7 @@ def test_the_demo_samples_write_to_one_asset_per_visitor(client):
     assert re.fullmatch(r"[a-z0-9]{6}", suffix)
     assert f"data-asset='{views.SAMPLE_ASSET}-{suffix}'" in first.text
     assert f"data-asset='{views.SAMPLE_ASSET}-{suffix}'" in client.get("/app").text
+    assert f"data-asset='{views.SAMPLE_ASSET}-b-{suffix}'" in first.text
 
     stranger = TestClient(app, follow_redirects=False).get("/app")
     assert stranger.cookies["demo"] != suffix

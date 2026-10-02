@@ -146,8 +146,15 @@ _EN = {
     "error_activity": "Open activity",
 
     "samples_title": "no photo at hand?",
-    "samples_hint": "Four demo captures, in order: each lands on a different answer. Pick one, "
-                    "then press inspect.",
+    "samples_hint": "Three sets of four demo captures; swipe or use the arrows to change set. "
+                    "Go in order: each photo lands on a different answer. Pick one, then press "
+                    "inspect.",
+    "samples_group": "Set {n} of {total} · {name}",
+    "samples_group_crack": "crack",
+    "samples_group_hotspot": "hot spot",
+    "samples_group_delamination": "delamination",
+    "samples_prev": "previous set",
+    "samples_next": "next set",
     "sample_1_label": "1 · the reference photo",
     "sample_1_note": "nothing to compare against yet, so it becomes the baseline",
     "sample_2_label": "2 · the same panel, out of focus",
@@ -156,6 +163,10 @@ _EN = {
     "sample_3_note": "severe enough that a person has to approve it",
     "sample_4_label": "4 · a different panel altogether",
     "sample_4_note": "too few matches — the agent refuses rather than guess",
+    "sample_3_label_hotspot": "3 · the same panel, now with a hot spot",
+    "sample_3_note_hotspot": "severe enough that a person has to approve it",
+    "sample_3_label_delamination": "3 · the same panel, now delaminating",
+    "sample_3_note_delamination": "severe enough that a person has to approve it",
 
     "queue_kicker_tech": "runs the policy would not write unattended",
     "queue_kicker_plain": "changes the agent will not record on its own",
@@ -259,6 +270,8 @@ _EN = {
     "sample_needs_reference": "after sample 1, which sets the reference",
     "next_sample_2": "Next: 2 · the same panel, out of focus",
     "next_sample_4": "Next: 4 · another, completely different panel",
+    "next_sample_hotspot": "Next: 3 · the same panel, now with a hot spot",
+    "next_sample_delamination": "Next: 3 · the same panel, now delaminating",
     "tour_end": "See this asset's history",
     "step_assess_quality_plain": "quality",
     "step_align_to_baseline_plain": "alignment",
@@ -488,8 +501,15 @@ _ES = {
     "error_activity": "Abrir actividad",
 
     "samples_title": "¿no tenés una foto a mano?",
-    "samples_hint": "Cuatro capturas de demo, en orden: cada una cae en una respuesta distinta. "
+    "samples_hint": "Tres juegos de cuatro capturas de demo; deslizá o usá las flechas para "
+                    "cambiar de juego. Seguí el orden: cada foto cae en una respuesta distinta. "
                     "Elegí una y apretá inspeccionar.",
+    "samples_group": "Juego {n} de {total} · {name}",
+    "samples_group_crack": "fisura",
+    "samples_group_hotspot": "punto caliente",
+    "samples_group_delamination": "delaminación",
+    "samples_prev": "juego anterior",
+    "samples_next": "juego siguiente",
     "sample_1_label": "1 · la foto de referencia",
     "sample_1_note": "todavía no hay con qué comparar, así que pasa a ser el "
                      "baseline",
@@ -499,6 +519,10 @@ _ES = {
     "sample_3_note": "grave como para que lo apruebe una persona",
     "sample_4_label": "4 · otro panel completamente distinto",
     "sample_4_note": "muy pocas coincidencias — el agente se niega en vez de adivinar",
+    "sample_3_label_hotspot": "3 · el mismo panel, ahora con un punto caliente",
+    "sample_3_note_hotspot": "grave como para que lo apruebe una persona",
+    "sample_3_label_delamination": "3 · el mismo panel, ahora delaminado",
+    "sample_3_note_delamination": "grave como para que lo apruebe una persona",
 
     "queue_kicker_tech": "corridas que la política no escribiría sin supervisión",
     "queue_kicker_plain": "cambios que el agente no va a anotar por su cuenta",
@@ -602,6 +626,8 @@ _ES = {
     "sample_needs_reference": "después de la 1, que fija la referencia",
     "next_sample_2": "Siguiente: 2 · el mismo panel, fuera de foco",
     "next_sample_4": "Siguiente: 4 · otro panel completamente distinto",
+    "next_sample_hotspot": "Siguiente: 3 · el mismo panel, ahora con un punto caliente",
+    "next_sample_delamination": "Siguiente: 3 · el mismo panel, ahora delaminado",
     "tour_end": "Ver la historia del activo",
     "step_assess_quality_plain": "calidad",
     "step_align_to_baseline_plain": "alineación",

@@ -133,7 +133,9 @@ browser profile.
 
 On a fresh browser, samples 2–4 are locked with "after sample 1" until sample 1 has set the
 reference. From there the tour buttons walk 1 → 3 → approve → 2 → 4 → the asset history without
-the nav. Run O before P, and both before N. They leave the demo asset in the gallery with a thumbnail, which
+the nav. The hot-spot and delamination sets (› or a swipe on the carousel) repeat the same walk on
+`demo-panel-b-<suffix>` and `demo-panel-c-<suffix>`; each "Next" stays inside its set, and a
+set's samples 2–4 stay locked until that set's own sample 1 has run. Run O before P, and both before N. They leave the demo asset in the gallery with a thumbnail, which
 is what `/app` is meant to look like when someone arrives.
 
 ### Asset `e2e-ghost` — a new asset whose very first capture is unusable
@@ -258,7 +260,7 @@ For this pass, the browser run and measured findings are recorded in
   without JS they are inert and the only way in is the file picker. The primer above them is a plain
   `<details>` and still opens.
 - **The samples are committed copies, not the files the video uses.**
-  `services/ui/static/sample-*.png` are written by `video/make_demo_images.py` alongside
+  `services/ui/static/sample-*.png` (all three sets) are written by `video/make_demo_images.py` alongside
   `video/img/`, which is gitignored. Regenerate both in the same run, or path O stops reproducing
   `3.6589` while path C still does.
 - **`docker compose down` between runs empties the traces too**, not just the table: they live inside
