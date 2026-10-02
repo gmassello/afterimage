@@ -1,7 +1,9 @@
 import asyncio
 import os
 import uuid
+from pathlib import Path
 
+import cv2
 import pytest
 
 from services.agent import hitl, loop
@@ -317,3 +319,28 @@ def test_the_second_opinion_sends_an_overstated_message_back_and_never_blocks(
     assert phrasing == ["phrasing_rejected"]
     guard = [e for e in trace.read_events(result.run_dir) if e.get("tool") == loop.JEV_GUARD]
     assert [e.get("error") for e in guard] == [None, "HTTP 403"]
+
+
+SAMPLE_DIR = Path(__file__).parents[2] / "ui" / "static"
+
+
+@localstack
+@pytest.mark.parametrize("group", ["sample", "sample-b", "sample-c"])
+def test_every_demo_group_reaches_its_four_answers(group, tmp_path):
+    if not weights.neural_weights_available():
+        pytest.skip("requires ALIKED weights, the detector the deployment uses")
+    asset = unique(f"loop-{group}")
+
+    def sample(role):
+        return cv2.imread(str(SAMPLE_DIR / f"{group}-{role}.png"))
+
+    first = run_loop(asset, upload_capture(asset, sample("baseline")), ScriptedLLM([]), tmp_path)
+    assert first.branch == "first_baseline"
+    baseline_key = store.current_baseline(asset)["image_key"]
+    for role, branch in (
+        ("blurred", "recapture"), ("defect", "human_approval"), ("foreign", "unrecognized_asset"),
+    ):
+        capture_key = images.put_image(asset, f"insp-{role}", "capture", sample(role))
+        llm = PolicyFollowingLLM(capture_key, baseline_key, alignment.NEURAL)
+        result = run_loop(asset, capture_key, llm, tmp_path / role)
+        assert result.branch == branch, (role, result.decisions)

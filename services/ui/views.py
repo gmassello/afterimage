@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
@@ -48,12 +49,26 @@ _NAV = (
 )
 
 SAMPLE_ASSET = "demo-panel"
-SAMPLES = (
-    ("sample-baseline", "sample_1"),
-    ("sample-blurred", "sample_2"),
-    ("sample-defect", "sample_3"),
-    ("sample-foreign", "sample_4"),
-)
+SAMPLE_GROUPS = (("crack", "sample"), ("hotspot", "sample-b"), ("delamination", "sample-c"))
+SAMPLE_ROLES = ("baseline", "blurred", "defect", "foreign")
+SAMPLES = tuple(f"{prefix}-{role}" for _, prefix in SAMPLE_GROUPS for role in SAMPLE_ROLES)
+_SAMPLE_GROUP_ASSET = re.compile(rf"{SAMPLE_ASSET}(-[a-z])?-[a-z0-9]+")
+
+
+def sample_asset(prefix: str, suffix: str = "") -> str:
+    base = SAMPLE_ASSET + prefix.removeprefix("sample")
+    return f"{base}-{suffix}" if suffix else base
+
+
+def sample_group(asset_id: str) -> tuple[str, str] | None:
+    match = _SAMPLE_GROUP_ASSET.fullmatch(asset_id)
+    prefix = "sample" + ((match and match[1]) or "")
+    return next((g for g in SAMPLE_GROUPS if match and g[1] == prefix), None)
+
+
+def _sample_key(field: str, number: int, group: str) -> str:
+    key = f"sample_{number}_{field}"
+    return f"{key}_{group}" if number == 3 and group != SAMPLE_GROUPS[0][0] else key
 
 
 def when(value, lang: str = DEFAULT_LANG) -> str:
@@ -135,17 +150,33 @@ def _static_url(suffix: str, stem: str | None = None) -> str:
     return f"/static/{name}"
 
 
-def _samples(t: dict, asset_id: str = SAMPLE_ASSET, ready: bool = True) -> list[dict]:
+def _group_samples(t: dict, group: str, prefix: str, suffix: str, ready: bool) -> list[dict]:
     return [
         {
-            "url": f"/static/{next(n for n in _assets() if n.startswith(stem + '.'))}",
-            "name": f"{stem}.png",
-            "asset_id": asset_id,
-            "label": t[f"{key}_label"],
-            "note": t[f"{key}_note"] if ready or not index else t["sample_needs_reference"],
+            "url": f"/static/{next(n for n in _assets() if n.startswith(f'{prefix}-{role}.'))}",
+            "name": f"{prefix}-{role}.png",
+            "asset_id": sample_asset(prefix, suffix),
+            "label": t[_sample_key("label", index + 1, group)],
+            "note": t[_sample_key("note", index + 1, group)] if ready or not index
+            else t["sample_needs_reference"],
             "locked": not ready and index > 0,
         }
-        for index, (stem, key) in enumerate(SAMPLES)
+        for index, role in enumerate(SAMPLE_ROLES)
+    ]
+
+
+def _sample_groups(t: dict, suffix: str = "",
+                   ready: bool | tuple[bool, ...] = True) -> list[dict]:
+    readiness = ready if isinstance(ready, tuple) else (ready,) * len(SAMPLE_GROUPS)
+    return [
+        {
+            "key": group,
+            "title": t["samples_group"].format(
+                n=number, total=len(SAMPLE_GROUPS), name=t[f"samples_group_{group}"]),
+            "samples": _group_samples(t, group, prefix, suffix, group_ready),
+        }
+        for number, ((group, prefix), group_ready)
+        in enumerate(zip(SAMPLE_GROUPS, readiness, strict=True), start=1)
     ]
 
 
@@ -204,11 +235,11 @@ def landing_page(metrics: list[dict] | None = None, lang: str = DEFAULT_LANG,
         "landing.html", "visual inspection with memory", "landing", lang, register,
         narrow=False,
         landing_metrics=shown,
-        samples=_samples(t),
+        samples=_sample_groups(t)[0]["samples"],
         stages=[_step_name(tool, t) for tool in _ORDER],
         outcomes=[
             branch if register == "tech" else t.get(f"outcome_{branch}", branch)
-            for branch in (t[f"landing_scenario_{n}_outcome"] for n in range(1, len(SAMPLES) + 1))
+            for branch in (t[f"landing_scenario_{n}_outcome"] for n in range(1, len(SAMPLE_ROLES) + 1))
         ],
         landing_js_url=_static_url(".js", "landing"),
     )
@@ -369,8 +400,8 @@ def _asset_card(asset: dict) -> dict:
 
 def index_page(assets: list[dict], error: str = "", asset_id: str = "",
                lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER,
-               sample_asset: str = SAMPLE_ASSET, preselect: str = "",
-               sample_ready: bool = True) -> str:
+               sample_suffix: str = "", preselect: str = "",
+               sample_ready: bool | tuple[bool, ...] = True) -> str:
     t = strings(lang, register)
     return _render(
         "index.html", t["nav_assets"], "assets", lang, register,
@@ -378,10 +409,10 @@ def index_page(assets: list[dict], error: str = "", asset_id: str = "",
         assets=[_asset_card(asset) for asset in assets],
         asset_branches=sorted({str(asset.get("last_branch")) for asset in assets
                                if asset.get("last_branch")}),
-        samples=_samples(t, sample_asset, sample_ready),
+        sample_groups=_sample_groups(t, sample_suffix, sample_ready),
         error=error,
         asset_id=asset_id,
-        preselect=preselect if preselect in {stem for stem, _ in SAMPLES} else "",
+        preselect=preselect if preselect in SAMPLES else "",
     )
 
 
@@ -791,28 +822,31 @@ def _cta(summary: dict, claimed: bool | None = None) -> dict | None:
     }
 
 
-NEXT_LABEL = {
-    "sample-defect": "next_sample",
-    "sample-blurred": "next_sample_2",
-    "sample-foreign": "next_sample_4",
-}
+NEXT_LABEL = {"defect": "next_sample", "blurred": "next_sample_2", "foreign": "next_sample_4"}
 
 
 def _sample_step(stem: str, t: dict) -> dict | None:
-    if stem not in NEXT_LABEL:
+    if stem not in SAMPLES or not stem.endswith(tuple(NEXT_LABEL)):
         return None
-    return {"url": f"/app?sample={stem}", "label": t[NEXT_LABEL[stem]]}
+    prefix, role = stem.rsplit("-", 1)
+    group = next(g for g, p in SAMPLE_GROUPS if p == prefix)
+    label = NEXT_LABEL[role]
+    if role == "defect" and group != SAMPLE_GROUPS[0][0]:
+        label = f"{label}_{group}"
+    return {"url": f"/app?sample={stem}", "label": t[label]}
 
 
 def _next_sample(summary: dict, t: dict) -> dict | None:
     asset_id = str(summary.get("asset_id") or "")
-    if not asset_id.startswith(f"{SAMPLE_ASSET}-"):
+    group = sample_group(asset_id)
+    if group is None:
         return None
+    prefix = group[1]
     branch = summary.get("branch")
     if branch == policy_module.FIRST_BASELINE:
-        return _sample_step("sample-defect", t)
+        return _sample_step(f"{prefix}-defect", t)
     if branch == policy_module.RECAPTURE:
-        return _sample_step("sample-foreign", t)
+        return _sample_step(f"{prefix}-foreign", t)
     if branch == policy_module.UNRECOGNIZED_ASSET:
         return {"url": f"/assets/{asset_id}", "label": t["tour_end"]}
     return None

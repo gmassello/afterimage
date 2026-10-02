@@ -332,6 +332,15 @@ footer.bot { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--font-
                 min-width: 0; }
 .sample .name { font-family: var(--font-sans); font-weight: 500; font-size: 0.875rem; }
 .sample .ms { font-size: 0.8125rem; color: var(--muted); text-wrap: pretty; }
+.carousel { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.carousel-bar { display: flex; align-items: center; gap: 8px; }
+.carousel-bar .btn[aria-disabled=true] { color: var(--subtle); cursor: not-allowed; }
+.carousel-count { flex: 1; margin: 0; text-align: center; font-size: 0.875rem; color: var(--muted); }
+.groups { display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+          overscroll-behavior-x: contain; scrollbar-width: none; border-radius: var(--radius-md); }
+.groups::-webkit-scrollbar { display: none; }
+.group { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; }
+@media (prefers-reduced-motion: no-preference) { .groups { scroll-behavior: smooth; } }
 
 .dropzone { position: relative; display: inline-flex; max-width: 100%; min-width: 0;
             flex-wrap: wrap; align-items: center; gap: 8px; }

@@ -166,6 +166,8 @@ if (zone) {
     input.files = e.dataTransfer.files;
     review();
   });
+  const demoAssets = new Set([...document.querySelectorAll('.sample[data-asset]')]
+    .map((sample) => sample.dataset.asset));
   document.querySelectorAll('.sample[data-sample]').forEach((button) => {
     button.addEventListener('click', async () => {
       if (button.getAttribute('aria-disabled') === 'true') {
@@ -174,7 +176,7 @@ if (zone) {
         return;
       }
       const id = document.getElementById('asset-id');
-      if (id && !id.value) id.value = button.dataset.asset;
+      if (id && (!id.value || demoAssets.has(id.value))) id.value = button.dataset.asset;
       try {
         const picked = new DataTransfer();
         const body = await (await fetch(button.dataset.sample)).blob();
@@ -193,8 +195,40 @@ if (zone) {
       }
     });
   });
-  const preselect = document.querySelector('.strip[data-preselect]')?.dataset.preselect;
-  if (preselect) document.querySelector(`.sample[data-name="${preselect}.png"]`)?.click();
+  const carousel = document.querySelector('[data-carousel]');
+  if (carousel) {
+    const track = carousel.querySelector('[data-groups]');
+    const groups = [...track.querySelectorAll('.group')];
+    const count = carousel.querySelector('[data-carousel-count]');
+    const steps = [...carousel.querySelectorAll('[data-carousel-step]')];
+    const current = () => Math.round(track.scrollLeft / track.clientWidth) || 0;
+    const show = () => {
+      const at = current();
+      if (count.textContent !== groups[at].dataset.groupLabel) count.textContent = groups[at].dataset.groupLabel;
+      steps.forEach((step) => {
+        const to = at + Number(step.dataset.carouselStep);
+        step.setAttribute('aria-disabled', String(to < 0 || to >= groups.length));
+      });
+    };
+    const go = (to, behavior) => {
+      if (to >= 0 && to < groups.length) track.scrollTo({ left: to * track.clientWidth, behavior });
+    };
+    steps.forEach((step) => step.addEventListener('click', () => go(current() + Number(step.dataset.carouselStep))));
+    track.addEventListener('keydown', (e) => {
+      if (e.target !== track || !['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+      e.preventDefault();
+      go(current() + (e.key === 'ArrowRight' ? 1 : -1));
+    });
+    let settle;
+    track.addEventListener('scroll', () => { clearTimeout(settle); settle = setTimeout(show, 120); });
+    show();
+    const preselect = carousel.dataset.preselect;
+    const chosen = preselect && document.querySelector(`.sample[data-name="${preselect}.png"]`);
+    if (chosen) {
+      go(groups.indexOf(chosen.closest('.group')), 'instant');
+      chosen.click();
+    }
+  }
 }
 
 const assetFilters = document.querySelector('[data-asset-filters]');

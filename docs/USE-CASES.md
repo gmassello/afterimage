@@ -100,7 +100,7 @@ Initial state: `panel-d4-south` holds the `sample-baseline` reference; a second 
 Initial state: a first-time visitor with no cookies; plain register, English.
 
 1. Open `/` and press the primary button: `/app?sample=sample-baseline` opens with the sample chosen.
-2. Run it (`first_baseline`); the trace offers `sample-defect`; approve it; the history offers `sample-blurred` (`recapture`), then `sample-foreign` (`unrecognized_asset`).
+2. Run it (`first_baseline`); the trace offers `sample-defect`; approve it; the history offers `sample-blurred` (`recapture`), then `sample-foreign` (`unrecognized_asset`). The hot-spot and delamination sets (`sample-b-*`, `sample-c-*`, reached by swiping the carousel) walk the same four answers on their own demo assets; `services/agent/tests/test_loop.py::test_every_demo_group_reaches_its_four_answers` proves each set's branches.
 3. Switch to Spanish, technical register, and dark theme on any page: the copy changes and the numbers stay.
 
 | Acceptance | How it is proven |

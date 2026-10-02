@@ -72,16 +72,17 @@ def test_each_language_counts_with_its_own_plural():
 def test_the_home_hands_a_capture_to_anyone_who_has_none():
     page = views.index_page([])
     assert page.count("data-sample=") == len(views.SAMPLES)
-    for stem, _ in views.SAMPLES:
+    for stem in views.SAMPLES:
         assert (views.STATIC / f"{stem}.png").exists()
         assert f"data-name='{stem}.png'" in page
     assert f"data-asset='{views.SAMPLE_ASSET}'" in page
+    assert f"data-asset='{views.SAMPLE_ASSET}-b'" in page
     assert "picked.items.add(new File(" in (views.STATIC / "app.js").read_text()
 
 
 def test_the_landing_demo_uses_bundled_captures_without_submitting_them():
     page = views.landing_page()
-    assert page.count("data-landing-tab=") == len(views.SAMPLES)
+    assert page.count("data-landing-tab=") == len(views.SAMPLE_ROLES)
     assert "landing-demo" in page
     script = (views.STATIC / "landing.js").read_text()
     assert "fetch(" not in script and "submit(" not in script
