@@ -45,8 +45,8 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
   `/app?sample=<stem>` preselects one of them on load; any other value is ignored.
   The chosen card gets `aria-pressed=true` and an accent border, a server-rendered `role=status`
   line says which sample loaded, and the form scrolls back into view.
-- The samples come in three sets of four — crack (`sample-*`), hot spot (`sample-b-*`) and
-  delamination (`sample-c-*`) — each a `<section class='group'>` in a horizontal scroll-snap track.
+- The samples come in three sets of four, in this order — hot spot (`sample-b-*`), delamination
+  (`sample-c-*`) and crack (`sample-*`, the set the landing illustrates and opens) — each a `<section class='group'>` in a horizontal scroll-snap track.
   Swipe, trackpad, the ‹ › buttons or the arrow keys on the focused track move one set; the
   buttons carry `aria-disabled` at either end and a `role=status` line names the visible set.
   `?sample=` of another set scrolls there before selecting it.
@@ -134,6 +134,9 @@ and error layout stack; the 390 px rule reduces the capture preview. Primary lan
 - Jinja2 autoescaping is enabled and view tests exercise untrusted strings on every page.
 - Static filenames include the first eight characters of their SHA-256 digest and are cached as
   immutable for one year.
+- Each sample capture also gets a `-thumb` variant, shrunk once to 144 px with `INTER_AREA` when
+  the assets are hashed. The carousel shows the thumbnail and inspects the full capture, because
+  letting the browser scale an 800 px photo into a 72 px box gave a different sharpness on each reload.
 - Stored images are served through the application rather than exposed as a public S3 bucket and
   use a shorter cache policy.
 - Browser checks improve usability but do not replace API validation.

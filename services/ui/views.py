@@ -10,7 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 from services.agent import policy as policy_module
 from services.agent.loop import NEXT_TOOL, STAGE_OF
 from services.agent.policy import HUMAN_GATE_METRIC, SEVERITY_METRIC, Policy
-from services.memory import runs, store
+from services.memory import images, runs, store
 from services.observability import trace
 from services.observability.render import causal_line
 from services.ui.text import (
@@ -26,6 +26,7 @@ from services.ui.text import (
 HERE = Path(__file__).parent
 STATIC = HERE / "static"
 THUMB_WIDTH = 180
+SAMPLE_THUMB_WIDTH = 144
 
 MEDIA = {
     "css": "text/css",
@@ -49,7 +50,8 @@ _NAV = (
 )
 
 SAMPLE_ASSET = "demo-panel"
-SAMPLE_GROUPS = (("crack", "sample"), ("hotspot", "sample-b"), ("delamination", "sample-c"))
+SAMPLE_GROUPS = (("hotspot", "sample-b"), ("delamination", "sample-c"), ("crack", "sample"))
+BASE_GROUP = "crack"
 SAMPLE_ROLES = ("baseline", "blurred", "defect", "foreign")
 SAMPLES = tuple(f"{prefix}-{role}" for _, prefix in SAMPLE_GROUPS for role in SAMPLE_ROLES)
 _SAMPLE_GROUP_ASSET = re.compile(rf"{SAMPLE_ASSET}(-[a-z])?-[a-z0-9]+")
@@ -68,7 +70,7 @@ def sample_group(asset_id: str) -> tuple[str, str] | None:
 
 def _sample_key(field: str, number: int, group: str) -> str:
     key = f"sample_{number}_{field}"
-    return f"{key}_{group}" if number == 3 and group != SAMPLE_GROUPS[0][0] else key
+    return f"{key}_{group}" if number == 3 and group != BASE_GROUP else key
 
 
 def when(value, lang: str = DEFAULT_LANG) -> str:
@@ -135,6 +137,10 @@ def _assets() -> dict[str, tuple[bytes, str]]:
         body = path.read_bytes()
         digest = hashlib.sha256(body).hexdigest()[:8]
         built[f"{path.stem}.{digest}{path.suffix}"] = (body, media)
+        if path.stem.startswith("sample"):
+            built[f"{path.stem}-thumb.{digest}{path.suffix}"] = (
+                images.shrink_png(body, SAMPLE_THUMB_WIDTH, path.name), media
+            )
     return built
 
 
@@ -153,7 +159,8 @@ def _static_url(suffix: str, stem: str | None = None) -> str:
 def _group_samples(t: dict, group: str, prefix: str, suffix: str, ready: bool) -> list[dict]:
     return [
         {
-            "url": f"/static/{next(n for n in _assets() if n.startswith(f'{prefix}-{role}.'))}",
+            "url": _static_url(".png", f"{prefix}-{role}"),
+            "thumb": _static_url(".png", f"{prefix}-{role}-thumb"),
             "name": f"{prefix}-{role}.png",
             "asset_id": sample_asset(prefix, suffix),
             "label": t[_sample_key("label", index + 1, group)],
@@ -235,7 +242,7 @@ def landing_page(metrics: list[dict] | None = None, lang: str = DEFAULT_LANG,
         "landing.html", "visual inspection with memory", "landing", lang, register,
         narrow=False,
         landing_metrics=shown,
-        samples=_sample_groups(t)[0]["samples"],
+        samples=next(g for g in _sample_groups(t) if g["key"] == BASE_GROUP)["samples"],
         stages=[_step_name(tool, t) for tool in _ORDER],
         outcomes=[
             branch if register == "tech" else t.get(f"outcome_{branch}", branch)
@@ -831,7 +838,7 @@ def _sample_step(stem: str, t: dict) -> dict | None:
     prefix, role = stem.rsplit("-", 1)
     group = next(g for g, p in SAMPLE_GROUPS if p == prefix)
     label = NEXT_LABEL[role]
-    if role == "defect" and group != SAMPLE_GROUPS[0][0]:
+    if role == "defect" and group != BASE_GROUP:
         label = f"{label}_{group}"
     return {"url": f"/app?sample={stem}", "label": t[label]}
 

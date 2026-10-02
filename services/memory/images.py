@@ -61,13 +61,17 @@ def put_image(asset_id: str, inspection_id: str, name: str, image: np.ndarray) -
 # ponytail: decoded straight from S3 instead of through get_image, so a thumbnail request does
 # not pin a full-resolution array in the process cache the agent needs for its own captures
 def thumbnail_png(key: str, width: int) -> bytes:
-    image = decode(get_png(key))
+    return shrink_png(get_png(key), width, key)
+
+
+def shrink_png(data: bytes, width: int, what: str) -> bytes:
+    image = decode(data)
     height, full_width = image.shape[:2]
     width = min(width, full_width)
     scaled = cv2.resize(
         image, (width, max(1, round(height * width / full_width))), interpolation=cv2.INTER_AREA
     )
-    return _png(scaled, key)
+    return _png(scaled, what)
 
 
 def ids_from_key(key: str) -> tuple[str, str]:

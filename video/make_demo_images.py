@@ -8,14 +8,15 @@ from services.perception import panels
 OUT = Path(__file__).parent / "img"
 SAMPLES = Path(__file__).parents[1] / "services" / "ui" / "static"
 GROUPS = (
-    ("sample", "crack-real-closeup", 99),
-    ("sample-b", "hotspot-real-ogiinuur", 7),
-    ("sample-c", "delamination-real-jetion", 23),
+    ("sample", "panel_front_closeup.jpg", ("crack_at", [0.42, 0.42, 0.12, 0.12]), 99),
+    ("sample-b", "array_hannover_roof.jpg", ("hotspot_at", [0.55, 0.75, 0.1, 0.1]), 7),
+    ("sample-c", "array_rooftop.jpg", ("delamination_at", [0.55, 0.62, 0.12, 0.12]), 23),
 )
 
 
-def group(prefix: str, scenario: str, seed: int):
-    spec = {s["id"]: s for s in scenarios.load()}[scenario]
+def group(base: str, defect: tuple, seed: int):
+    step, region = defect
+    spec = {"base": {"file": base}, "capture": [[step, {"region": region}], ["shifted", {}]]}
     baseline, capture, _ = scenarios.materialise(spec)
     foreign = panels.solar_panel(seed=seed, rows=4, cols=7, cell=80)
     return baseline, panels.blurred(baseline), capture, foreign
@@ -24,8 +25,8 @@ def group(prefix: str, scenario: str, seed: int):
 def main():
     OUT.mkdir(exist_ok=True)
     written = []
-    for prefix, scenario, seed in GROUPS:
-        baseline, blurred, capture, foreign = group(prefix, scenario, seed)
+    for prefix, base, defect, seed in GROUPS:
+        baseline, blurred, capture, foreign = group(base, defect, seed)
         written += [
             (SAMPLES / f"{prefix}-baseline.png", baseline),
             (SAMPLES / f"{prefix}-blurred.png", blurred),

@@ -91,7 +91,8 @@ def test_the_landing_demo_uses_bundled_captures_without_submitting_them():
 def test_the_sample_captures_are_content_addressed_like_every_other_asset():
     served = {name: media for name, (_, media) in views._assets().items()
               if name.endswith(".png")}
-    assert len(served) == len(views.SAMPLES)
+    assert len(served) == 2 * len(views.SAMPLES)
+    assert sum("-thumb." in name for name in served) == len(views.SAMPLES)
     assert set(served.values()) == {"image/png"}
 
 
