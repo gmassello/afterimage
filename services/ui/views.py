@@ -152,10 +152,10 @@ def _samples(t: dict, asset_id: str = SAMPLE_ASSET, ready: bool = True) -> list[
 def _nav(current: str, t: dict) -> list[dict]:
     if current == "landing":
         return [
+            {"href": "/app", "label": t["nav_open_app"], "here": False},
             {"href": "#how-it-works", "label": t["nav_how"], "here": False},
             {"href": "#memory", "label": t["nav_memory"], "here": False},
             {"href": "#system", "label": t["nav_system"], "here": False},
-            {"href": "/app", "label": t["nav_open_app"], "here": False},
         ]
     links = [
         {"href": href, "label": t[label], "here": key == current}
