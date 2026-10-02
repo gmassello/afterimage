@@ -7,7 +7,7 @@ import cv2
 import pytest
 from fastapi.testclient import TestClient
 
-from services.api.app import app
+from services.api.app import _assets_in_memory, app
 from services.conftest import localstack
 from services.memory import images, runs, store
 from services.perception.panels import solar_panel
@@ -167,9 +167,13 @@ def test_a_browser_sees_a_rejected_upload_inside_the_page(client):
 @localstack
 def test_the_empty_queue_counts_what_memory_holds(client):
     store.put_asset(unique("api-count"))
+    _assets_in_memory.cache_clear()
+    before = len(store.list_assets())
     page = client.get("/queue")
+    after = len(store.list_assets())
     assert page.status_code == 200
-    assert f"{len(store.list_assets())} asset" in page.text
+    shown = int(re.search(r"(\d+) asset", page.text).group(1))
+    assert before <= shown <= after
 
 
 @localstack
