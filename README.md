@@ -262,7 +262,7 @@ Eight weeks, one capability per week. Current stage: **the written record** — 
 | 2 | Perception: the five tools implemented and tested on synthetic fixtures, each returning the raw metrics the agent branches on. |
 
 Progress against the competition rubric is preserved in [docs/SUBMISSION.md](docs/SUBMISSION.md).
-The original [brief](docs/BRIEF.md) and [build plan](docs/PLAN.md) are historical records; use the
+The original [proposal](docs/PROPOSAL.md) and [build log](docs/BUILD_LOG.md) are historical records; use the
 [architecture guide](docs/ARCHITECTURE.md) for the implemented system.
 
 </details>

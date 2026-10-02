@@ -4,7 +4,7 @@
 > current product specification. See [FUNCTIONAL.md](FUNCTIONAL.md) and
 > [EVALUATION.md](EVALUATION.md) for current behavior and results.
 
-For the OpenCV AI Competition 2026 submission. Structure follows `docs/BRIEF.md` §7.
+For the OpenCV AI Competition 2026 submission. Structure follows `docs/PROPOSAL.md` §7.
 
 **Hard requirements:** at most 5 minutes, the author's face must appear, public or unlisted, and it
 must be recorded **against the public endpoint** — not localhost.
@@ -48,7 +48,7 @@ The cut runs shorter than the script's marks because the recorded reading is fas
 budget assumed, and because pauses over 0.55 s are trimmed out of the clips.
 
 The competition rules require the author's face, the app, the architecture and the results, and set
-no language requirement (`docs/BRIEF.md` §1). A real voice and a face on screen throughout carry
+no language requirement (`docs/PROPOSAL.md` §1). A real voice and a face on screen throughout carry
 more in a competition video than a synthetic reading, and the subtitles carry the content in full.
 
 Subtitle timings come from silence detection over the recorded voice, not from an estimate.

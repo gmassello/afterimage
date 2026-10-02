@@ -1,0 +1,13 @@
+# Overall rubric (opencv26.devpost.com/rules)
+Technical execution	30%	opencv ?5|architecture|pipeline|reliab|evaluation|benchmark|accuracy|tests?
+Innovation	20%	novel|original|first|agent|longitudinal|memory|llm|gemini
+Real-world impact	20%	inspection|industr|maintenance|safety|defect|operator|cost|downtime
+User experience	10%	ui|usab|accessib|interface|dashboard|web app|bilingual|dark mode
+Documentation and presentation	10%	report|readme|diagram|docs?|video|instructions
+Cloud delivery, reproducibility, and responsible operation	10%	aws|lambda|s3|dynamodb|cloudformation|graviton|observab|trace|security|responsible|reproduc
+# Agentic Vision Award rubric
+Substantive OpenCV 5 and agent integration	30%	agent|mcp|tool call|opencv ?5
+Orchestration and appropriate autonomy	25%	orchestrat|loop|policy|autonom|decision
+Task effectiveness and evaluation	20%	evaluation|scenarios?|precision|recall|success rate|accuracy
+Failure handling, observability, security, and human control	15%	failure|fallback|trace|observab|human[- ]in[- ]the[- ]loop|approval|hitl
+User experience, documentation, and demonstration	10%	ui|demo|video|docs?|walkthrough

@@ -1,7 +1,7 @@
 # Architecture
 
-This document is the canonical architecture description of the implemented system. `BRIEF.md` and
-`PLAN.md` are historical planning records and must not be used as descriptions of the current
+This document is the canonical architecture description of the implemented system. `PROPOSAL.md` and
+`BUILD_LOG.md` are historical planning records and must not be used as descriptions of the current
 runtime.
 
 ## System shape

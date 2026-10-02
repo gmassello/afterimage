@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Afterimage is a visual inspection agent with longitudinal memory, built for the OpenCV AI Competition 2026. Use the documentation map below for the implemented system; `docs/BRIEF.md` and `docs/PLAN.md` are historical planning records.
+Afterimage is a visual inspection agent with longitudinal memory, built for the OpenCV AI Competition 2026. Use the documentation map below for the implemented system; `docs/PROPOSAL.md` and `docs/BUILD_LOG.md` are historical planning records; `docs/BRIEF.md` is the product contract and `docs/PLAN.md` the remaining work.
 
 ## Documentation Map
 
@@ -16,13 +16,17 @@ Current system documentation:
 
 Specialized references:
 
+- [Product brief](docs/BRIEF.md) — actors, requirements tied to the judging criteria, flows, and acceptance examples.
+- [Delivery plan](docs/PLAN.md) — units traced to the brief, their tests, and the cut line before the deadline.
+- [Use cases](docs/USE-CASES.md) — happy paths with how each acceptance example is proven, and the small, medium, and large test cases.
+- [Event brief](docs/HACKATHON.md) — competition dates, prizes, judging criteria, and submission requirements.
 - [Evaluation](docs/EVALUATION.md) — current dataset, metrics, failure cases, and limitations.
 - [End-to-end walkthrough](docs/E2E.md) — manual browser paths and expected behavior.
 - [Security](docs/SECURITY.md) — public endpoint, deployment controls, retention, and data handling.
 - [Responsible use](docs/RESPONSIBLE_USE.md) — intended use, claims, human gate, and boundaries.
 - [AI disclosure](docs/AI_DISCLOSURE.md) — model responsibilities in the product and its development.
 
-Historical and delivery records include `docs/BRIEF.md`, `docs/PLAN.md`, `docs/SUBMISSION.md`, and the video-production documents. They preserve decisions and evidence from a point in time and are not sources of current architecture.
+Historical and delivery records include `docs/PROPOSAL.md`, `docs/BUILD_LOG.md`, `docs/SUBMISSION.md`, `docs/DEVPOST.md` (the entry text to paste), and the video-production documents. They preserve decisions and evidence from a point in time and are not sources of current architecture.
 
 ## Hard Rules
 
