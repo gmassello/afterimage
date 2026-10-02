@@ -113,8 +113,8 @@ The rescan result keeps `zoom_area_ratio` for the crop-relative confirmation thr
 full-frame `area_ratio` to severity classification.
 
 For a first capture, only quality is required before creating the baseline. Every later tool result
-is passed to `services/agent/policy.py:evaluate`, which returns the deciding metric, value,
-threshold, and branch. The loop rejects out-of-order calls and a submitted branch that differs from
+is passed to `services/agent/policy.py:evaluate`, which returns the decision record
+`{input_metric, value, threshold, branch}`. The loop rejects out-of-order calls and a submitted branch that differs from
 the last policy verdict.
 
 ## Persistence
