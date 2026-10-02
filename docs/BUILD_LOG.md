@@ -29,7 +29,7 @@ project is running **about six weeks ahead**. That margin is real and worth not 
 | 6 | AWS deploy + front end + public endpoint | **closed** — live at https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ |
 | 7 | Evaluation — dataset, metrics, failure cases | **closed** — 23 scenarios, branch accuracy 0.8696, see `docs/EVALUATION.md` |
 | 8 | Technical report, diagrams and video script | **closed** — see `docs/TECHNICAL_REPORT.md` |
-| 9 | Video, polish, submission | **closed** — recorded and cut, 4:53.6 (`video/out/demo.mp4`): 14 s cold open, face in the corner box throughout, every figure on screen matching the script. Published 7 September and submitted; the endpoint was opened from another network. See `docs/SUBMISSION.md` |
+| 9 | Video, polish, submission | **closed** — recorded and cut, 4:53.6 (`video/out/demo.mp4`): 14 s cold open, face in the corner box throughout, every figure on screen matching the script. Published 7 September and submitted; the endpoint was opened from another network. See `docs/DELIVERY.md` |
 
 ### Closed in stage 1
 
@@ -417,7 +417,7 @@ figure and every table row out of `docs/EVALUATION.md` and fails the suite if th
 ### Closed in stage 8
 
 `docs/TECHNICAL_REPORT.md` — the self-contained document a judge reads end to end, in the order
-`SUBMISSION.md` demands: problem and users, real-world impact, longitudinal memory, architecture, the
+`DELIVERY.md` demands: problem and users, real-world impact, longitudinal memory, architecture, the
 OpenCV 5 implementation, the agentic loop, deploy and responsible operation, evaluation, limitations,
 and how to reproduce it. It links out for detail rather than duplicating; the only figures it repeats
 are the headline ones, and those are now asserted by the test suite.
@@ -519,7 +519,7 @@ Artifact runtime gave for free and Pages does not. The Google Fonts `<link>` sta
 no CSP blocking it.
 
 **`docs/.nojekyll`** — empty. Without it, Jekyll would try to render `PROPOSAL.md`, `PLAN.md` and
-`SUBMISSION.md` as site pages. They stay readable in the repo, but they have no business being pages.
+`DELIVERY.md` as site pages. They stay readable in the repo, but they have no business being pages.
 The deploy is also faster.
 
 **`README.md`** — the link at the top, where it is visible without scrolling.
@@ -582,7 +582,7 @@ a trained classifier. The `# ponytail:` comment in the code marks that ceiling.
 ### 8 — Technical report and documentation
 
 A complete `docs/TECHNICAL_REPORT.md`, both diagrams, pinned deps, instructions that work on a clean
-machine. `docs/SUBMISSION.md` already exists and has been filling up since stage 2.
+machine. `docs/DELIVERY.md` (then `DELIVERY.md`) already exists and has been filling up since stage 2.
 
 From `hindsight`: `test_readme_claims.py`, which parses the README's results table and checks every
 cell against the run artefacts — if a number in the README lies, CI fails. And the sections that win
