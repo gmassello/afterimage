@@ -133,7 +133,8 @@ browser profile.
 
 On a fresh browser, samples 2–4 are locked with "after sample 1" until sample 1 has set the
 reference. From there the tour buttons walk 1 → 3 → approve → 2 → 4 → the asset history without
-the nav. The hot-spot and delamination sets (› or a swipe on the carousel) repeat the same walk on
+the nav. The carousel opens on the hot-spot set; the landing's button scrolls it to the crack set, the
+last one. The hot-spot and delamination sets (‹ or a swipe back) repeat the same walk on
 `demo-panel-b-<suffix>` and `demo-panel-c-<suffix>`; each "Next" stays inside its set, and a
 set's samples 2–4 stay locked until that set's own sample 1 has run. Run O before P, and both before N. They leave the demo asset in the gallery with a thumbnail, which
 is what `/app` is meant to look like when someone arrives.

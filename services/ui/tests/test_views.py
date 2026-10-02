@@ -2,6 +2,8 @@ import json
 import re
 from pathlib import Path
 
+import cv2
+import numpy as np
 import pytest
 
 from services.memory import runs, store
@@ -876,17 +878,29 @@ def test_each_demo_set_tours_its_own_asset_and_names_its_defect():
 
 
 def test_the_demo_sets_sit_in_a_carousel_and_lock_one_by_one():
-    page = views.index_page([], sample_suffix="abc123", sample_ready=(True, False, True),
+    page = views.index_page([], sample_suffix="abc123", sample_ready=(False, True, True),
                             preselect="sample-c-defect")
     assert page.count("<section class='group'") == len(views.SAMPLE_GROUPS)
     assert "data-carousel-step='-1'" in page and "data-carousel-step='1'" in page
-    assert "role='status' data-carousel-count>Set 1 of 3 · crack<" in page
+    assert "role='status' data-carousel-count>Set 1 of 3 · hot spot<" in page
+    assert page.index("aria-label='Set 3 of 3 · crack'") > page.index("aria-label='Set 2 of 3 · delamination'")
     assert "data-carousel data-preselect='sample-c-defect'" in page
     assert page.count("aria-disabled='true'") == len(views.SAMPLE_ROLES) - 1
-    hotspot = page.split("aria-label='Set 2 of 3 · hot spot'")[1].split("</section>")[0]
+    hotspot = page.split("aria-label='Set 1 of 3 · hot spot'")[1].split("</section>")[0]
     assert hotspot.count("aria-disabled='true'") == len(views.SAMPLE_ROLES) - 1
     assert "data-asset='demo-panel-b-abc123'" in hotspot
 
+
+def test_sample_thumbnails_are_shrunk_on_the_server_and_inspect_the_full_capture():
+    page = views.index_page([])
+    thumbs = re.findall(r"<img src='/static/([^']+)' width='72'", page)
+    assert len(thumbs) == len(views.SAMPLES)
+    for name in thumbs:
+        assert "-thumb." in name
+        body, _ = views.static_asset(name)
+        image = cv2.imdecode(np.frombuffer(body, np.uint8), cv2.IMREAD_COLOR)
+        assert image.shape[1] == views.SAMPLE_THUMB_WIDTH
+    assert "-thumb." not in "".join(re.findall(r"data-sample='([^']+)'", page))
 
 def test_a_running_trace_does_not_freeze_a_partial_chain_count():
     running = views.render_html({}, EVENTS[:2])

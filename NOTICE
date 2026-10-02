@@ -18,16 +18,17 @@ data, in opencv_extra/testdata/dnn/download_models.py on the 5.x branch, and
 points at this same repository rather than hosting the bytes itself. They are copied into the deployed image at /opt/models.
 
 services/ui/static/sample-b-baseline.png, sample-b-blurred.png and
-sample-b-defect.png are derived from "Solar panels in Ogiinuur.jpg" by Chinneeb
-(https://commons.wikimedia.org/wiki/File:Solar_panels_in_Ogiinuur.jpg), licensed
-under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0). They are
-resized, blurred or given a synthetic hot spot by video/make_demo_images.py and
-are distributed under the same license.
+sample-b-defect.png are derived from "Photovoltaik Dachanlage Hannover - Schwarze
+Heide - 1 MW.jpg" by AleSpa
+(https://commons.wikimedia.org/wiki/File:Photovoltaik_Dachanlage_Hannover_-_Schwarze_Heide_-_1_MW.jpg),
+licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0).
+They are resized, blurred or given a synthetic hot spot by
+video/make_demo_images.py and are distributed under the same license.
 
 services/ui/static/sample-c-baseline.png, sample-c-blurred.png and
-sample-c-defect.png are derived from "Dornbirn-Solar panel Jetion JTI 195
-Jetion Solar-01ASD.jpg" by Asurnipal
-(https://commons.wikimedia.org/wiki/File:Dornbirn-Solar_panel_Jetion_JTI_195_Jetion_Solar-01ASD.jpg),
+sample-c-defect.png are derived from "Rooftop solar photovoltaic installation.jpg"
+by Marta Victoria
+(https://commons.wikimedia.org/wiki/File:Rooftop_solar_photovoltaic_installation.jpg),
 licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0).
 They are resized, blurred or given synthetic delamination by
 video/make_demo_images.py and are distributed under the same license.
