@@ -15,7 +15,7 @@ Estado del codigo en una linea: 363 tests verdes (cobertura 92.44%, `make test` 
 | Superficie | Donde | Estado | Verificado |
 |---|---|---|---|
 | Repo y CI | `gmassello/afterimage` @ `901467f` | pusheado; CI verde | 2026-10-02 `gh run list --commit` |
-| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `901467f` (deploy manual, run 37069246099): carrusel con tres juegos de muestras | 2026-10-02 `/app` con 3 juegos y 12 muestras, los 8 PNG nuevos `200 image/png`, `/health` calibration `aligned` 0.9975 |
+| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `bdeea3f` (deploy manual, run 37076617913): crack al final, fotos de referencia nuevas y miniaturas de 144 px | 2026-10-02 `/app` abre en "Set 1 of 3 · hot spot" y sirve `sample-b-baseline-thumb.cfb36a84.png` |
 | Submission | https://devpost.com/software/afterimage-ibp376 | publicada el 7 Sep, desactualizada (dice video, cinco tools, 23 escenarios); texto nuevo en `docs/submission.md` | 2026-10-01 lectura de la pagina publica |
 | Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no verificada | — |
 | PR upstream | no aplica | — | — |
