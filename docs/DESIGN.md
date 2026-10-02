@@ -151,6 +151,7 @@ classes per theme.
 | `--ok` | Branches that let the run continue or write: `quality_ok`, `aligned`, `change_confirmed`, `no_change`, `auto_write`, `first_baseline`. |
 | `--warn` | Branches that ask for more: `recapture`, `retry_classic`, `crop_and_rescan`, `human_approval`. |
 | `--danger` | `unrecognized_asset`, failed tool calls, broken hash chain, errors. |
+| `--lit` | Local tone of one element, declared after the token block: defaults to `--accent` and is set to `--ok`, `--warn` or `--danger` by the `ok` / `warn` / `bad` class on threshold bars, region boxes, big metrics and timeline marks. Never set it to a literal colour. |
 
 The branch-to-tone map lives in one place, `_TONE` in `services/ui/views.py`; templates and CSS
 only consume the `ok` / `warn` / `bad` class it returns.
@@ -317,6 +318,44 @@ A single `small` line under an action, with `role="status"` and `aria-live="poli
 `--muted` while working, `--ok` on success, `--danger` on error. This is where every button and
 form reports errors.
 
+### Sample capture
+
+- A button with a 72 × 48 px thumbnail, the sample name (`small`, 500) and one `small` `--muted`
+  line saying what it shows. 1 px `--border`, `--radius-md`, `--bg` fill.
+- Hover and selected (`aria-pressed="true"`): border `--accent`. Focus: ring.
+- Locked until the demo asset has a reference (`aria-disabled="true"`): dashed border, no hover
+  change, `cursor: not-allowed`; a tap explains why in the status line instead of starting a run.
+- Loading and error: carried by the form's submit button and status line.
+
+### Next step of the tour
+
+- A single `ok` button inside the trace hero, directly under the verdict, so a phone reaches it
+  before the deciding-number panel. Its label names the next sample.
+- Rendered only for a finished run of a demo asset; absent while the run is in progress.
+
+### Approval panel
+
+- Approve (`ok` button) and a reject form side by side: an optional reason input (`.input`,
+  `maxlength="500"`, placeholder and `aria-label` from `text.py`) and a secondary reject button.
+- The first click arms a confirmation and stays armed; the second posts. An interrupted verdict
+  shows only its own action with a `small` hint. Results go to the status line.
+
+### Asset filters
+
+- Above the gallery on `/app`, only when assets exist: a search input and a branch select, both
+  `.input` with visible labels. An empty result shows a `role="status"` line instead of a blank grid.
+
+### Sparkline
+
+- On the asset history, once there are two scored inspections: a 72 px SVG with a 1.5 px
+  `--border` polyline, one 7 px round mark per inspection in its branch tone, and a 1 px `--fg`
+  dashed line at the approval threshold. Caption in `mono` `caption` size, `--muted`.
+
+### Repository link
+
+- A labelled inline-SVG GitHub icon in the top bar, `--muted`, `--fg` on hover, `--radius-pill`
+  hit area. No icon library.
+
 ### Image comparison
 
 - Two `--radius-xl` panels on `--surface-1`, each with a `mono` `caption` under it (the S3 key).
@@ -331,12 +370,11 @@ Routes are the ones served by `services/api/app.py`.
 | Screen | Route | Structure | Components |
 |---|---|---|---|
 | Landing | `/` | Hero band (display title, lead, primary and secondary buttons) beside the scenario demo rail, a row of four counters, how-it-works cards, memory, stack and limits, final call to action | Navigation, buttons, counters, card, branch pill |
-| Upload | `/app` | Page title, the asset id input, the dropzone, sample capture buttons, submit, status line | Input, dropzone, buttons, status line |
-| Trace | `/traces/{run_id}` | Verdict line (h2 plus branch pill), severity metric, threshold bar, the stage rail, the terminal with one line per tool call, one card per tool call with its threshold bar, image comparison, approve/reject bar when awaiting approval, hash-chain footer | Terminal, branch pill, threshold bar, image comparison, buttons, status line |
-| Queue | `/queue` | Title with count, one card per pending finding ordered by severity: comparison, metric, threshold bar, approve/reject | Card, image comparison, threshold bar, buttons |
+| Upload | `/app` | Page title, the asset id input, the dropzone, sample capture buttons, submit, status line; below it the gallery: asset filters, then a 3-up grid of asset cards (latest capture thumbnail, asset id in mono, last branch pill) | Input, dropzone, sample capture, buttons, status line, asset filters, card, branch pill |
+| Trace | `/traces/{run_id}` | Verdict line (h2 plus branch pill), the next step of the tour for a finished demo run, severity metric, threshold bar, the stage rail, the terminal with one line per tool call, one card per tool call with its threshold bar, image comparison, approval panel when awaiting approval, hash-chain footer | Terminal, branch pill, threshold bar, image comparison, next step of the tour, approval panel, buttons, status line |
+| Queue | `/queue` | Title with count, one card per pending finding ordered by severity: comparison, metric, threshold bar, approval panel | Card, image comparison, threshold bar, approval panel |
 | Activity | `/activity` | Filter row, then one row per run: run id, asset, time, branch pill, retry when failed | Input, branch pill, ghost button |
-| Asset history | `/assets/{asset_id}` | Timeline of inspections and baselines; the baseline in force is marked with the accent left border | Card, branch pill, image thumbnails |
-| Gallery | the asset index rendered by `index_page` | 3-up grid of asset cards: latest capture thumbnail, asset id in mono, last branch pill | Card, branch pill |
+| Asset history | `/assets/{asset_id}` | Timeline of inspections and baselines; the baseline in force is marked with the accent left border; the sparkline once two inspections are scored; a link that continues the tour when `next` names a sample | Card, branch pill, image thumbnails, sparkline, buttons |
 | Error | any `ApiError` in HTML | Title, the bilingual message, a ghost link back | Card, ghost button |
 
 ## 8. Effects
@@ -390,7 +428,9 @@ Two protagonists, nothing else animates except state transitions at `--dur-fast`
 
 Do:
 
-- Use only the tokens in section 3 and the type scale in section 4. When something seems
+- Use only the tokens in section 3 and the type scale in section 4. Every `font-size` in
+  `app.css` is a step of that scale; a fluid `clamp()` may only run between two steps. The one
+  exception is the decorative status number on the error page. When something seems
   missing, reuse the nearest existing token and flag it; do not add one silently.
 - Colour a branch only through `--ok`, `--warn` or `--danger`, and always pair the colour with
   the branch name in text. Colour is never the only signal.
