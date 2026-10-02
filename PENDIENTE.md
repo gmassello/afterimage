@@ -6,7 +6,7 @@ Cierre: **2026-10-26 23:45 -07:00** (2026-10-27 03:45 -03:00). Competencia:
 Etapas (de la pagina de fechas del evento; en Devpost, `/details/dates`): submissions hasta 2026-10-26 23:45 -07:00, judging 2026-10-27 00:00 -07:00 → 2026-11-09 23:45 -08:00,
 ganadores 2026-11-10 09:00 -08:00.
 
-Estado del codigo en una linea: <N tests verdes, que esta hecho, que falta>.
+Estado del codigo en una linea: 363 tests verdes (cobertura 92.44%, `make test` del 2026-10-01); producto completo (U1-U18 del PLAN `done`); faltan U19 (regrabar video) y U20 (pegar la ficha).
 
 ---
 
@@ -14,37 +14,37 @@ Estado del codigo en una linea: <N tests verdes, que esta hecho, que falta>.
 
 | Superficie | Donde | Estado | Verificado |
 |---|---|---|---|
-| Repo y CI | `<owner>/<repo>` @ `<sha>` | | |
-| Sitio | <URL> | | |
-| Submission | <URL publica, no /edit> | | |
-| Tarjeta en la galeria | <URL de la galeria> | | |
-| PR upstream | #<n> | | |
-| Segundo checkout | `~/<ruta>` rama `<rama>` | | |
-| Video | `<id>` | | |
-| Deck | `docs/deck.pdf` sha256 `<hash>` | | |
+| Repo y CI | `gmassello/afterimage` @ `a35a1ec` local; remoto en `2b79825` | 4 commits sin pushear (docs, ficha, casos, escala tipografica) | 2026-10-01 `git log` |
+| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | sirve `2b79825`; la escala tipografica de `a35a1ec` entra con el push (deploy automatico) | 2026-09-30 `<title>afterimage`, Deploy success en `2b79825` |
+| Submission | https://devpost.com/software/afterimage-ibp376 | publicada el 7 Sep, desactualizada (dice video, cinco tools, 23 escenarios); texto nuevo en `docs/DEVPOST.md` | 2026-10-01 lectura de la pagina publica |
+| Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no verificada | — |
+| PR upstream | no aplica | — | — |
+| Segundo checkout | no aplica | — | — |
+| Video | `zUFR96a33IM` (4:53.6) | cumple el requisito; muestra la UI del 6 Sep, anterior a landing, tour y toggles | 2026-10-01 embed en la ficha |
+| Deck | no lo pide el evento | — | `docs/HACKATHON.md` |
 
 ## Hechos duplicados
 
 | Hecho | Valor real | Comando que lo produce | Copias |
 |---|---|---|---|
-| Cantidad de tests | | `uv run pytest -q \| tail -1` | |
-| Archivos del PR | | `gh pr view <n> --json files --jq '.files\|length'` | |
-| Version | | | |
+| Cantidad de tests | 363 | `make test` | ninguna publicada |
+| Escenarios / pasan | 29 / 24 | `make eval` → `eval/results/latest/results.json` | README, EVALUATION, TECHNICAL_REPORT, `docs/DEVPOST.md` (ancladas por `test_published_numbers`, salvo DEVPOST) |
+| Tools MCP | 6 | `services/mcp_server/server.py` | README, landing, `docs/DEVPOST.md`, descripcion del repo en GitHub (corregida 2026-10-01) |
 
 ## Lo que no cierra
 
-Lo que no funciona, con el motivo. Esto es lo que evita prometer de mas en el formulario, y en una
-competencia donde todos prometen, decirlo es diferencial.
-
-- **<Cosa>** — <por que no cierra, y que haria falta para cerrarla>.
+- **Efectividad de campo** — lo publicado vale para el dataset comprometido, no es precision en planta; haria falta imagery de planta fuera del dataset.
+- **Cinco escenarios fallan** — cada uno con su causa raiz publicada en `docs/EVALUATION.md` (gate de cobertura global, gate de exposicion antes de severidad, severidad que ignora la clase, regla de soiling calibrada en sintetico).
+- **Log de auditoria** — la cadena de hashes detecta edicion comun, no es un log firmado.
+- **Endpoint publico sin login** — es una demostracion acotada.
+- **Impacto sin cifra externa de costo de inspeccion** — solo el costo propio medido ($0.0005 por inspeccion); pregunta abierta en `docs/BRIEF.md`.
 
 ## No romper esto al volver
 
-Las trampas del repo, para el que lo toque dentro de tres dias (que sos vos, sin contexto).
-
-- `<script>` borra `<directorio gitignoreado>`: si se corre, se pierde <que>.
-- `<archivo generado>` tiene que copiarse tambien a `<segundo lugar>`.
-- `<test>` fija el output de `<comando>`: cambiar el formato obliga a reconciliarlo a mano.
+- `docs/submission.md` y `docs/SUBMISSION.md` son el mismo archivo en macOS: la ficha vive en `docs/DEVPOST.md`.
+- `test_the_stylesheet_carries_the_design_system_tokens_verbatim` exige que `app.css` empiece con el bloque css de `docs/DESIGN.md` §3: un token nuevo va en los dos.
+- Cifras de evaluacion: solo via `make eval`; `test_published_numbers` y el job `eval` de CI fallan si se escriben a mano.
+- `make test` y `make dev` necesitan el daemon de Docker (`colima start`).
 
 ## Fuera de mi control
 
