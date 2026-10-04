@@ -6,7 +6,7 @@ Cierre: **2026-10-26 23:45 -07:00** (2026-10-27 03:45 -03:00). Competencia:
 Etapas (de la pagina de fechas del evento; en Devpost, `/details/dates`): submissions hasta 2026-10-26 23:45 -07:00, judging 2026-10-27 00:00 -07:00 → 2026-11-09 23:45 -08:00,
 ganadores 2026-11-10 09:00 -08:00.
 
-Estado del codigo en una linea: 363 tests verdes (cobertura 92.44%, `make test` del 2026-10-01); producto completo (U1-U18 del PLAN `done`); faltan U19 (regrabar video) y U20 (pegar la ficha).
+Estado del codigo en una linea: 379 tests verdes (cobertura 92.61%, `make test` del 2026-10-01); producto completo (U1-U18 del PLAN `done`); faltan U19 (regrabar video) y U20 (pegar la ficha).
 
 ---
 
@@ -14,8 +14,8 @@ Estado del codigo en una linea: 363 tests verdes (cobertura 92.44%, `make test` 
 
 | Superficie | Donde | Estado | Verificado |
 |---|---|---|---|
-| Repo y CI | `gmassello/afterimage` @ `901467f` | pusheado; CI verde | 2026-10-02 `gh run list --commit` |
-| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `bdeea3f` (deploy manual, run 37076617913): crack al final, fotos de referencia nuevas y miniaturas de 144 px | 2026-10-02 `/app` abre en "Set 1 of 3 · hot spot" y sirve `sample-b-baseline-thumb.cfb36a84.png` |
+| Repo y CI | `gmassello/afterimage` @ `e8fd19d` | pusheado; CI verde | 2026-10-04 `gh run list --commit` |
+| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `e8fd19d` (deploy manual, run 37212031408): muestras primero, cuarto juego de corrosión sobre un tanque galvanizado, zoom antes / ahora en la aprobación | 2026-10-04 `/app` muestra "El tanque sano" y sirve `sample-d-defect-thumb.95de4102.png` `200 image/png` |
 | Submission | https://devpost.com/software/afterimage-ibp376 | publicada el 7 Sep, desactualizada (dice video, cinco tools, 23 escenarios); texto nuevo en `docs/submission.md` | 2026-10-01 lectura de la pagina publica |
 | Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no verificada | — |
 | PR upstream | no aplica | — | — |
