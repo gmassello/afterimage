@@ -6,7 +6,7 @@ Cierre: **2026-10-26 23:45 -07:00** (2026-10-27 03:45 -03:00). Competencia:
 Etapas (de la pagina de fechas del evento; en Devpost, `/details/dates`): submissions hasta 2026-10-26 23:45 -07:00, judging 2026-10-27 00:00 -07:00 → 2026-11-09 23:45 -08:00,
 ganadores 2026-11-10 09:00 -08:00.
 
-Estado del codigo en una linea: 380 tests verdes (cobertura 92.62%, `make test` del 2026-10-01); producto completo (U1-U18 del PLAN `done`); faltan U19 (regrabar video) y U20 (pegar la ficha).
+Estado del codigo en una linea: 380 tests verdes (cobertura 92.62%, `make test` del 2026-10-01); producto completo (U1-U18 del PLAN `done`); U19 hecho (video regrabado el 4 Oct); falta U20 (pegar la ficha).
 
 ---
 
@@ -20,7 +20,7 @@ Estado del codigo en una linea: 380 tests verdes (cobertura 92.62%, `make test` 
 | Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no verificada | — |
 | PR upstream | no aplica | — | — |
 | Segundo checkout | no aplica | — | — |
-| Video | `zUFR96a33IM` (4:53.6) | cumple el requisito; muestra la UI del 6 Sep, anterior a landing, tour y toggles | 2026-10-01 embed en la ficha |
+| Video | `_fJo29SdoaU` (3:06.6, publico) | regrabado el 4 Oct sobre la UI actual: tres casos de uso, tarjeta de aprobacion, cifras de `results.json` | 2026-10-04 subida a YouTube |
 | Deck | no lo pide el evento | — | `docs/HACKATHON.md` |
 
 ## Hechos duplicados

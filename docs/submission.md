@@ -80,7 +80,7 @@ opencv, amazon-web-services, aws-lambda, amazon-dynamodb, amazon-s3, aws-cloudfo
 - https://gmassello.github.io/afterimage/
 
 ## Video demo link (-)
-https://www.youtube.com/watch?v=zUFR96a33IM
+https://www.youtube.com/watch?v=_fJo29SdoaU
 
 ## Criteria coverage
 | Criterion | Weight | Paragraph |

@@ -16,7 +16,7 @@
 
 <p align="center">
   <b><a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/">Try the live agent</a></b> — no login, <b>200 in 0.58 s</b> ·<br>
-  <b><a href="https://youtu.be/zUFR96a33IM">Watch the demo (4:54)</a></b> ·
+  <b><a href="https://youtu.be/_fJo29SdoaU">Watch the demo (3:07)</a></b> ·
   <b><a href="https://gmassello.github.io/afterimage/">Field manual</a></b> ·
   <b><a href="docs/TECHNICAL_REPORT.md">Technical report</a></b> ·
   <b><a href="docs/EVALUATION.md">Evaluation</a></b> ·
@@ -36,7 +36,7 @@ Developer documentation: [functional guide](docs/FUNCTIONAL.md) ·
 <p align="center">
   <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/"><img src="docs/img/demo.gif" alt="A capture is uploaded, the trace opens and fills in as the agent works, the queue shows the changed region against the baseline, a human approves, and the asset history gains the new reference" width="880"></a><br>
   <sub>Upload a capture → the loop decides → the trace shows the value behind every decision → a human approves what the policy would not write alone</sub><br>
-  <sub><a href="https://youtu.be/zUFR96a33IM">Watch the 5-minute walkthrough</a> · <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/">try the live endpoint</a></sub>
+  <sub><a href="https://youtu.be/_fJo29SdoaU">Watch the 3-minute walkthrough</a> · <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/">try the live endpoint</a></sub>
 </p>
 
 ### Three minutes

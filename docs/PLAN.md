@@ -230,7 +230,7 @@ must; nothing remaining blocks the demo.
 - **Covers:** R15 · F6
 - **Files:** `video/script.tsv`, `video/`, `docs/VIDEO_SCRIPT.md`
 - **Depends on:** U17
-- **Status:** todo
+- **Status:** done — https://youtu.be/_fJo29SdoaU, 3:06.6, recorded 4 October (`video/PRODUCTION.md`)
 - **Tests:**
   - happy: figures in the script → match `results.json` (`eval/tests/test_published_numbers.py`)
   - edge: final cut → duration ≤ 5:00
