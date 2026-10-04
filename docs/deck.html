@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>afterimage — pitch deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface-1: #f5f6f6;
+  --surface-2: #eceef0;
+  --surface-3: #e3e5e8;
+  --fg: #0f1011;
+  --muted: #3e3e44;
+  --subtle: #5f636b;
+  --border: #e1e3e6;
+  --border-strong: #8a8f98;
+  --accent: #5d5294;
+  --accent-hover: #4a4078;
+  --accent-soft: #e9e6f8;
+  --on-accent: #ffffff;
+  --ring: #5d5294;
+  --ok: #176b42;
+  --warn: #8a5a06;
+  --danger: #a03028;
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-24: 96px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+}
+
+@page { size: 1920px 1080px; margin: 0 }
+* { box-sizing: border-box; margin: 0; padding: 0 }
+html, body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); -webkit-print-color-adjust: exact; print-color-adjust: exact }
+.slide { width: 1920px; height: 1080px; overflow: hidden; position: relative; padding: var(--space-24); display: flex; flex-direction: column; gap: var(--space-8); break-after: page; font-size: 32px; line-height: 1.45; letter-spacing: -0.05px }
+.slide:last-child { break-after: auto }
+.eyebrow { font-size: 28px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: var(--subtle) }
+h1 { font-size: 160px; font-weight: 600; line-height: 1.0; letter-spacing: -6px }
+h2 { font-size: 72px; font-weight: 600; line-height: 1.1; letter-spacing: -2px; max-width: 30ch }
+h3 { font-size: 36px; font-weight: 600; letter-spacing: -0.6px }
+p { max-width: 52ch; color: var(--muted) }
+.mono, code { font-family: var(--font-mono) }
+.metric { font-family: var(--font-mono); font-weight: 500; font-size: 88px; line-height: 1.05; letter-spacing: -2px; color: var(--accent) }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-8) }
+.foot { position: absolute; left: var(--space-24); right: var(--space-24); bottom: 48px; display: flex; justify-content: space-between; font-size: 28px; color: var(--subtle); font-family: var(--font-mono) }
+.row { display: flex; gap: var(--space-8) }
+.grow { flex: 1 }
+.tag { display: inline-block; font-family: var(--font-mono); font-size: 28px; padding: 2px 16px; border-radius: var(--radius-pill); border: 1px solid var(--border-strong) }
+.ok { color: var(--ok); border-color: var(--ok) }
+.warn { color: var(--warn); border-color: var(--warn) }
+.bad { color: var(--danger); border-color: var(--danger) }
+
+.title { justify-content: center; background: var(--surface-1) }
+.title .lede { font-size: 44px; line-height: 1.35; color: var(--fg); max-width: 34ch }
+
+.uses { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-8); margin-top: var(--space-4) }
+.uses figure { display: flex; flex-direction: column; gap: var(--space-4) }
+.uses img { width: 100%; height: 330px; object-fit: cover; border-radius: var(--radius-xl); border: 1px solid var(--border) }
+.uses figcaption { font-size: 30px; color: var(--muted) }
+.uses figcaption b { display: block; color: var(--fg); font-size: 36px; font-weight: 600 }
+
+.shot { position: relative; flex: none; width: 1180px; height: 500px; overflow: hidden; border-radius: var(--radius-xl); border: 1px solid var(--border) }
+.shot img { width: 1300px; margin-top: -122px; margin-left: -56px; display: block }
+.shot .mark { position: absolute; left: 10px; top: 197px; width: 660px; height: 292px; border: 5px solid var(--accent); border-radius: var(--radius-lg) }
+
+.flow { display: flex; align-items: stretch; gap: var(--space-3) }
+.flow .step { flex: 1; background: var(--surface-1); border: 1px solid var(--border); border-left: 4px solid var(--ok); border-radius: var(--radius-md); padding: var(--space-5) var(--space-4); font-size: 28px; line-height: 1.3 }
+.flow .step small { display: block; font-family: var(--font-mono); font-size: 28px; color: var(--subtle); margin-top: var(--space-2) }
+.flow .arrow { align-self: center; color: var(--subtle); font-size: 36px }
+.branches { display: flex; gap: var(--space-4); flex-wrap: wrap }
+
+.metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-8) }
+.metrics .card div:last-child { font-size: 30px; color: var(--muted); margin-top: var(--space-2) }
+
+table { border-collapse: collapse; width: 100%; font-size: 28px; line-height: 1.3 }
+td { padding: 10px 0; border-bottom: 1px solid var(--border); vertical-align: top }
+td.w { font-family: var(--font-mono); color: var(--accent); width: 110px }
+td.c { font-weight: 600; width: 400px; padding-right: var(--space-6) }
+td.a { color: var(--muted) }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-12) }
+
+ul { list-style: none; display: flex; flex-direction: column; gap: var(--space-5); max-width: 62ch }
+li { padding-left: 40px; position: relative; color: var(--muted) }
+li::before { content: ""; position: absolute; left: 0; top: 18px; width: 16px; height: 16px; border-radius: var(--radius-xs); background: var(--accent) }
+li b { color: var(--fg); font-weight: 600 }
+.links li { font-family: var(--font-mono); font-size: 30px }
+</style>
+</head>
+<body>
+
+<section class="slide title">
+  <div class="eyebrow">OpenCV AI Competition 2026 · Agentic Vision</div>
+  <h1>afterimage</h1>
+  <p class="lede">A visual inspection agent that remembers. It aligns every photo to the stored baseline of the same asset with OpenCV 5, and a measured number decides what it does next.</p>
+  <div class="foot"><span>gmassello</span><span>github.com/gmassello/afterimage</span></div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Problem</div>
+  <h2>What matters is what changed since the last time anyone looked.</h2>
+  <div class="row">
+    <div class="card grow"><div class="metric">~2,900</div><div>modules per MW of solar plant <!-- src: docs/TECHNICAL_REPORT.md §1, reference [1] --></div></div>
+    <div class="card grow"><div class="metric">~15%/yr</div><div>lost to PID in affected modules, partly reversible if caught early <!-- src: docs/TECHNICAL_REPORT.md §2, IEA-PVPS T13-09:2017 --></div></div>
+    <div class="card grow"><div class="metric">5–20%</div><div>of annual energy lost to soiling, depending on site <!-- src: docs/TECHNICAL_REPORT.md §2 --></div></div>
+  </div>
+  <p>Nobody can look at them all, twice. Every prior winner analysed one frame or one session; none of them remember.</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Solution</div>
+  <h2>An agent that keeps the memory of each asset and acts on the difference.</h2>
+  <div class="uses">
+    <figure><img src="../services/ui/static/sample-b-defect.png" alt="Solar array with an overheating cell"><figcaption><b>Solar panels</b>hot spots, delamination, cracked glass — measured</figcaption></figure>
+    <figure><img src="../services/ui/static/sample-d-defect.png" alt="Galvanised steel tank with a rust patch"><figcaption><b>Metal structures</b>corrosion — demonstration</figcaption></figure>
+    <figure><img src="../services/ui/static/sample-e-defect.png" alt="Concrete wall with a crack"><figcaption><b>Concrete</b>cracks — demonstration</figcaption></figure>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Demo</div>
+  <div class="row">
+    <div class="shot"><img src="img/deck-approval.png" alt="Trace page: score 0.5945 above the 0.4 threshold, an approval card with before and now crops beside Confirm damage and Dismiss"><div class="mark"></div></div>
+    <div class="grow" style="display:flex;flex-direction:column;gap:var(--space-6)">
+      <h3>A severe change waits for a person</h3>
+      <p><span class="mono">score 0.5945 ≥ 0.4</span> → <span class="tag warn">human_approval</span></p>
+      <p>The card asks <b style="color:var(--fg)">“Is this real damage?”</b> and shows the changed spot zoomed, before and now, beside <b style="color:var(--fg)">Confirm damage</b> and <b style="color:var(--fg)">Dismiss</b>. Nothing is written to memory until someone decides.</p>
+    </div>
+  </div>
+  <p>Five sample sets in <span class="mono">/app</span> walk all four answers with no photo of your own.</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">How it works</div>
+  <h2>Perception reports numbers. One policy file decides.</h2>
+  <div class="flow">
+    <div class="step">Quality gate<small>blur_variance ≥ 100</small></div><div class="arrow">→</div>
+    <div class="step">Identify asset<small>ANNIndex vote</small></div><div class="arrow">→</div>
+    <div class="step">Align<small>ALIKED + LightGlue</small></div><div class="arrow">→</div>
+    <div class="step">Diff vs memory<small>mean_delta</small></div><div class="arrow">→</div>
+    <div class="step">Rescan ×2<small>if uncertain</small></div><div class="arrow">→</div>
+    <div class="step">Severity<small>score vs 0.4</small></div>
+  </div>
+  <div class="branches"><span class="tag ok">auto_write</span><span class="tag ok">first_baseline</span><span class="tag warn">recapture</span><span class="tag warn">human_approval</span><span class="tag bad">unrecognized_asset</span></div>
+  <p>Six OpenCV 5 tools over MCP, in an arm64 container on AWS Lambda (Graviton). Memory in DynamoDB and S3. Gemini orders the tool calls and phrases the result; it cannot move a threshold or skip a step. Every decision is a hash-chained trace event: <span class="mono">{metric, value, threshold, branch}</span>.</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Results</div>
+  <h2>29 scenarios, 18 on real photographs.</h2>
+  <!-- src: make eval → eval/results/latest/results.json summary.scenarios, summary.real, summary.passed, summary.branch.accuracy, summary.defect.macro.f1, summary.localisation.mean_iou -->
+  <div class="metrics">
+    <div class="card"><div class="metric">24 / 29</div><div>scenarios pass every assertion</div></div>
+    <div class="card"><div class="metric">0.8621</div><div>branch accuracy</div></div>
+    <div class="card"><div class="metric">0.8542</div><div>defect macro F1</div></div>
+    <div class="card"><div class="metric">0.7875</div><div>mean IoU of the located region</div></div>
+    <div class="card"><div class="metric">20.4 s</div><div>per inspection, p50 <!-- src: docs/TECHNICAL_REPORT.md §7, Lambda REPORT lines --></div></div>
+    <div class="card"><div class="metric">$0.0005</div><div>per inspection at list price <!-- src: docs/TECHNICAL_REPORT.md §7, Price List API --></div></div>
+  </div>
+  <p>The five failures are published with their root cause. CI fails if a headline figure drifts from a fresh run.</p>
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Judging criteria</div>
+  <div class="cols">
+    <table>
+      <tr><td class="w">30%</td><td class="c">Technical execution</td><td class="a">OpenCV 5 alignment with ORB fallback, 380 tests, eval gate in CI</td></tr>
+      <tr><td class="w">20%</td><td class="c">Innovation</td><td class="a">longitudinal memory per asset; rescans on its own</td></tr>
+      <tr><td class="w">20%</td><td class="c">Real-world impact</td><td class="a">solar, metal and concrete inspection</td></tr>
+      <tr><td class="w">10%</td><td class="c">User experience</td><td class="a">sample sets, before/now approval, EN/ES, plain/technical, dark</td></tr>
+      <tr><td class="w">10%</td><td class="c">Docs and presentation</td><td class="a">technical report, field manual, video</td></tr>
+      <tr><td class="w">10%</td><td class="c">Cloud and responsible ops</td><td class="a">Lambda + CloudFormation over OIDC, calibration gate</td></tr>
+    </table>
+    <table>
+      <tr><td class="w">30%</td><td class="c">OpenCV 5 + agent</td><td class="a">six OpenCV tools exposed over MCP</td></tr>
+      <tr><td class="w">25%</td><td class="c">Orchestration, autonomy</td><td class="a">enforced next tool; the model cannot change a branch</td></tr>
+      <tr><td class="w">20%</td><td class="c">Effectiveness, evaluation</td><td class="a">29 reproducible scenarios, failures published</td></tr>
+      <tr><td class="w">15%</td><td class="c">Failure, trace, human</td><td class="a">recapture, refusal, approval gate, hash-chained trace</td></tr>
+      <tr><td class="w">10%</td><td class="c">UX, docs, demo</td><td class="a">walk all four answers in a minute</td></tr>
+    </table>
+  </div>
+  <!-- src: 380 tests from make test, 4 October 2026 -->
+</section>
+
+<section class="slide">
+  <div class="eyebrow">Limits and what's next</div>
+  <h2>What it does not claim.</h2>
+  <ul>
+    <li><b>Dataset, not field accuracy.</b> The figures hold for the committed dataset; plant imagery outside it is the next step.</li>
+    <li><b>Solar only is measured.</b> The metal and concrete sets are demonstrations with one synthetic defect each.</li>
+    <li><b>Five scenarios fail,</b> each traced to a cause: a global coverage default, the exposure gate firing late, severity ignoring the class, a soiling rule tuned on synthetic texture.</li>
+    <li><b>The hash chain detects ordinary edits;</b> it is not a signed audit log. The public demo has no login.</li>
+  </ul>
+</section>
+
+<section class="slide title">
+  <div class="eyebrow">Try it</div>
+  <h2>Open it, pick a sample, follow the numbers.</h2>
+  <ul class="links">
+    <li>jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws</li>
+    <li>github.com/gmassello/afterimage</li>
+    <li>gmassello.github.io/afterimage</li>
+    <li>youtube.com/watch?v=zUFR96a33IM</li>
+  </ul>
+  <div class="foot"><span>gmassello</span><span>MIT · OpenCV AI Competition 2026</span></div>
+</section>
+
+</body>
+</html>
