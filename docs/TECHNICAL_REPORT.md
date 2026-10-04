@@ -203,12 +203,18 @@ changing a decision is a fact you can point at rather than something inferred fr
 | Tool | OpenCV 5 primitives | Metrics returned |
 |---|---|---|
 | `identify_asset` | `cv2.ALIKED.create` (or `cv2.ORB.create(4000)`) descriptors of every current baseline, cached in S3 as `descriptors-<detector>.npy` beside the baseline image; `cv2.ANNIndex.create` (Euclidean for ALIKED, Hamming for ORB), `build`, `knnSearch` | `asset_id`, `votes`, `vote_share`, `runner_up`, `runner_up_votes`, `query_keypoints`, `candidates` |
-| `assess_quality` | `cv2.Laplacian(..., CV_64F).var()`, `cv2.Canny` + `cv2.findContours` + `cv2.boundingRect` | `blur_variance`, `mean_brightness`, `clipped_dark_ratio`, `clipped_bright_ratio`, `coverage_ratio` |
-| `align_to_baseline` | `cv2.ALIKED.create` + `cv2.LightGlueMatcher.create` (neural) or `cv2.ORB.create(4000)` + `cv2.BFMatcher(NORM_HAMMING)` (fallback); `cv2.findHomography(src, dst, cv2.UsacParams)` configured as MAGSAC with a 3.0 px threshold; `cv2.warpPerspective`; `cv2.erode` | `keypoints_query`, `keypoints_train`, `matches`, `inliers`, `inlier_ratio`, `mean_reprojection_error` |
+| `assess_quality` | `cv2.Laplacian(..., CV_64F).var()`, `cv2.GaussianBlur` + `cv2.Canny` + `cv2.findContours`, then `cv2.boundingRect` of the largest contour by `cv2.contourArea` | `blur_variance`, `mean_brightness`, `clipped_dark_ratio`, `clipped_bright_ratio`, `coverage_ratio` |
+| `align_to_baseline` | `cv2.ALIKED.create` + `cv2.LightGlueMatcher.create` (neural) or `cv2.ORB.create(4000)` + `cv2.BFMatcher(NORM_HAMMING)` (fallback); `cv2.findHomography(src, dst, cv2.UsacParams)` configured as MAGSAC with a 3.0 px threshold; `cv2.perspectiveTransform` for the inlier reprojection error and the warped frame corners; `cv2.fillConvexPoly` + `cv2.erode` for the valid-pixel mask; `cv2.warpPerspective` | `keypoints_query`, `keypoints_train`, `matches`, `inliers`, `inlier_ratio`, `mean_reprojection_error` |
 | `diff_against_memory` | `cv2.createCLAHE`, `cv2.absdiff`, `cv2.GaussianBlur`, `cv2.threshold`, `cv2.connectedComponentsWithStats` | `changed_ratio`, and per region `area_px`, `area_ratio`, `mean_delta`, `bbox` |
 | `crop_and_rescan` | the same diff pipeline plus `cv2.resize(..., INTER_CUBIC)` | full-frame `area_px` and `area_ratio`, plus crop-relative `zoom_area_ratio` |
 | `classify_severity` | `cv2.cvtColor(..., COLOR_BGR2HSV)`, `cv2.absdiff` | `score` and the features `brightness_delta`, `saturation_delta`, `hue_shift`, `change_hue`, `spatial_uniformity`, `mean_delta`, `area_ratio` |
 | `classify_severity` evidence | `cv2.rectangle`, `cv2.FontFace("sans")`, `cv2.getTextSize` and the UTF-8 `cv2.putText` overload that takes a `FontFace` | `evidence_key`: the aligned capture with the region boxed and labelled `label · score · Δbrightness`, stored as `evidence.png` |
+
+Outside the six tools, OpenCV also does the image I/O (`cv2.imdecode`, `cv2.imencode` and
+`cv2.resize(..., INTER_AREA)` in `services/memory/images.py`) and draws the synthetic panel behind the
+calibration gate, the scripted demo and the synthetic scenarios (`cv2.getRotationMatrix2D` +
+`cv2.warpAffine` for the shifted capture, plus `cv2.GaussianBlur` and the drawing primitives, in
+`services/perception/panels.py`).
 
 The `Features` module is used substantively, not decoratively: ALIKED keypoints matched by LightGlue
 are what anchor a capture to the baseline of the same asset, and without that anchoring the diff in
