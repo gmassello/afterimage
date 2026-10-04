@@ -35,8 +35,13 @@ def load_lines():
     lines = {}
     for row in rows:
         beat, en, es = row.split("\t")
-        lines.setdefault(beat, []).append((en, es))
+        lines.setdefault(beat, []).append((en, es or en))
     return lines
+
+
+def source(name):
+    path = VIDEO / name
+    return path if path.exists() else path.with_suffix(".mp4")
 
 
 def stream_format(path):
@@ -236,7 +241,7 @@ def concat_audio(clips, dest):
 
 def main():
     lines = load_lines()
-    missing = [name for _, name in BEATS if not (VIDEO / name).exists()]
+    missing = [name for _, name in BEATS if not source(name).exists()]
     hook = OUT / HOOK
     lead = duration(hook) if hook.exists() else 0.0
 
@@ -245,7 +250,7 @@ def main():
     print(f"  {'clip':<16}{'beat':<7}{'raw':>8}{'lines':>7}{'pauses':>8}  {'method':<13}"
           f"{'tight':>8}{'saved':>8}")
     for beat, name in BEATS:
-        path = VIDEO / name
+        path = source(name)
         if not path.exists():
             print(f"  {name:<16}{beat:<7}{'--':>8}{len(lines[beat]):>7}{'--':>8}  {'not recorded':<13}")
             continue

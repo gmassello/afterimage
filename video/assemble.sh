@@ -5,10 +5,12 @@ set -euo pipefail
 
 VIDEO_DIR="${VIDEO_DIR:-$PWD/video}"
 OUT="$VIDEO_DIR/out"
-SKILL="${SKILL:-$HOME/.claude/skills/personal-record-video/scripts}"
+SKILL="${SKILL:-$HOME/.claude/skills/hackathon-record-video/scripts}"
 PIP_W="${PIP_W:-300}"
 PIP_MARGIN="${PIP_MARGIN:-24}"
 PIP_POS="${PIP_POS:-tl}"
+CLOSE_IMAGE="${CLOSE_IMAGE:-}"
+RAW="${RAW:-$VIDEO_DIR/raw.mov}"
 BEATS="${1:-}"
 
 CLIPS=(face-open.mov body-1.mov body-2.mov body-3.mov body-4.mov body-5.mov face-close.mov)
@@ -25,7 +27,7 @@ done
 [ -f "$OUT/hook.mov" ] || { echo "ERROR: $OUT/hook.mov not found. Run hook.py first."; exit 1; }
 
 if [ -n "$BEATS" ]; then
-  VIDEO_DIR="$VIDEO_DIR" python3 "$SKILL/fit-to-audio.py" "$VIDEO_DIR/raw.mov" \
+  VIDEO_DIR="$VIDEO_DIR" python3 "$SKILL/fit-to-audio.py" "$RAW" \
     --audio "$OUT/narration.wav" --timing "$OUT/timing.txt" --beats "$BEATS"
 fi
 [ -f "$OUT/raw-fitted.mov" ] || { echo "ERROR: $OUT/raw-fitted.mov not found. Pass the --beats marks as \$1."; exit 1; }
@@ -39,12 +41,21 @@ FIT="scale=1920:1080:force_original_aspect_ratio=decrease,\
 pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1,fps=30"
 
 INPUTS=(-i "$OUT/raw-fitted.mov" -i "$OUT/hook.mov")
-GRAPH="[0:v]${FIT}[screen];[1:v]setsar=1,fps=30,format=yuv420p[hook];"
-i=2
+if [ -n "$CLOSE_IMAGE" ]; then
+  CLOSE_AT=$(awk 'NR>1 {last=$2} END {print last}' "$OUT/timing.txt")
+  CLOSE_LEN=$(awk "BEGIN {print $BODY_DUR - $CLOSE_AT}")
+  INPUTS+=(-loop 1 -t "$CLOSE_LEN" -i "$CLOSE_IMAGE")
+  GRAPH="[0:v]trim=0:${CLOSE_AT},setpts=PTS-STARTPTS,${FIT}[shot];[2:v]${FIT}[close];[shot][close]concat=n=2:v=1:a=0[screen];"
+  i=3
+else
+  GRAPH="[0:v]${FIT}[screen];"
+  i=2
+fi
+GRAPH+="[1:v]setsar=1,fps=30,format=yuv420p[hook];"
 PIPCHAIN=""
 for clip in "${CLIPS[@]}"; do
   INPUTS+=(-i "$CUT/$clip")
-  GRAPH+="[${i}:v]scale=${PIP_W}:-2,setsar=1,fps=30[p$i];"
+  GRAPH+="[${i}:v]crop='min(iw,ih)':'min(iw,ih)',scale=${PIP_W}:${PIP_W},setsar=1,fps=30[p$i];"
   PIPCHAIN+="[p$i]"
   i=$((i + 1))
 done

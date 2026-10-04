@@ -1,59 +1,49 @@
 beat	en	es
-0:00	Those two numbers decided what it did next	Esos dos números decidieron qué hizo el sistema después.
-0:00	I'm Germán Massello. This is afterimage	Soy Germán Massello. Esto es afterimage.
-0:00	It compares today's photo against the same panel, last time	Compara la foto de hoy de un panel con la foto de ese mismo panel, de la última vez.
-0:00	Not "is it broken". What changed	No pregunta si está roto. Pregunta qué cambió.
-0:25	Solar Star, California: 1.7 million solar panels	Solar Star, en California, son un millón setecientos mil paneles solares.
-0:25	Automated inspection asks: is this panel broken?	La inspección automática pregunta: ¿este panel está roto?
-0:25	But a defect doesn't appear overnight. It grows	Pero un defecto no aparece de golpe: va creciendo.
-0:25	Potential-induced degradation: ~15% a year, reversible if caught early	Hay un tipo de degradación que se come cerca del quince por ciento al año, y si la agarrás a tiempo, se revierte.
-0:25	The useful question is what changed since last time	La pregunta útil es qué cambió desde la última vez.
-0:25	Which means remembering what this panel looked like before	Y eso implica recordar cómo se veía este panel antes.
-1:00	It all runs in one Lambda container — ARM Graviton, no GPU	Todo esto corre en un solo contenedor, sobre una función Lambda. Procesador ARM Graviton, y sin placa de video: todo en CPU.
-1:00	Five vision tools over MCP — each measures, none says it's broken	El agente ve la visión como cinco herramientas, expuestas por M C P. Cada una mide algo y devuelve el número. Ninguna dice si el panel está roto.
-1:00	The thresholds live somewhere else: a policy, in code	Los umbrales viven en otro lado: una política, escrita en código.
-1:00	Memory: a chain of baselines, retired, never overwritten	La memoria es una cadena de baselines. Se retiran, nunca se sobrescriben.
-1:30	First capture. It's out of focus	Primera captura. Está fuera de foco.
-1:30	The agent didn't try to analyse it	El agente ni intentó analizarla.
-1:30	blur_variance came back under 100	blur variance dio menos de cien.
-1:30	The policy compared it against the threshold	La política lo comparó contra el umbral.
-1:30	It chose the recapture branch: go take another photo	Y eligió la rama recapture: andá y sacá otra foto.
-1:30	The operator is still standing at the panel	El operario todavía está parado frente al panel.
-1:30	Asking now works. Asking tomorrow, once they've left, is worthless	Pedírsela ahora sirve. Pedírsela mañana, cuando ya se fue, no sirve para nada.
-1:30	Same panel, in focus. Nothing to compare against yet	El mismo panel, enfocado. Todavía no hay nada contra qué comparar.
-1:30	So this capture becomes the baseline — the reference photo	Así que esta captura pasa a ser el baseline: la foto de referencia.
-1:30	That is the memory being created	Esto es la memoria creándose.
-1:30	Everything afterwards is measured against this image	Todo lo que venga después se mide contra esta imagen.
-1:30	Now the same panel, some time later	Ahora el mismo panel, un tiempo después.
-1:30	It aligns the capture to the stored baseline	Alinea la captura contra el baseline guardado.
-1:30	ALIKED finds the points, LightGlue matches them — OpenCV 5 Features	Busca puntos que reconoce en las dos fotos y los empareja: ALIKED para encontrarlos, LightGlue para emparejarlos. Es el módulo Features de OpenCV cinco.
-1:30	Both images now in the same frame of reference	Las dos imágenes quedan en el mismo marco de referencia.
-1:30	It diffs against memory, and finds what changed	Compara contra la memoria, y encuentra qué cambió.
-1:30	And here it stops	Y acá se frena.
-1:30	The severity score cleared the approval threshold	El score de severidad superó el umbral de aprobación.
-1:30	It wrote nothing. It's waiting for a person	No escribió nada. Está esperando a una persona.
-1:30	I approve it. Only now is the inspection committed	Yo apruebo. Recién ahora la inspección se persiste.
-1:30	And this capture becomes the new baseline	Y esta captura pasa a ser el nuevo baseline.
-1:30	The full history: every inspection, every baseline	El historial completo: cada inspección, cada baseline.
-3:15	Every tool call is one span	Cada llamada a una herramienta deja su propio registro.
-3:15	Arguments, metrics, duration, and the policy's verdict	Con qué la llamó, qué midió, cuánto tardó, y qué decidió la política.
-3:15	The causal link is a field, not a reconstruction	Por qué hizo lo que hizo no hay que deducirlo. Está escrito.
-3:15	One line: the metric, its value, the threshold, the branch	Una sola línea: qué midió, cuánto dio, contra qué umbral, y qué decidió.
-3:15	The model orders the calls. It does not decide	El modelo elige el orden de las llamadas. Lo que se hace después, no.
-3:15	Submit the wrong branch and the loop rejects it	Si propone algo distinto de lo que dicen los números, se lo rechaza.
-3:15	It cannot move a threshold	Y no puede mover un umbral.
-3:15	A number, in a field, next to the action it caused	Un número guardado, justo al lado de la acción que provocó.
-4:00	29 scenarios, 18 on real licensed photographs	Lo probé con veintinueve casos. Dieciocho son fotografías reales de paneles, con licencia.
-4:00	Branch accuracy 0.8621 · defect macro F1 0.8542	Acierta qué hacer en el ochenta y seis por ciento de los casos.
-4:00	Mean IoU 0.7875 locating the region · precision 1.0 on calling a human	Clasifica bien el tipo de defecto, y ubica dónde está dentro de la imagen.
-4:00	It never interrupted someone for nothing	Y cada vez que llamó a una persona, hacía falta. Ni una interrupción de más.
-4:00	Five of the 29 fail, and they're in the report	Cinco de los veintinueve fallan, y están en el reporte.
-4:00	A delamination scored 0.3412 against a 0.4 threshold — auto-filed instead of escalated	Una delaminación —el vidrio despegándose— en un área chica sacó cero coma treinta y cuatro, contra un umbral de cero coma cuarenta. Lo archivó solo, en vez de avisar a una persona.
-4:00	The score ignores the label its own classifier produced	El score solo mira cuánto cambió. No mira qué tipo de defecto encontró él mismo.
-4:00	I know how to fix it. I didn't fix it here	Sé cómo arreglarlo. No lo arreglé acá.
-4:00	Rewriting a score to pass one case is overfitting	Cambiar el score para que pase un caso es entrenar para el examen.
-4:35	What's next: severity that knows the defect class	Lo que sigue: que el score mire también qué tipo de defecto es.
-4:35	And frame coverage calibrated per site	Y calibrar, para cada planta, cuánto del cuadro tiene que ocupar el panel.
-4:35	I measured that one. There is no global default that works	Eso lo medí: no hay un número único que sirva para todas.
-4:35	Everything is open: the repo, the evaluation, the traces, a public endpoint with no login	Está todo abierto: el código, la evaluación, las trazas, y una página pública donde probarlo, sin registrarse.
-4:35	Upload your own photograph and watch a number decide what it does	Subí tu propia fotografía y mirá cómo un número decide qué hace.
+0:00	Those two numbers decided what the agent did next	
+0:00	I'm Germán Massello, and this is afterimage	
+0:00	It compares today's photo with the same asset, last time	
+0:00	Not "is it broken", but "what changed"	
+0:25	Solar Star, in California: 1.7 million solar panels	
+0:25	A defect does not appear overnight. It grows	
+0:25	Potential-induced degradation: about 15% a year, partly reversible if caught early	
+0:25	The same holds for rust on a steel tank, or a crack in a concrete wall	
+0:25	The useful question is what changed since last time	
+0:25	And that means remembering what the asset looked like before	
+1:00	It all runs in one Lambda container: ARM Graviton, no GPU	
+1:00	Six OpenCV 5 tools over MCP. Each one measures; none of them decides	
+1:00	The thresholds live in one place: a policy, in code	
+1:00	Memory is a chain of baselines, superseded, never overwritten	
+1:30	The app opens on sample sets for three use cases	
+1:30	Solar panels, metal structures, and concrete	
+1:30	I'll take the solar one: a cell that overheats	
+1:30	Photo one. There is nothing to compare against yet	
+1:30	So it becomes the baseline: the memory starts here	
+1:30	Now the same panel, some time later	
+1:30	It aligns the capture to the stored baseline with ALIKED and LightGlue	
+1:30	It diffs against memory and finds what changed	
+1:30	The severity score is 0.5945, over the 0.4 threshold	
+1:30	So it wrote nothing. It is waiting for a person	
+1:30	It asks one question: is this real damage?	
+1:30	Before and now, zoomed on the spot that changed	
+1:30	I confirm it. Only now is the inspection written	
+1:30	And the old baseline is marked superseded	
+1:30	Next, the same photo, shaken	
+1:30	blur_variance is 4.1446, far under 100	The blur variance is 4.1446, far under 100
+1:30	It does not analyse it. It asks for another photo while the operator is still there	
+1:30	Last, something else entirely	
+1:30	The alignment finds almost no matches, so it refuses instead of guessing	
+3:15	Every tool call is one span in the trace	
+3:15	Arguments, metrics, duration, and the policy's verdict	
+3:15	One line: the metric, its value, the threshold, the branch	
+3:15	The model orders the calls and writes the message. It does not decide	
+3:15	Submit the wrong branch, and the loop rejects it	
+3:15	It cannot move a threshold	
+4:00	29 scenarios, 18 on real licensed photographs	
+4:00	Branch accuracy 0.8621, defect macro F1 0.8542	Branch accuracy 0.8621. Defect macro F1, 0.8542
+4:00	Mean IoU 0.7875 locating the region	Mean intersection over union, 0.7875, locating the region
+4:00	Five of the 29 fail, and every one is in the report	
+4:00	A delamination scored 0.3412 against 0.4, and was filed instead of escalated	
+4:00	The score ignores the class its own classifier produced. That is the next fix	
+4:35	Everything is open: the repo, the evaluation, the traces	
+4:35	And a public endpoint with no login	
+4:35	Upload a photo, and watch a number decide what happens next	

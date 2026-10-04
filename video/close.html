@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>afterimage — video close</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f6f6;
+  --fg: #0f1011;
+  --muted: #3e3e44;
+  --subtle: #5f636b;
+  --border: #e1e3e6;
+  --accent: #5d5294;
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0 }
+body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--font-sans) }
+main { position: absolute; left: 420px; right: 96px; top: 150px; display: flex; flex-direction: column; gap: 32px }
+.eyebrow { font-size: 28px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; color: var(--subtle) }
+h1 { font-size: 72px; font-weight: 600; line-height: 1.1; letter-spacing: -2px }
+.row { display: flex; gap: 32px }
+.card { flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 28px 32px }
+.metric { font-family: var(--font-mono); font-weight: 500; font-size: 64px; letter-spacing: -1.5px; color: var(--accent) }
+.card div:last-child { font-size: 28px; color: var(--muted) }
+ul { list-style: none; display: flex; flex-direction: column; gap: 16px; font-family: var(--font-mono); font-size: 34px }
+li::before { content: "→ "; color: var(--accent) }
+footer { position: absolute; left: 420px; right: 96px; top: 800px; display: flex; justify-content: space-between; font-size: 28px; color: var(--subtle) }
+</style>
+</head>
+<body>
+<main>
+  <div class="eyebrow">afterimage · OpenCV AI Competition 2026</div>
+  <h1>An inspection agent that remembers.</h1>
+  <div class="row">
+    <div class="card"><div class="metric">3</div><div>use cases: solar panels, metal structures, concrete</div></div>
+    <div class="card"><div class="metric">24 / 29</div><div>evaluation scenarios pass</div></div>
+    <div class="card"><div class="metric">$0.0005</div><div>per inspection on AWS Lambda</div></div>
+  </div>
+  <!-- src: make eval → eval/results/latest/results.json summary.passed; docs/TECHNICAL_REPORT.md §7 -->
+  <ul>
+    <li>jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws</li>
+    <li>github.com/gmassello/afterimage</li>
+    <li>gmassello.github.io/afterimage</li>
+  </ul>
+</main>
+<footer><span>Germán Massello</span></footer>
+</body>
+</html>

@@ -20,7 +20,7 @@ BEATS = [
     ("4:35", "face-close.mov"),
 ]
 GAP = float(os.environ.get("REHEARSAL_GAP", "0.45"))
-VOICE = "Mónica"
+VOICE = os.environ.get("REHEARSAL_VOICE", "Ava (Premium)")
 WPM = "180"
 TOLERANCE = 0.25
 
@@ -42,7 +42,7 @@ def load_lines():
     lines = {}
     for row in SCRIPT.read_text().splitlines()[1:]:
         beat, en, es = row.split("\t")
-        lines.setdefault(beat, []).append((en, es))
+        lines.setdefault(beat, []).append((en, es or en))
     return lines
 
 

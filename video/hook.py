@@ -23,15 +23,16 @@ SHOTS = [
         "headline": "1,700,000 panels",
     },
     {
-        "image": VIDEO / "img/1-blurred.png",
+        "image": ROOT / "services/ui/static/sample-b-blurred.png",
         "seconds": 3.0,
-        "metric": "blur_variance    3.6589  <   100.0   ->  recapture",
+        "metric": "blur_variance    4.1446  <   100.0   ->  recapture",
     },
     {
-        "image": VIDEO / "img/3-defect.png",
+        "image": ROOT / "services/ui/static/sample-b-defect.png",
         "seconds": 3.5,
-        "source_box": (342, 213, 104, 72),
-        "metric": "score            0.6798  >=    0.4    ->  human_approval",
+        "source_box": (457, 381, 83, 73),
+        "metric": "score            0.5945  >=    0.4    ->  human_approval",
+        "metric_y": "120",
     },
     {"seconds": 1.5},
     {"seconds": 3.0, "title": "afterimage", "subtitle": "it does not guess. it measures."},
@@ -118,7 +119,7 @@ def shot_filter(index, shot):
         ))
     if "metric" in shot:
         chain.append(text_layer(
-            f"{index}-metric", shot["metric"], MONO, 44, 120, f"{H}-230",
+            f"{index}-metric", shot["metric"], MONO, 44, 120, shot.get("metric_y", f"{H}-230"),
             ":box=1:boxcolor=black@0.65:boxborderw=26:enable='gte(t,0.4)'",
         ))
     if "title" in shot:

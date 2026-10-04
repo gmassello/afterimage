@@ -405,7 +405,7 @@ def main():
     rows = {}
     for line in SCRIPT.read_text().splitlines()[1:]:
         beat, en, es = line.split("\t")
-        rows.setdefault(beat, []).append({"en": en, "es": es})
+        rows.setdefault(beat, []).append({"en": en, "es": es or en})
 
     missing = [b for b, _, _ in CLIPS if b not in rows]
     if missing:

@@ -9,3 +9,6 @@ video/out/
 *.mov
 video/img/
 /.scratchpad/
+.DS_Store
+video/*.mp4
+video/v2/

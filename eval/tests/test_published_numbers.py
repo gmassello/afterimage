@@ -20,8 +20,8 @@ SPELLED = (
 NO_DEFECT = "NONE"  # the class for a capture with nothing wrong, not one of the defect classes
 MISSED = "MISSED"  # predicted when the agent abstained on a capture that had a defect
 
-# Read off the screen during the 5 September browser rehearsal — see video/PRODUCTION.md.
-ON_CAMERA = {"3.6589", "2483.1292", "1064.0321", "0.9988", "67.7646", "0.6798"}
+# Read off the screen during the 4 October browser rehearsal — see video/PRODUCTION.md.
+ON_CAMERA = {"6311.2328", "4.1446", "2612.6678", "97.0812", "0.5945", "0.0680"}
 
 pytestmark = pytest.mark.skipif(
     not (PAGE.exists() and RESULTS.exists()), reason="run `make eval` first"

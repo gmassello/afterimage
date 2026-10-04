@@ -4,12 +4,14 @@
 > the current product, start with [`docs/FUNCTIONAL.md`](../docs/FUNCTIONAL.md) and
 > [`docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md).
 
-A 14-second cold open with no voice, then your voice in Spanish end to end, English burned-in
-subtitles, and your face in a box in the corner **for the whole video** — the big frame is always
-showing the product or the documentation.
+The current render (4 October take, below) is a 14-second cold open with no voice, then an English
+narration end to end, English burned-in subtitles, a presenter box in the corner for the whole
+video, and a closing slide with the links (`video/close.html` rendered to `video/img/close.png`).
+The presenter clips were generated with HeyGen from the author's photos and voice; the sections
+below describe the original self-recorded workflow, which the scripts still support.
 
 The script is `video/script.tsv`: one row per subtitle, `en` is what the viewer reads, `es` is what
-you say. 58 rows.
+the presenter says (empty means `en`). 48 rows.
 
 ## 1. Build the cold open
 
@@ -286,6 +288,35 @@ Two things the rehearsal changed:
 - The `/queue` reload, which turned out to be a real bug rather than a tooling artifact: an
   approval POST that had not returned when the timer fired was cancelled, silently. Fixed and
   verified in a browser — see the commit.
+
+## The take, 4 October — asset `demo-panel-b-4d5da1`
+
+The hot-spot sample set driven through `/app` on the public endpoint, in the tour order 1 → 3 → 2 → 4:
+
+```
+1-baseline  run 915f291b6ba9   first_baseline
+3-defect    run 2797229f9ec6   blur_variance 2612.67 >= 100 -> quality_ok
+                               inlier_ratio        1 >= 0.9 -> aligned
+                               mean_delta    97.0812 >=  35 -> change_confirmed
+                               score          0.5945 >= 0.4 -> human_approval   (confirmed)
+2-blurred   run 794e54904d55   blur_variance  4.1446 <  100 -> recapture
+4-foreign   run e2419dc88066   inlier_ratio    0.068 <  0.3 -> unrecognized_asset
+```
+
+`assemble.sh`'s fitter keeps activity at real speed and compresses the gaps inside each beat, which
+on a 303-second demo beat put each sentence over the wrong screen. `video/sync_take.py` instead
+retimes the raw take segment by segment, one anchor per narration line, crops the tab strip and drops
+a timed-out page and a six-minute wait; its output is used directly as `out/raw-fitted.mov`:
+
+```bash
+python3 video/sync_take.py
+cp video/raw-sync.mov video/out/raw-fitted.mov
+CLOSE_IMAGE=video/img/close.png bash video/assemble.sh
+```
+
+Result: 186.6 s. Every four-decimal figure in `demo.en.srt` is either in
+`eval/results/latest/results.json` or on screen in the runs above (`ON_CAMERA` in
+`eval/tests/test_published_numbers.py`).
 
 ## Pipeline rehearsed end to end
 
