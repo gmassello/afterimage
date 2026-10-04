@@ -6,7 +6,7 @@ Cierre: **2026-10-26 23:45 -07:00** (2026-10-27 03:45 -03:00). Competencia:
 Etapas (de la pagina de fechas del evento; en Devpost, `/details/dates`): submissions hasta 2026-10-26 23:45 -07:00, judging 2026-10-27 00:00 -07:00 → 2026-11-09 23:45 -08:00,
 ganadores 2026-11-10 09:00 -08:00.
 
-Estado del codigo en una linea: 380 tests verdes (cobertura 92.62%, `make test` del 2026-10-01); producto completo (U1-U18 del PLAN `done`); U19 hecho (video regrabado el 4 Oct); falta U20 (pegar la ficha).
+Estado del codigo en una linea: 380 tests verdes (cobertura 92.62%, `make test` del 2026-10-01); producto completo (U1-U18 del PLAN `done`); U19 y U20 hechos (video regrabado y ficha pegada el 4 Oct).
 
 ---
 
@@ -16,7 +16,7 @@ Estado del codigo en una linea: 380 tests verdes (cobertura 92.62%, `make test` 
 |---|---|---|---|
 | Repo y CI | `gmassello/afterimage` @ `bc9418b` | pusheado; CI verde | 2026-10-04 `gh run list --commit` |
 | Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `bc9418b` (deploy manual, run 37232578711): cinco juegos con su rubro en el título, el tercero una fisura en un muro de hormigón | 2026-10-04 `/app` muestra "Hormigón: una grieta en el muro" y sirve `sample-e-defect-thumb.1621b31d.png` `200 image/png` |
-| Submission | https://devpost.com/software/afterimage-ibp376 | publicada el 7 Sep, desactualizada (dice video, cinco tools, 23 escenarios); texto nuevo en `docs/submission.md` | 2026-10-01 lectura de la pagina publica |
+| Submission | https://devpost.com/software/afterimage-ibp376 | actualizada el 4 Oct con el texto de `docs/submission.md` y el video nuevo; la galeria sigue con capturas del 6 Sep | 2026-10-04 lectura de la pagina publica |
 | Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no verificada | — |
 | PR upstream | no aplica | — | — |
 | Segundo checkout | no aplica | — | — |

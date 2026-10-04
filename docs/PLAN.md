@@ -241,7 +241,7 @@ must; nothing remaining blocks the demo.
 - **Covers:** R15
 - **Files:** `docs/submission.md`, `docs/DELIVERY.md`
 - **Depends on:** U17
-- **Status:** todo — text ready in `docs/submission.md`; pasting it into the Devpost form is pending
+- **Status:** done — pasted into Devpost on 4 October; the gallery still shows the 6 September captures
 - **Tests:**
   - happy: every figure in the entry → found in `eval/results/latest/results.json` or the report's measured section
   - edge: the video link → still the current cut after U19
