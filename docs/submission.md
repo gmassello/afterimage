@@ -16,10 +16,12 @@ Every prior OpenCV competition winner analyses one frame, or one session. None o
 
 But what matters in industrial inspection is not what a panel looks like today — it is what changed since the last time anyone looked at it. Photovoltaic degradation is the clearest case: potential-induced degradation costs affected modules around 15% a year and is partially reversible if caught before saturation, soiling costs 5–20% of annual energy, and a utility-scale plant carries roughly 2,900 modules per MW. <!-- src: docs/TECHNICAL_REPORT.md §1–§2, IEA-PVPS T13-09:2017 and reference [1] --> Nobody can look at them all, twice.
 
+The same holds for any asset photographed again and again: rust spreading on a steel tank, a crack opening in a concrete wall.
+
 So the question was never "can a model find a crack". It was: can an agent keep the memory of an asset across inspections, and act on the difference?
 
 ## What it does (-)
-afterimage inspects physical assets from still photographs and compares every capture against the memory of the same asset. Each branch is decided by a number, and the number is on screen:
+afterimage inspects physical assets from still photographs — solar panels, metal structures and concrete — and compares every capture against the memory of the same asset. Each branch is decided by a number, and the number is on screen:
 
 - **It gates its own input.** `blur_variance` under 100, or a frame too dark, too bright or clipped, and the capture is sent back for a recapture instead of being scored. <!-- src: services/agent/policy.py Policy.blur_variance_min -->
 - **It knows which asset it is looking at.** Leave the asset ID empty and it votes among the stored baselines; a split or thin vote ends `unidentified` instead of a guess. <!-- src: services/agent/policy.py identity_* -->
@@ -29,7 +31,7 @@ afterimage inspects physical assets from still photographs and compares every ca
 
 Every decision is a trace event carrying `{metric, value, threshold, branch}`, hash-chained so an edit or a removed event is detected, and any run can be replayed from it. A language model orders the tool calls over MCP and phrases the result; it cannot move a threshold, skip the mandated next tool, or submit a branch the evidence did not produce.
 
-A judge can walk it in a minute: the landing opens a guided tour that runs the first baseline, a recapture, a human-gated defect and a foreign panel on bundled samples — five sets across three use cases: solar panels (a hot spot, delamination, a cracked glass), a metal structure (rust on a steel tank) and concrete (a cracked wall) — over demo assets of their own. The interface reads in English or Spanish, in plain or technical language, in a light or dark theme, and works by keyboard.
+A judge can walk it in a minute without a photo of their own. `/app` opens on bundled samples — five sets of four, each titled with its use case: solar panels (a hot spot, delamination, a cracked glass), a metal structure (rust on a steel tank) and concrete (a cracked wall). Taken in order, each set runs the first baseline, a recapture, a human-gated defect and a foreign object over a demo asset of the judge's own, and every result links to the next photo. The human gate asks "Is this real damage?" and shows the changed region zoomed, before and now, beside **Confirm damage** and **Dismiss**. The interface reads in English or Spanish, in plain or technical language, in a light or dark theme, and works by keyboard.
 
 ## How we built it (-)
 Six perception tools — identify, quality, alignment, diff against memory, crop-and-rescan, severity — run in an arm64 OpenCV 5 container on AWS Lambda (Graviton) and are exposed over MCP. <!-- src: services/mcp_server/server.py --> The loop opens an in-process MCP session to them, and the same server answers any outside MCP client over stdio.
@@ -51,7 +53,7 @@ The harder problem was honesty. It is easy to build a demo where the agent looks
 | Metric | Score |
 |---|---|
 | Branch accuracy | 0.8621 (macro F1 0.8624) |
-| Defect macro F1 | 0.8542 (precision 0.75 or better on every defect class) |
+| Defect macro F1 | 0.8542 (precision 0.75 or better on every evaluated defect class) |
 | Mean IoU | 0.7875 |
 | Scenarios passed | 24 / 29 |
 
@@ -67,7 +69,7 @@ And a verification gate catches what review does not. Several bugs shipped past 
 ## What's next for afterimage (-)
 The published failures are the roadmap: a coverage gate that cannot take one global default, an exposure gate firing before severity is ever assessed, a severity score that ignores the class the classifier just produced, and a soiling rule calibrated on a synthetic panel that does not survive real texture. Beyond that: field validation on plant imagery outside the committed dataset.
 
-Known limitations: the published effectiveness applies to the committed dataset only and is not field accuracy; the trace's hash chain detects ordinary editing but is not a signed audit log; the public deployment has no login and is a bounded demonstration.
+Known limitations: the published effectiveness applies to the committed dataset only and is not field accuracy; the evaluation measures solar panels only, and the metal and concrete sets are demonstrations with a synthetic defect on one photograph each; the trace's hash chain detects ordinary editing but is not a signed audit log; the public deployment has no login and is a bounded demonstration.
 
 ## Built With (-)
 opencv, amazon-web-services, aws-lambda, amazon-dynamodb, amazon-s3, aws-cloudformation, arm64, onnx, mcp, gemini, python, fastapi, docker, github-actions
@@ -85,12 +87,12 @@ https://www.youtube.com/watch?v=zUFR96a33IM
 |---|---|---|
 | Technical execution | 30% | What it does; How we built it; Accomplishments |
 | Innovation | 20% | Inspiration; What it does (memory, active rescan) |
-| Real-world impact | 20% | Inspiration |
-| User experience | 10% | What it does (guided tour, toggles) |
+| Real-world impact | 20% | Inspiration (PV loss figures; tanks and concrete); What it does (three use cases) |
+| User experience | 10% | What it does (samples per use case, before/now approval card, toggles) |
 | Documentation and presentation | 10% | Accomplishments (figures anchored by tests); Try it out; Video |
 | Cloud delivery, reproducibility, and responsible operation | 10% | How we built it (delivery, calibration, cost); Known limitations |
 | Substantive OpenCV 5 and agent integration | 30% | What it does; How we built it (six MCP tools) |
 | Orchestration and appropriate autonomy | 25% | What it does (enforced order, model cannot move a threshold) |
-| Task effectiveness and evaluation | 20% | Accomplishments |
+| Task effectiveness and evaluation | 20% | Accomplishments; Known limitations (solar only) |
 | Failure handling, observability, security, and human control | 15% | What it does (trace, human gate, reobservation); How we built it (retry) |
-| User experience, documentation, and demonstration | 10% | What it does (tour); Video |
+| User experience, documentation, and demonstration | 10% | What it does (samples, approval card); Video |
