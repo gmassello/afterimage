@@ -157,6 +157,9 @@ its own; re-running the 29 scenarios with it in place leaves every branch and ev
 unchanged (neural and ORB), and `services/perception/tests/test_severity.py` pins it on a rust
 fixture.
 
+The concrete demo set (a crack in a concrete wall) reuses the existing `crack` label and has no
+scenario either: the evaluation measures solar panels only.
+
 ### `coverage_ratio_min`: cannot be enabled with one global default
 
 `Policy.coverage_ratio_min` disables the frame-coverage check because the contour heuristic reads

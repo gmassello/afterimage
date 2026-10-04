@@ -10,7 +10,8 @@ Afterimage inspects a physical asset repeatedly from photographs. It compares ea
 with the accepted baseline of the same asset, records the evidence behind every decision, and keeps
 a longitudinal history instead of judging each image in isolation.
 
-The current evaluation domain is photovoltaic modules. The product assists an inspection; it is not
+It is built for three use cases: solar panels, metal structures and concrete. The current evaluation
+domain is photovoltaic modules; the metal and concrete use cases are shown by demo sets only. The product assists an inspection; it is not
 a safety certification, autonomous maintenance system, or field-validated diagnostic device. See
 [RESPONSIBLE_USE.md](RESPONSIBLE_USE.md) for the operating boundary.
 
@@ -33,8 +34,9 @@ was the reference at each point in time.
 ## Operator journey
 
 1. Open the public landing page at `/` to understand the product, evidence, and limits.
-2. Enter the inspection workspace at `/app`. The sample images come first: four sets of four (a
-   hot spot, rust on a steel tank, delamination, a crack), chosen by swiping or with the arrows, each photo inspected with
+2. Enter the inspection workspace at `/app`. The sample images come first: five sets of four, each
+   titled with its use case (solar panels: a hot spot, delamination, a cracked glass; metal
+   structures: rust on a steel tank; concrete: a cracked wall), chosen by swiping or with the arrows, each photo inspected with
    the button under them. Each set writes to a demo asset of your own, so each visitor walks the
    four branches over their own memory, once per set.
 3. Or upload your own capture below the samples, with a panel name (the asset ID) that matches the

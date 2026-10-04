@@ -29,7 +29,7 @@ afterimage inspects physical assets from still photographs and compares every ca
 
 Every decision is a trace event carrying `{metric, value, threshold, branch}`, hash-chained so an edit or a removed event is detected, and any run can be replayed from it. A language model orders the tool calls over MCP and phrases the result; it cannot move a threshold, skip the mandated next tool, or submit a branch the evidence did not produce.
 
-A judge can walk it in a minute: the landing opens a guided tour that runs the first baseline, a recapture, a human-gated defect and a foreign panel on bundled samples — four sets, a hot spot, rust on a steel tank, delamination and a crack — over demo assets of their own. The interface reads in English or Spanish, in plain or technical language, in a light or dark theme, and works by keyboard.
+A judge can walk it in a minute: the landing opens a guided tour that runs the first baseline, a recapture, a human-gated defect and a foreign panel on bundled samples — five sets across three use cases: solar panels (a hot spot, delamination, a cracked glass), a metal structure (rust on a steel tank) and concrete (a cracked wall) — over demo assets of their own. The interface reads in English or Spanish, in plain or technical language, in a light or dark theme, and works by keyboard.
 
 ## How we built it (-)
 Six perception tools — identify, quality, alignment, diff against memory, crop-and-rescan, severity — run in an arm64 OpenCV 5 container on AWS Lambda (Graviton) and are exposed over MCP. <!-- src: services/mcp_server/server.py --> The loop opens an in-process MCP session to them, and the same server answers any outside MCP client over stdio.

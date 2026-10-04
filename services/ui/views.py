@@ -51,8 +51,10 @@ _NAV = (
 
 SAMPLE_ASSET = "demo-panel"
 SAMPLE_GROUPS = (
-    ("hotspot", "sample-b"), ("corrosion", "sample-d"), ("delamination", "sample-c"), ("crack", "sample"),
+    ("hotspot", "sample-b"), ("corrosion", "sample-d"), ("concrete", "sample-e"),
+    ("delamination", "sample-c"), ("crack", "sample"),
 )
+SAMPLE_DOMAIN = {"corrosion": "metal", "concrete": "concrete"}
 BASE_GROUP = "crack"
 SAMPLE_ROLES = ("baseline", "blurred", "defect", "foreign")
 SAMPLES = tuple(f"{prefix}-{role}" for _, prefix in SAMPLE_GROUPS for role in SAMPLE_ROLES)
@@ -180,7 +182,8 @@ def _sample_groups(t: dict, suffix: str = "",
         {
             "key": group,
             "title": t["samples_group"].format(
-                n=number, total=len(SAMPLE_GROUPS), name=t[f"samples_group_{group}"]),
+                n=number, total=len(SAMPLE_GROUPS), name=t[f"samples_group_{group}"],
+                domain=t[f"samples_domain_{SAMPLE_DOMAIN.get(group, 'solar')}"]),
             "samples": _group_samples(t, group, prefix, suffix, group_ready),
         }
         for number, ((group, prefix), group_ready)

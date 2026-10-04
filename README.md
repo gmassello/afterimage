@@ -74,9 +74,11 @@ Both live in [`services/perception/alignment.py`](services/perception/alignment.
 - Optionally asks Jev (`typesafe-ai/jev` through Vercel AI Gateway), a typed-decision model, whether the operator message claims more than the verdict supports and whether a reviewer's rejection blames the capture. Both answers are recorded against a floor in `policy.py`; neither can move a branch, and with no key nothing leaves the machine.
 - Emits every decision as a trace event carrying the metric, the threshold and the branch it produced, hash-chained to the event before it — `GET /traces/{run_id}` names the event where an edit broke the chain. The chain proves no step was edited on its own, not that the file as a whole was not rewritten; see [docs/SECURITY.md](docs/SECURITY.md).
 
+It applies wherever an asset is photographed again and again: **solar panels** (hot spots, delamination, cracked glass), **metal structures** (corrosion) and **concrete** (cracks). The measured evaluation covers solar panels only; the metal and concrete sets are demonstrations.
+
 The loop is the product, not the development process: an unusable capture is sent back, an unrecognised asset is refused rather than guessed, and a severe finding waits for a human before anything is written.
 
-The public landing explains the problem, the decision loop, measured evidence, stack and limits before asking anyone to operate the system. The `/app` workspace includes four sets of four sample captures — a hot spot, rust on a steel tank, delamination and a crack, each on its own asset and chosen by swiping — written to demo assets of the visitor's own, so anyone can drive the whole loop without a photo of their own; `/activity` makes the latest runs searchable by identity and outcome. Three switches sit beside each other in the header: language (English or Spanish), register (plain or technical) and theme. The plain register explains the number a decision turned on; it never replaces it, and metric names, identifiers and the message the agent itself wrote stay as the trace recorded them.
+The public landing explains the problem, the decision loop, measured evidence, stack and limits before asking anyone to operate the system. The `/app` workspace includes five sets of four sample captures, each titled with its use case — solar panels (a hot spot, delamination, a cracked glass), a metal structure (rust on a steel tank) and concrete (a cracked wall), each on its own asset and chosen by swiping — written to demo assets of the visitor's own, so anyone can drive the whole loop without a photo of their own; `/activity` makes the latest runs searchable by identity and outcome. Three switches sit beside each other in the header: language (English or Spanish), register (plain or technical) and theme. The plain register explains the number a decision turned on; it never replaces it, and metric names, identifiers and the message the agent itself wrote stay as the trace recorded them.
 
 A failed run remains immutable and can be retried from recent activity, and a run interrupted before it finished is closed as failed after fifteen minutes of silence so it can be retried too. The retry creates a new run over the same capture, repeated requests return that same replacement, and a write-once marker preserves the relationship. Browser failures render as normal themed pages; API clients receive stable `{detail, code, retryable}` JSON.
 
@@ -156,6 +158,7 @@ Perception runs in an arm64 OpenCV 5 container on Lambda (Graviton): capture qua
 ## Honest limits
 
 - The evaluation's own limits — injected defects, a small suite, one domain — are in [the evaluation](docs/EVALUATION.md#limits-of-this-evaluation); the system's are in [section 9 of the technical report](docs/TECHNICAL_REPORT.md#9-limitations).
+- The metal and concrete demo sets carry synthetic defects on one photograph each; no evaluation scenario measures those domains.
 - Asset recognition is retrieval plus geometric verification. No dedicated evaluation set measures it.
 - Assets that look identical split the vote and end `unidentified`; the operator picks the asset.
 - Descriptors are cached per baseline, but the `ANNIndex` over them is rebuilt on every identification.
@@ -218,7 +221,7 @@ GOOGLE_API_KEY=... make deploy   # ECR + docker buildx arm64 + CloudFormation, i
 | Endpoint | What it serves |
 |---|---|
 | `/` | Public landing: product, workflow, measured evidence, stack and limits |
-| `/app` | Asset list, capture upload (the asset id is optional: leave it empty and the agent recognises the asset) and four sets of four sample captures that need no file of your own |
+| `/app` | Asset list, capture upload (the asset id is optional: leave it empty and the agent recognises the asset) and five sets of four sample captures (solar panels, metal structures, concrete) that need no file of your own |
 | `/activity` | Search and status filtering over the latest runs, showing 4 |
 | `/assets/{id}` | Inspection timeline and current baseline |
 | `/queue` | Human approval queue, with the compared pair; a rejection can carry a written reason |

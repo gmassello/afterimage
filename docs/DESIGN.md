@@ -329,11 +329,11 @@ form reports errors.
 
 ### Sample carousel
 
-- Four sets of four sample captures, one `<section class='group'>` each, in a track with
+- Five sets of four sample captures, one `<section class='group'>` each, in a track with
   `overflow-x: auto`, `scroll-snap-type: x mandatory`, hidden scrollbar and each set at 100 % of
   the track width. Smooth scrolling only under `prefers-reduced-motion: no-preference`.
 - Above it: ‹ and › as `btn sm` (32 × 32) around a centred `small` `--muted` count
-  ("Problem 1 of 4 · a cell that overheats" in the plain register, "Set 1 of 4 · hot spot" in the
+  ("Problem 1 of 5 · Solar panels: a cell that overheats" in the plain register, "Set 1 of 5 · Solar panels: hot spot" in the
   technical one) with `role="status"`.
 - Disabled end (`aria-disabled="true"` on ‹ at the first set, › at the last): `--subtle` text,
   `cursor: not-allowed`. Focus: ring on the buttons and on the track, which takes the arrow keys.

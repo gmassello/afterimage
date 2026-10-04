@@ -77,6 +77,38 @@ def shatter(image, bbox, seed=99):
     return np.clip(cracked, 0, 255).astype(np.uint8)
 
 
+def fissure(image, bbox, seed=41):
+    rng = np.random.default_rng(seed)
+    shape = image.shape[:2]
+    x, y, box_width, box_height = bbox
+    point = np.array([x + box_width * 0.4, y], np.float32)
+    drift = 0.0
+    trunk = [point.copy()]
+    while point[1] < y + box_height:
+        drift = 0.7 * drift + rng.normal(0, 0.35)
+        point += (drift * box_width * 0.03, box_height / 60)
+        trunk.append(point.copy())
+    lines = np.zeros(shape, np.float32)
+    for a, b in zip(trunk, trunk[1:]):
+        width = int(rng.choice([2, 2, 3]))
+        cv2.line(lines, tuple(int(v) for v in a), tuple(int(v) for v in b), 1.0, width, cv2.LINE_AA)
+    for start in rng.choice(np.arange(8, len(trunk) - 8), 5, replace=False):
+        branch, angle = [trunk[start].copy()], rng.choice([-1, 1]) * rng.uniform(0.5, 1.1)
+        for _ in range(int(rng.integers(5, 12))):
+            angle += rng.normal(0, 0.35)
+            branch.append(branch[-1] + box_height / 70 * np.array([np.sin(angle), np.cos(angle)]))
+        cv2.polylines(lines, [np.array(branch, np.int32)], False, 0.7, 1, cv2.LINE_AA)
+    strokes = lines[..., None]
+    damp = cv2.GaussianBlur(cv2.dilate(lines, np.ones((7, 7), np.uint8)), (0, 0), box_width * 0.1)
+    damp = np.clip(damp / damp.max() * 1.3, 0, 1)[..., None]
+    grain = rng.normal(0, 6, shape)[..., None]
+    cracked = image.astype(np.float32) * (1 - 0.55 * damp) + grain * damp
+    cracked = cracked * (1 - 0.85 * strokes) + 28 * (0.85 * strokes)
+    edge = np.roll(strokes, (-1, -1), axis=(0, 1)) * (1 - strokes)
+    cracked = cracked * (1 - 0.3 * edge) + 200 * (0.3 * edge)
+    return np.clip(cracked, 0, 255).astype(np.uint8)
+
+
 def rust(image, bbox, seed=31):
     rng = np.random.default_rng(seed)
     shape = image.shape[:2]
@@ -105,6 +137,7 @@ GROUPS = (
     ("sample-b", "array_hannover_roof.jpg", (glow, [0.55, 0.75, 0.1, 0.1]), 7),
     ("sample-c", "array_rooftop.jpg", (yellowing, [0.55, 0.62, 0.12, 0.12]), 23),
     ("sample-d", "steel_fire_tank.jpg", (rust, [0.49, 0.4, 0.15, 0.16]), 31),
+    ("sample-e", "concrete_wall.jpg", (fissure, [0.18, 0.2, 0.18, 0.55]), 41),
 )
 
 

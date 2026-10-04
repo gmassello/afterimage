@@ -895,23 +895,28 @@ def test_each_demo_set_tours_its_own_asset_and_names_its_defect():
 
 
 def test_the_demo_sets_sit_in_a_carousel_and_lock_one_by_one():
-    page = views.index_page([], sample_suffix="abc123", sample_ready=(True, False, True, True),
+    page = views.index_page([], sample_suffix="abc123", sample_ready=(True, False, True, True, True),
                             preselect="sample-c-defect")
-    assert page.count("<section class='group'") == len(views.SAMPLE_GROUPS) == 4
+    assert page.count("<section class='group'") == len(views.SAMPLE_GROUPS) == 5
     assert "data-carousel-step='-1'" in page and "data-carousel-step='1'" in page
-    assert "role='status' data-carousel-count>Problem 1 of 4 · a cell that overheats<" in page
-    order = ["a cell that overheats", "rust on a steel structure", "layers coming apart", "a crack in the glass"]
-    places = [page.index(f"aria-label='Problem {n} of 4 · {name}'") for n, name in enumerate(order, 1)]
+    assert "role='status' data-carousel-count>Problem 1 of 5 · Solar panels: a cell that overheats<" in page
+    order = ["Solar panels: a cell that overheats", "Metal structures: rust on a tank",
+             "Concrete: a crack in the wall", "Solar panels: layers coming apart",
+             "Solar panels: a crack in the glass"]
+    places = [page.index(f"aria-label='Problem {n} of 5 · {name}'") for n, name in enumerate(order, 1)]
     assert places == sorted(places)
     tech = views.index_page([], register="tech")
-    assert "role='status' data-carousel-count>Set 1 of 4 · hot spot<" in tech
-    assert "aria-label='Set 2 of 4 · corrosion'" in tech
+    assert "role='status' data-carousel-count>Set 1 of 5 · Solar panels: hot spot<" in tech
+    assert "aria-label='Set 3 of 5 · Concrete: crack'" in tech
+    assert "aria-label='Problema 2 de 5 · Estructuras metálicas: óxido en un tanque'" in views.index_page([], lang="es")
     assert "data-carousel data-preselect='sample-c-defect'" in page
     assert page.count("aria-disabled='true'") == len(views.SAMPLE_ROLES) - 1
-    steel = page.split("aria-label='Problem 2 of 4 · rust on a steel structure'")[1].split("</section>")[0]
+    steel = page.split("aria-label='Problem 2 of 5 · Metal structures: rust on a tank'")[1].split("</section>")[0]
     assert steel.count("aria-disabled='true'") == len(views.SAMPLE_ROLES) - 1
     assert "data-asset='demo-panel-d-abc123'" in steel
     assert "1 · The healthy tank" in steel and "4 · Something else entirely" in steel
+    wall = page.split("aria-label='Problem 3 of 5 · Concrete: a crack in the wall'")[1].split("</section>")[0]
+    assert "data-asset='demo-panel-e-abc123'" in wall and "1 · The healthy wall" in wall
 
 
 def test_a_demo_set_borrows_the_generic_copy_where_it_has_none_of_its_own():

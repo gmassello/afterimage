@@ -41,6 +41,14 @@ licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0).
 They are resized, blurred or given synthetic rust on a panel by
 video/make_demo_images.py and are distributed under the same license.
 
+services/ui/static/sample-e-baseline.png, sample-e-blurred.png and
+sample-e-defect.png are derived from "FOT9558 Haltepunkt Leipzig Anger-Crottendorf 2024 –
+Sichtbeton im Treppenaufgang Süd.jpg" by August Geyler
+(https://commons.wikimedia.org/wiki/File:FOT9558_Haltepunkt_Leipzig_Anger-Crottendorf_2024_%E2%80%93_Sichtbeton_im_Treppenaufgang_S%C3%BCd.jpg),
+licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0).
+They are resized, blurred or given a synthetic crack by
+video/make_demo_images.py and are distributed under the same license.
+
 The crack set (sample-baseline/blurred/defect.png) derives from a CC0 photograph, with a
 synthetic shattered-glass crack on sample-defect.png,
 and every sample-*-foreign.png is a synthetic panel; eval/dataset/SOURCES.md lists

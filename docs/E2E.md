@@ -263,7 +263,7 @@ For this pass, the browser run and measured findings are recorded in
   without JS they are inert and the only way in is the file picker. The primer above them is a plain
   `<details>` and still opens.
 - **The samples are committed copies, not the files the video uses.**
-  `services/ui/static/sample-*.png` (all four sets) are written by `video/make_demo_images.py` alongside
+  `services/ui/static/sample-*.png` (all five sets) are written by `video/make_demo_images.py` alongside
   `video/img/`, which is gitignored. Regenerate both in the same run, or path O stops reproducing
   `3.6589` while path C still does.
   All four defects are demo-only (`shatter`, `glow`, `yellowing` and `rust` in that script), drawn so

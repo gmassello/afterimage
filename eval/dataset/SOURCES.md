@@ -28,9 +28,10 @@ defect — `docs/EVALUATION.md` states what that does and does not let us claim.
 | `array_bifacial_roof.jpg` | [Vertical bifacial solar panels on a green roof.jpg](https://commons.wikimedia.org/wiki/File:Vertical_bifacial_solar_panels_on_a_green_roof.jpg) | Trygvetv | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 | `array_arapaho.jpg` | [Solar panels at Arapaho National Wildlife Refuge (6009458404).jpg](https://commons.wikimedia.org/wiki/File:Solar_panels_at_Arapaho_National_Wildlife_Refuge_(6009458404).jpg) | USFWS Mountain Prairie | Public domain |
 | `steel_fire_tank.jpg` | [External Hot-Dipped Galvanised Steel Fire Tank.webp](https://commons.wikimedia.org/wiki/File:External_Hot-Dipped_Galvanised_Steel_Fire_Tank.webp), converted to JPEG | Wateraus1 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+| `concrete_wall.jpg` | [FOT9558 Haltepunkt Leipzig Anger-Crottendorf 2024 – Sichtbeton im Treppenaufgang Süd.jpg](https://commons.wikimedia.org/wiki/File:FOT9558_Haltepunkt_Leipzig_Anger-Crottendorf_2024_%E2%80%93_Sichtbeton_im_Treppenaufgang_S%C3%BCd.jpg), 960 px wide | August Geyler | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 
-`steel_fire_tank.jpg` is used only by the corrosion demo set (`video/make_demo_images.py`); no
-evaluation scenario reads it.
+`steel_fire_tank.jpg` and `concrete_wall.jpg` are used only by the corrosion and concrete demo sets
+(`video/make_demo_images.py`); no evaluation scenario reads them.
 
 Share-alike licences (CC BY-SA) apply to the photographs themselves. They are redistributed here
 unmodified, with attribution; the derived scenarios the harness generates at run time are not

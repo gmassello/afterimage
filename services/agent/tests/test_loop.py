@@ -324,7 +324,8 @@ def test_the_second_opinion_sends_an_overstated_message_back_and_never_blocks(
 SAMPLE_DIR = Path(__file__).parents[2] / "ui" / "static"
 
 
-DEMO_LABEL = {"sample": "crack", "sample-b": "hotspot", "sample-c": "delamination", "sample-d": "corrosion"}
+DEMO_LABEL = {"sample": "crack", "sample-b": "hotspot", "sample-c": "delamination", "sample-d": "corrosion",
+              "sample-e": "crack"}
 
 
 @localstack
