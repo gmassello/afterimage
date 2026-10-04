@@ -116,7 +116,9 @@ def test_the_register_is_resolved_away_before_a_template_sees_it():
         for register in REGISTERS:
             t = strings(lang, register)
             assert not [key for key in t if key.endswith(("_tech", "_plain"))]
-            assert t["upload_hint"] == TEXT[lang][f"upload_hint_{register}"]
+            table = TEXT["en"] | TEXT[lang]
+            for key in (k for k in table if k.endswith(f"_{register}")):
+                assert t[key.rsplit("_", 1)[0]] == table[key], key
 
 
 def test_resolving_the_register_leaves_the_other_suffixes_alone():

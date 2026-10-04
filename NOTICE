@@ -22,7 +22,7 @@ sample-b-defect.png are derived from "Photovoltaik Dachanlage Hannover - Schwarz
 Heide - 1 MW.jpg" by AleSpa
 (https://commons.wikimedia.org/wiki/File:Photovoltaik_Dachanlage_Hannover_-_Schwarze_Heide_-_1_MW.jpg),
 licensed under CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0).
-They are resized, blurred or given a synthetic hot spot by
+They are resized, blurred or given a synthetic bright glow (the hot spot) by
 video/make_demo_images.py and are distributed under the same license.
 
 services/ui/static/sample-c-baseline.png, sample-c-blurred.png and
@@ -30,10 +30,19 @@ sample-c-defect.png are derived from "Rooftop solar photovoltaic installation.jp
 by Marta Victoria
 (https://commons.wikimedia.org/wiki/File:Rooftop_solar_photovoltaic_installation.jpg),
 licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0).
-They are resized, blurred or given synthetic delamination by
+They are resized, blurred or given a synthetic amber discolouration (the delamination) by
 video/make_demo_images.py and are distributed under the same license.
 
-The crack set (sample-baseline/blurred/defect.png) derives from a CC0 photograph,
+services/ui/static/sample-d-baseline.png, sample-d-blurred.png and
+sample-d-defect.png are derived from "External Hot-Dipped Galvanised Steel Fire Tank.webp"
+by Wateraus1
+(https://commons.wikimedia.org/wiki/File:External_Hot-Dipped_Galvanised_Steel_Fire_Tank.webp),
+licensed under CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0).
+They are resized, blurred or given synthetic rust on a panel by
+video/make_demo_images.py and are distributed under the same license.
+
+The crack set (sample-baseline/blurred/defect.png) derives from a CC0 photograph, with a
+synthetic shattered-glass crack on sample-defect.png,
 and every sample-*-foreign.png is a synthetic panel; eval/dataset/SOURCES.md lists
 every source photograph.
 

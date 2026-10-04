@@ -5,6 +5,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pytest
+from markupsafe import escape
 
 from services.memory import runs, store
 from services.observability import trace
@@ -285,8 +286,8 @@ def test_the_empty_queue_says_how_much_memory_holds():
 
 
 def test_the_upload_form_states_what_it_accepts():
-    for register, rule in (("tech", "lowercase letters, digits and hyphens"),
-                           ("plain", "Lowercase letters, numbers and hyphens")):
+    for register, rule in (("tech", "[a-z0-9-]{1,64}"),
+                           ("plain", "Lowercase letters, numbers and hyphens only")):
         page = views.index_page([], register=register)
         assert "image/jpeg,image/png" in page
         assert "image/*" not in page
@@ -296,11 +297,26 @@ def test_the_upload_form_states_what_it_accepts():
 
 
 def test_both_upload_fields_carry_a_label():
+    for register in ("plain", "tech"):
+        t = strings("en", register)
+        page = views.index_page([], register=register)
+        for field, label in (("asset-id", t["label_asset_id"]), ("capture", t["label_capture"])):
+            assert f"<label for='{field}'>{label}</label>" in page
+            assert f"id='{field}'" in page
+        assert f"placeholder='{t['asset_id_placeholder']}'" in page
+        assert f"<span class='hint' id='asset-id-help'>{escape(t['asset_id_help'])}</span>" in page
+    assert "aria-describedby='asset-id-help'" in page
+    assert "<label for='asset-id'>asset id</label>" in page
+    assert "<label for='asset-id'>panel name (optional)</label>" in views.index_page([])
+
+
+def test_the_sample_photos_come_first_with_their_own_inspect_button():
     page = views.index_page([])
-    for field, label in (("asset-id", "asset id"), ("capture", "capture")):
-        assert f"<label for='{field}'>{label}</label>" in page
-        assert f"id='{field}'" in page
-    assert "placeholder='panel-a7 (optional)'" in page
+    assert page.index("class='samples'") < page.index("class='own-photo'") < page.index("id='inspect-form'")
+    button = "<button class='btn ok' type='submit' form='inspect-form' data-sample-inspect disabled>"
+    assert button + EN["samples_inspect"] + "</button>" in page
+    assert page.index(button) < page.index("class='own-photo'")
+    assert "sampleInspect.disabled = false" in JS and "ownPhoto" in JS
 
 
 def test_a_rejected_upload_keeps_the_asset_id_already_typed():
@@ -778,9 +794,9 @@ def test_the_headline_number_skips_the_checks_that_follow_a_verdict():
 def test_a_rejection_can_carry_the_reviewer_reason():
     page = views.queue_page([_queued("7f2ac91b04de", 0.5)])
     form = page.split("action='/queue/7f2ac91b04de/reject'>")[1].split("</form>")[0]
-    assert "<label for='reason-7f2ac91b04de'>reason (optional)</label>" in form
+    assert f"<label for='reason-7f2ac91b04de'>{EN['reject_reason_label']}</label>" in form
     assert "id='reason-7f2ac91b04de' name='reason' maxlength='500'" in form
-    assert "placeholder='e.g. glare on the glass'" in form
+    assert "placeholder='e.g. glare'" in form
 
 
 def test_the_landing_nav_leads_with_the_way_into_the_app():
@@ -829,7 +845,7 @@ def test_samples_start_unpressed_and_have_a_status_line_to_speak_through():
     page = views.index_page([], lang="es")
     assert page.count("aria-pressed='false'") == len(views.SAMPLES)
     assert "role='status' data-sample-status" in page
-    assert '"sampleLoaded": "Cargada: {sample}. Apret\\u00e1 inspeccionar."' in page
+    assert '"sampleLoaded": "Elegiste {sample}. Apret\\u00e1 \\u00abinspeccionar esta foto\\u00bb."' in page
 
 
 def test_the_result_filter_is_named_for_what_it_filters():
@@ -846,7 +862,7 @@ def test_the_repository_link_is_an_icon_with_a_spoken_name():
 def test_the_demo_samples_wait_for_the_reference_photo():
     locked = views.index_page([], sample_ready=False)
     assert locked.count("aria-disabled='true'") == len(views.SAMPLES) - len(views.SAMPLE_GROUPS)
-    assert "after sample 1, which sets the reference" in locked
+    assert EN["sample_needs_reference"] in locked
     assert "aria-disabled" not in views.index_page([], sample_ready=True)
 
 
@@ -861,7 +877,7 @@ def test_the_demo_tour_offers_the_next_step_after_every_branch():
 
 def test_the_asset_history_continues_the_tour_only_when_asked():
     page = views.asset_page("demo-panel-abc123", [], next_sample="sample-blurred")
-    assert "href='/app?sample=sample-blurred'>Next: 2 · the same panel, out of focus</a>" in page
+    assert f"href='/app?sample=sample-blurred'>{EN['next_sample_2']}</a>" in page
     assert "/app?sample=" not in views.asset_page("demo-panel-abc123", [], next_sample="../x")
     assert "/app?sample=" not in views.asset_page("demo-panel-abc123", [])
 
@@ -869,8 +885,9 @@ def test_the_asset_history_continues_the_tour_only_when_asked():
 def test_each_demo_set_tours_its_own_asset_and_names_its_defect():
     hotspot = {"asset_id": "demo-panel-b-abc123"}
     first = views._next_sample({**hotspot, "branch": "first_baseline"}, EN)
-    assert first == {"url": "/app?sample=sample-b-defect",
-                     "label": "Next: 3 · the same panel, now with a hot spot"}
+    assert first == {"url": "/app?sample=sample-b-defect", "label": EN["next_sample_hotspot"]}
+    tech = views._next_sample({**hotspot, "branch": "first_baseline"}, strings("en", "tech"))
+    assert tech["label"] == "Next: 3 · the same panel, now with a hot spot"
     assert views._next_sample({**hotspot, "branch": "recapture"}, EN)["url"] == "/app?sample=sample-b-foreign"
     assert views.sample_group("demo-panel-abc123") == ("crack", "sample")
     assert views.sample_group("demo-panel-c-abc123") == ("delamination", "sample-c")
@@ -878,17 +895,30 @@ def test_each_demo_set_tours_its_own_asset_and_names_its_defect():
 
 
 def test_the_demo_sets_sit_in_a_carousel_and_lock_one_by_one():
-    page = views.index_page([], sample_suffix="abc123", sample_ready=(False, True, True),
+    page = views.index_page([], sample_suffix="abc123", sample_ready=(True, False, True, True),
                             preselect="sample-c-defect")
-    assert page.count("<section class='group'") == len(views.SAMPLE_GROUPS)
+    assert page.count("<section class='group'") == len(views.SAMPLE_GROUPS) == 4
     assert "data-carousel-step='-1'" in page and "data-carousel-step='1'" in page
-    assert "role='status' data-carousel-count>Set 1 of 3 · hot spot<" in page
-    assert page.index("aria-label='Set 3 of 3 · crack'") > page.index("aria-label='Set 2 of 3 · delamination'")
+    assert "role='status' data-carousel-count>Problem 1 of 4 · a cell that overheats<" in page
+    order = ["a cell that overheats", "rust on a steel structure", "layers coming apart", "a crack in the glass"]
+    places = [page.index(f"aria-label='Problem {n} of 4 · {name}'") for n, name in enumerate(order, 1)]
+    assert places == sorted(places)
+    tech = views.index_page([], register="tech")
+    assert "role='status' data-carousel-count>Set 1 of 4 · hot spot<" in tech
+    assert "aria-label='Set 2 of 4 · corrosion'" in tech
     assert "data-carousel data-preselect='sample-c-defect'" in page
     assert page.count("aria-disabled='true'") == len(views.SAMPLE_ROLES) - 1
-    hotspot = page.split("aria-label='Set 1 of 3 · hot spot'")[1].split("</section>")[0]
-    assert hotspot.count("aria-disabled='true'") == len(views.SAMPLE_ROLES) - 1
-    assert "data-asset='demo-panel-b-abc123'" in hotspot
+    steel = page.split("aria-label='Problem 2 of 4 · rust on a steel structure'")[1].split("</section>")[0]
+    assert steel.count("aria-disabled='true'") == len(views.SAMPLE_ROLES) - 1
+    assert "data-asset='demo-panel-d-abc123'" in steel
+    assert "1 · The healthy tank" in steel and "4 · Something else entirely" in steel
+
+
+def test_a_demo_set_borrows_the_generic_copy_where_it_has_none_of_its_own():
+    assert views._for_group(EN, "sample_2_label", "corrosion") == EN["sample_2_label"]
+    assert views._for_group(EN, "sample_4_label", "corrosion") == EN["sample_4_label_corrosion"]
+    rust = views._next_sample({"asset_id": "demo-panel-d-abc123", "branch": "recapture"}, EN)
+    assert rust == {"url": "/app?sample=sample-d-foreign", "label": EN["next_sample_4_corrosion"]}
 
 
 def test_sample_thumbnails_are_shrunk_on_the_server_and_inspect_the_full_capture():
@@ -930,6 +960,41 @@ def test_the_approval_panel_keeps_the_model_message_for_the_technical_register()
     assert "confirm the crack" not in views.render_html(pending, EVENTS).split("<section class='cta'>")[1]
     assert "confirm the crack" in views.render_html(pending, EVENTS, register="tech")
 
+
+def test_the_approval_asks_whether_the_damage_is_real_in_plain_words():
+    pending = {**STATE, "status": "awaiting_approval"}
+    cta = views.render_html(pending, EVENTS).split("<section class='cta'>")[1].split("</section>")[0]
+    assert "Is this real damage?" in cta
+    assert "<button class='btn ok'>Confirm damage</button>" in cta
+    assert "<button class='btn'>Dismiss</button>" in cta
+    tech = views.render_html(pending, EVENTS, register="tech").split("<section class='cta'>")[1]
+    assert "Waiting on a human" in tech and "Approve write" in tech
+
+def test_the_approval_card_shows_the_marked_photo_next_to_its_buttons():
+    events = json.loads(json.dumps(EVENTS))
+    for event in events:
+        if event.get("tool") == "align_to_baseline":
+            event["args"]["baseline_key"] = "assets/demo/b/baseline.png"
+        if event.get("policy"):
+            event["policy"]["extra"] = {"bbox": [10, 20, 30, 40]}
+    page = views.render_html({**STATE, "status": "awaiting_approval"}, events)
+    cta = page.split("<section class='cta'>")[1].split("</section>")[0]
+    before = cta.index("<figure class='zoom' data-bbox='[10, 20, 30, 40]'><div class='zoom-box'><img src='/images/assets/demo/b/baseline.png'")
+    now = cta.index("<figcaption>now</figcaption>")
+    assert before < now < cta.index("Confirm damage")
+    assert cta.count("class='zoom'") == 2
+    assert "<a class='zoom-full' href='#compare'>see the full photo</a>" in cta
+    assert "<section class='col' id='compare'>" in page and "class='compare'" in page
+
+
+def test_the_approval_card_falls_back_to_the_whole_photo_without_a_region():
+    events = json.loads(json.dumps(EVENTS))
+    for event in events:
+        if event.get("tool") == "align_to_baseline":
+            event["args"]["baseline_key"] = "assets/demo/b/baseline.png"
+    cta = views.render_html({**STATE, "status": "awaiting_approval"}, events).split("<section class='cta'>")[1]
+    assert "<div class='cta-shot'><div class='frame'><img src='/images/" in cta
+    assert "class='zoom'" not in cta.split("</section>")[0]
 
 def test_the_landing_opens_the_tour_and_speaks_the_trace_vocabulary():
     plain = views.landing_page()

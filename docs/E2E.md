@@ -52,7 +52,8 @@ Confirm from the page itself: `document.hidden` has to read `false` before path 
 ## Captures
 
 Three already exist and are the ones the video uses — `video/img/1-blurred.png`, `2-baseline.png`,
-`3-defect.png`, built from the real `crack-real-closeup` scenario by `video/make_demo_images.py`.
+`3-defect.png`, built by `video/make_demo_images.py` from the CC0 close-up with a demo-only shattered-glass
+crack (`shatter`).
 
 The four synthetic ones are generated in the container, because there is no `cv2` on the host:
 
@@ -92,10 +93,10 @@ which is half of what this walkthrough checks.
 | **A** | empty gallery | — | the designed empty state: a dotted ring and `Nothing in memory yet` |
 | **B** | `first_baseline` | `2-baseline.png` | trace ends `first_baseline`; the four stages that never ran read `not run · first_baseline`, not `not run · quality_ok`; the gallery gains a card with a thumbnail |
 | **C** | ACTION 1 · `recapture` | `1-blurred.png` | **`blur_variance 3.6589 < 100.0 -> recapture`**; `assess_quality` warn, the other four `not run`; the history gains **nothing** |
-| **D** | ACTION 4 · `human_approval` | `3-defect.png` | **`score 0.6798 >= 0.4 -> human_approval`**; `crop_and_rescan` reads `not run · change_confirmed`; the bounding box is drawn; `Waiting on a human` |
-| **E** | `reject`, from the trace's own CTA | — | the CTA carries the same two forms the queue does; `Reject` arms `Confirm?` exactly like the approve; the redirect returns to the same trace, now titled as rejected, and the history gains **nothing** |
-| **F** | the same capture again | `3-defect.png` | **`score 0.6798`, again** — identical bytes against a baseline E never moved, which is what proves the reject wrote nothing; back in the queue |
-| **G** | the queue | — | one entry, `0.6798` large and in warn; open `what it measured`; **first click arms `Confirm?` and stays armed, second click posts**; the queue empties |
+| **D** | ACTION 4 · `human_approval` | `3-defect.png` | **`score 0.4939 >= 0.4 -> human_approval`**; `crop_and_rescan` reads `not run · change_confirmed`; the approval card shows the region before and now, enlarged, next to `Is this real damage?` (technical: `Waiting on a human`) |
+| **E** | `reject`, from the trace's own CTA | — | the CTA carries the same two forms the queue does; `Dismiss` (technical: `Reject`) arms `Confirm?` exactly like the approve; the redirect returns to the same trace, now titled as rejected, and the history gains **nothing** |
+| **F** | the same capture again | `3-defect.png` | **`score 0.4939`, again** — identical bytes against a baseline E never moved, which is what proves the reject wrote nothing; back in the queue |
+| **G** | the queue | — | one entry, `0.4939` large and in warn; open `what it measured`; **first click arms `Confirm?` and stays armed, second click posts**; the queue empties |
 | **H** | the history | — | the new inspection, the baseline in force ringed and bordered, the previous one `superseded by` |
 | **I** | the sparkline | `2-baseline.png` | the comparison run backwards: the clean capture against the defect baseline. It reaches `classify_severity` — `auto_write` or `human_approval` depending on the reverse delta; approve it if it lands in the queue. With **two** scored inspections `figure.spark` renders for the first time: one mark per inspection and the dashed approval threshold |
 
@@ -121,8 +122,8 @@ as a change.
 
 ### Asset `demo-panel-<suffix>` — the sample captures, driven from the workspace
 
-Nothing is uploaded by hand here: both rows go through the sample strip under the drop zone, which
-is the only entry route a first visitor has. The strip writes a demo asset of this browser's own,
+Nothing is uploaded by hand here: both rows go through the sample carousel at the top of `/app` and
+its **inspect this photo** button, which is the first entry route a visitor sees. The strip writes a demo asset of this browser's own,
 named after the `demo` cookie, so the walkthrough starts from an empty memory on every fresh
 browser profile.
 
@@ -134,8 +135,9 @@ browser profile.
 On a fresh browser, samples 2–4 are locked with "after sample 1" until sample 1 has set the
 reference. From there the tour buttons walk 1 → 3 → approve → 2 → 4 → the asset history without
 the nav. The carousel opens on the hot-spot set; the landing's button scrolls it to the crack set, the
-last one. The hot-spot and delamination sets (‹ or a swipe back) repeat the same walk on
-`demo-panel-b-<suffix>` and `demo-panel-c-<suffix>`; each "Next" stays inside its set, and a
+last one. The hot-spot, corrosion and delamination sets (‹ or a swipe back) repeat the same walk on
+`demo-panel-b-<suffix>`, `demo-panel-d-<suffix>` and `demo-panel-c-<suffix>`; the corrosion one names
+its defect `corrosion`; each "Next" stays inside its set, and a
 set's samples 2–4 stay locked until that set's own sample 1 has run. Run O before P, and both before N. They leave the demo asset in the gallery with a thumbnail, which
 is what `/app` is meant to look like when someone arrives.
 
@@ -152,7 +154,7 @@ These ride on the paths above rather than on an asset of their own.
 | | Path | Upload | Assertion |
 |---|---|---|---|
 | **Q** | the evidence image, during D | — | the `classify_severity` card shows a figure captioned as drawn with OpenCV 5 `FontFace`: the aligned capture with the region boxed and a label reading `<label> · <score> · Δ<brightness>`, `·` and `Δ` rendered as glyphs rather than `?`; the figure links to `evidence.png` under `/images/` |
-| **R** | reject with a reason, in E | — | type `glare on the glass` in the reason field before `Reject`; the trace's human decision carries `reason` in its `extra`; with `AI_GATEWAY_API_KEY` set a `jev_rejection` tool call follows with branch `rejected_capture_artefact`, and without the key there is no such call |
+| **R** | reject with a reason, in E | — | type `glare on the glass` in the reason field before `Dismiss` (technical: `Reject`); the trace's human decision carries `reason` in its `extra`; with `AI_GATEWAY_API_KEY` set a `jev_rejection` tool call follows with branch `rejected_capture_artefact`, and without the key there is no such call |
 | **S** | approve → re-observation, in G | — | after `human_approved 1.0 >= 1.0 -> approved` the trace gains one `baseline_consistent 1.0 >= 1.0 -> baseline_verified` decision, and only one if the verdict is repeated; the trace headline still reads the approval, not the re-observation |
 | **T** | upload without an asset id → `identified` | `7-synth-same.png`, id empty | the trace opens with `identify_asset`; `vote_share` at or above `0.5` → `identified` naming `e2e-synthetic`; the run then continues as M did and ends `no_change` on `e2e-synthetic`; the gallery gains no new asset |
 | **U** | upload without an asset id → not guessed | `6-synth-foreign.png`, id empty | either `identify_asset` ends the run `unidentified` (`votes` below `20` or `vote_share` below `0.5`) with the message asking the operator to choose the asset, or the vote names an asset and alignment refuses it as `unrecognized_asset`, as in L. Either way no asset is created and no inspection is written |
@@ -201,7 +203,7 @@ same two assertions against a locally built Lambda image.
 | theme | toggle, then wait out one poll swap on `/queue` | the choice survives the swap; `localStorage` holds it |
 | the poller is alive | hold `/queue` for 7 s | the `[data-poll]` node is a different element afterwards |
 | an asset nobody ever inspected | open `/assets/e2e-no-such-thing` | 200 with the designed `no history yet`, not a 404 — only an ID rejected by `ASSET_ID_PATTERN` is invalid |
-| resolving the same run twice | after G, return to that run's trace tab and fire `Approve write` again | 404 themed error page with code `approval_not_found`; the trace and asset history stay unchanged |
+| resolving the same run twice | after G, return to that run's trace tab and fire `Confirm damage` (technical: `Approve write`) again | 404 themed error page with code `approval_not_found`; the trace and asset history stay unchanged |
 | the language outlives the poller | `ES` in the header, then hold `/queue` for 7 s | `<html lang='es'>`, the cookie `afterimage-lang=es`, and the choice survives the swap — the poller fetches `location.pathname` without the query string, so only the cookie can carry it |
 | the browser's own preference | `curl -H 'Accept-Language: es-AR' localhost:8000` with no cookie | Spanish, without anyone clicking anything; `fr,en` falls to English |
 | the register switch | `technical` in the header, then open a trace | the prose swaps — `services/agent/policy.py` and the sha256 wording appear, the metric tips read in their technical form — while `inlier_ratio`, every number and the agent's own message are untouched. `plain` is what a first visitor gets, on its own cookie, independent of the language one |
@@ -221,7 +223,7 @@ Run this checklist in visible Chrome with the viewport set to **320×700**, **39
 | Navigation | use Tab and Shift+Tab through header links and forms | focus order follows the visual/task order; hidden horizontal navigation links scroll into view when focused |
 | Tabs | on `/`, focus a demo tab and press Left/Right, including at both ends | selection, `aria-selected`, roving `tabindex`, and the visible panel stay in sync |
 | Comparator | focus the trace range and use arrow keys | the wipe changes, the focused slider remains visible, and the paired images remain understandable |
-| Human approval | focus `Approve write`, activate once, then activate again with Enter | the first action arms confirmation, keeps focus, announces the next action, and does not write; the second resolves it |
+| Human approval | focus `Confirm damage`, activate once, then activate again with Enter | the first action arms confirmation, keeps focus, announces the next action, and does not write; the second resolves it |
 | Status | watch the trace while a run completes and check the queue after approval | progress, completion, and confirmation are available through a status/live region; the queue reflects the result |
 | Language and theme | inspect English and Spanish in light and dark themes | document language, visible labels, accessible control names, and contrast remain correct in all four combinations |
 | Contrast | sample normal/large text and control/focus boundaries in both themes | text is at least 4.5:1 (3:1 for large text); required non-text boundaries are at least 3:1 |
@@ -261,9 +263,14 @@ For this pass, the browser run and measured findings are recorded in
   without JS they are inert and the only way in is the file picker. The primer above them is a plain
   `<details>` and still opens.
 - **The samples are committed copies, not the files the video uses.**
-  `services/ui/static/sample-*.png` (all three sets) are written by `video/make_demo_images.py` alongside
+  `services/ui/static/sample-*.png` (all four sets) are written by `video/make_demo_images.py` alongside
   `video/img/`, which is gitignored. Regenerate both in the same run, or path O stops reproducing
   `3.6589` while path C still does.
+  All four defects are demo-only (`shatter`, `glow`, `yellowing` and `rust` in that script), drawn so
+  the severity classifier names them `crack`, `hotspot`, `delamination` and `corrosion` (darker;
+  brighter and washed out; brighter and more saturated; a rust-coloured change), so the eval's `panels.*_at` and every published
+  number stay untouched, and `test_every_demo_group_reaches_its_four_answers` keeps them at
+  `human_approval` with those labels.
 - **`docker compose down` between runs empties the traces too**, not just the table: they live inside
   the container under `runs/`. Any `/traces/...` URL from a previous walkthrough dies with it.
 

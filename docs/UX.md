@@ -219,3 +219,15 @@ Findings 16–21 are implemented. Walked again in Chrome in plain Spanish:
 - the lede counts six tools.
 
 The technical register keeps the tool ids, the branch ids and the statistical labels.
+
+## Later change: samples first
+
+`/app` now opens on the sample photos, with their own **inspect this photo** button, and the
+upload form moved below them as "have your own photo?". The plain register names each set by
+what a layperson sees ("a cell that overheats", "layers coming apart", "a crack in the glass"),
+gives each sample one short sentence about what the agent will do, and calls the asset id a
+"panel name" with a help line. The line references above describe the screen before that change.
+
+The human gate follows the same rule: in the plain register the trace and the queue ask "Is this
+real damage?", explain that confirming saves it to the panel's history and dismissing saves
+nothing, and offer **Confirm damage** / **Dismiss** instead of "Approve write" / "Reject".

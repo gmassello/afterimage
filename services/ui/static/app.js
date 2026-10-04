@@ -100,6 +100,25 @@ function typeLines() {
 }
 typeLines();
 
+function zoomRegions() {
+  document.querySelectorAll('.zoom[data-bbox]').forEach((zoom) => {
+    const img = zoom.querySelector('img');
+    const place = () => {
+      const W = img.naturalWidth, H = img.naturalHeight;
+      if (!W || !H) return;
+      const [x, y, w, h] = JSON.parse(zoom.dataset.bbox);
+      const side = Math.min(Math.max(80, Math.max(w, h) * 2.5), W, H);
+      const left = Math.min(Math.max(x + w / 2 - side / 2, 0), W - side);
+      const top = Math.min(Math.max(y + h / 2 - side / 2, 0), H - side);
+      img.style.width = (W / side * 100) + '%';
+      img.style.left = (-left / side * 100) + '%';
+      img.style.top = (-top / side * 100) + '%';
+      zoom.classList.add('zoomed');
+    };
+    img.complete ? place() : img.addEventListener('load', place);
+  });
+}
+
 function placeBoxes() {
   document.querySelectorAll('.box[data-bbox]').forEach((box) => {
     const img = box.parentElement.querySelector('img');
@@ -117,6 +136,7 @@ function placeBoxes() {
   });
 }
 placeBoxes();
+zoomRegions();
 
 const disarm = (button) => {
   button.textContent = button.dataset.armed;
@@ -168,6 +188,15 @@ if (zone) {
   });
   const demoAssets = new Set([...document.querySelectorAll('.sample[data-asset]')]
     .map((sample) => sample.dataset.asset));
+  const id = document.getElementById('asset-id');
+  const sampleInspect = document.querySelector('[data-sample-inspect]');
+  const ownPhoto = () => {
+    if (id && demoAssets.has(id.value)) id.value = '';
+    if (sampleInspect) sampleInspect.disabled = true;
+    document.querySelectorAll('.sample[aria-pressed=true]').forEach((other) => other.setAttribute('aria-pressed', 'false'));
+  };
+  input.addEventListener('change', ownPhoto);
+  zone.addEventListener('drop', ownPhoto);
   document.querySelectorAll('.sample[data-sample]').forEach((button) => {
     button.addEventListener('click', async () => {
       if (button.getAttribute('aria-disabled') === 'true') {
@@ -175,7 +204,6 @@ if (zone) {
         if (status) status.textContent = T.sampleLocked;
         return;
       }
-      const id = document.getElementById('asset-id');
       if (id && (!id.value || demoAssets.has(id.value))) id.value = button.dataset.asset;
       try {
         const picked = new DataTransfer();
@@ -188,7 +216,10 @@ if (zone) {
         });
         const status = document.querySelector('[data-sample-status]');
         if (status) status.textContent = T.sampleLoaded.replace('{sample}', button.querySelector('.name').textContent);
-        zone.closest('form').scrollIntoView({ block: 'nearest' });
+        if (sampleInspect) {
+          sampleInspect.disabled = false;
+          sampleInspect.scrollIntoView({ block: 'nearest' });
+        }
       } catch (e) {
         input.setCustomValidity(T.sampleFailed);
         input.reportValidity();
@@ -306,7 +337,7 @@ if (document.querySelector('[data-poll]') && page.dataset.runState !== 'done') {
     if (!pending || busy()) return;
     const arrived = pending;
     pending = null;
-    const swap = () => { block().replaceWith(arrived); placeBoxes(); countUp(); typeLines(); };
+    const swap = () => { block().replaceWith(arrived); placeBoxes(); zoomRegions(); countUp(); typeLines(); };
     document.startViewTransition ? document.startViewTransition(swap) : swap();
   };
   addEventListener('focusout', () => setTimeout(flush, 0));

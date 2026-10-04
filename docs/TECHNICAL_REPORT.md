@@ -207,7 +207,7 @@ changing a decision is a fact you can point at rather than something inferred fr
 | `align_to_baseline` | `cv2.ALIKED.create` + `cv2.LightGlueMatcher.create` (neural) or `cv2.ORB.create(4000)` + `cv2.BFMatcher(NORM_HAMMING)` (fallback); `cv2.findHomography(src, dst, cv2.UsacParams)` configured as MAGSAC with a 3.0 px threshold; `cv2.warpPerspective`; `cv2.erode` | `keypoints_query`, `keypoints_train`, `matches`, `inliers`, `inlier_ratio`, `mean_reprojection_error` |
 | `diff_against_memory` | `cv2.createCLAHE`, `cv2.absdiff`, `cv2.GaussianBlur`, `cv2.threshold`, `cv2.connectedComponentsWithStats` | `changed_ratio`, and per region `area_px`, `area_ratio`, `mean_delta`, `bbox` |
 | `crop_and_rescan` | the same diff pipeline plus `cv2.resize(..., INTER_CUBIC)` | full-frame `area_px` and `area_ratio`, plus crop-relative `zoom_area_ratio` |
-| `classify_severity` | `cv2.cvtColor(..., COLOR_BGR2HSV)`, `cv2.absdiff` | `score` and the features `brightness_delta`, `saturation_delta`, `hue_shift`, `spatial_uniformity`, `mean_delta`, `area_ratio` |
+| `classify_severity` | `cv2.cvtColor(..., COLOR_BGR2HSV)`, `cv2.absdiff` | `score` and the features `brightness_delta`, `saturation_delta`, `hue_shift`, `change_hue`, `spatial_uniformity`, `mean_delta`, `area_ratio` |
 | `classify_severity` evidence | `cv2.rectangle`, `cv2.FontFace("sans")`, `cv2.getTextSize` and the UTF-8 `cv2.putText` overload that takes a `FontFace` | `evidence_key`: the aligned capture with the region boxed and labelled `label · score · Δbrightness`, stored as `evidence.png` |
 
 The `Features` module is used substantively, not decoratively: ALIKED keypoints matched by LightGlue
@@ -380,8 +380,10 @@ perception functions take them as arguments; the MCP server is what resolves the
 environment, so a threshold never travels as a tool argument the model could move.
 
 One family stays in code on purpose: the feature cuts that name the defect class
-(`BRIGHTNESS_DELTA_CRACK`, `SATURATION_DELTA_DELAMINATION`, `AREA_RATIO_SOILING` and
-`BRIGHTNESS_DELTA_HOTSPOT`, in `services/perception/severity.py`). They pick a label, not a branch,
+(`RUST_HUE` with `SATURATION_DELTA_CORROSION`, `BRIGHTNESS_DELTA_CRACK`, `SATURATION_DELTA_DELAMINATION`,
+`AREA_RATIO_SOILING` and `BRIGHTNESS_DELTA_HOTSPOT`, in `services/perception/severity.py`). The
+corrosion cut reads `change_hue` — the saturation-weighted circular mean hue of the pixels that
+changed — and fires first, because rust on bright steel darkens and would otherwise read as a crack. They pick a label, not a branch,
 and they were measured on the fixtures rather than tuned per site — recalibrating those is a code
 change with a test behind it, not a deployment variable.
 

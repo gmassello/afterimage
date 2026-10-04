@@ -152,6 +152,11 @@ stated and fixed, not a boundary a model would have to learn. The note stays in 
 measured reason to leave it unspent and a named condition — if the soiling rule is rewritten and the
 classes still collide, that is when it gets spent.
 
+A fifth label, `corrosion`, was added later for the steel demo set. It has no evaluation scenario of
+its own; re-running the 29 scenarios with it in place leaves every branch and every defect label
+unchanged (neural and ORB), and `services/perception/tests/test_severity.py` pins it on a rust
+fixture.
+
 ### `coverage_ratio_min`: cannot be enabled with one global default
 
 `Policy.coverage_ratio_min` disables the frame-coverage check because the contour heuristic reads

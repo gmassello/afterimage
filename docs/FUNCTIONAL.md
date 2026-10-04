@@ -33,11 +33,12 @@ was the reference at each point in time.
 ## Operator journey
 
 1. Open the public landing page at `/` to understand the product, evidence, and limits.
-2. Enter the inspection workspace at `/app` and provide an asset ID, or leave it empty to let the
-   agent recognise which stored asset the photo shows.
-3. Upload a capture or choose one of the included sample images: three sets of four (a hot spot,
-   delamination, a crack), chosen by swiping or with the arrows. Each set writes to a demo asset
-   of your own, so each visitor walks the four branches over their own memory, once per set.
+2. Enter the inspection workspace at `/app`. The sample images come first: four sets of four (a
+   hot spot, rust on a steel tank, delamination, a crack), chosen by swiping or with the arrows, each photo inspected with
+   the button under them. Each set writes to a demo asset of your own, so each visitor walks the
+   four branches over their own memory, once per set.
+3. Or upload your own capture below the samples, with a panel name (the asset ID) that matches the
+   panel's earlier photos, or none to let the agent recognise which stored asset the photo shows.
 4. Confirm the image and start the inspection.
 5. Follow the live trace while the loop assesses quality, alignment, change, and severity.
 6. Act on the terminal result. Severe findings appear in the approval queue; accepted findings

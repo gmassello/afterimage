@@ -329,14 +329,17 @@ form reports errors.
 
 ### Sample carousel
 
-- Three sets of four sample captures, one `<section class='group'>` each, in a track with
+- Four sets of four sample captures, one `<section class='group'>` each, in a track with
   `overflow-x: auto`, `scroll-snap-type: x mandatory`, hidden scrollbar and each set at 100 % of
   the track width. Smooth scrolling only under `prefers-reduced-motion: no-preference`.
 - Above it: ‹ and › as `btn sm` (32 × 32) around a centred `small` `--muted` count
-  ("Set 2 of 3 · hot spot") with `role="status"`.
+  ("Problem 1 of 4 · a cell that overheats" in the plain register, "Set 1 of 4 · hot spot" in the
+  technical one) with `role="status"`.
 - Disabled end (`aria-disabled="true"` on ‹ at the first set, › at the last): `--subtle` text,
   `cursor: not-allowed`. Focus: ring on the buttons and on the track, which takes the arrow keys.
 - Each set locks on its own until its demo asset has a reference.
+- Below the track: an `ok` button, **inspect this photo**, disabled until a sample is chosen. It
+  submits the upload form, which sits under the carousel as the "have your own photo?" block.
 
 ### Next step of the tour
 
@@ -346,6 +349,10 @@ form reports errors.
 
 ### Approval panel
 
+- On the trace, the panel carries two square crops of the changed region side by side, captioned
+  "before" and "now" in `small` `--muted`, with a "see the full photo" link to the comparison:
+  a two-column grid with the question and the buttons on desktop, stacked below 768 px. Without a
+  region it shows the whole capture with its box (no tag), capped at 280 px (220 px on a phone).
 - Approve (`ok` button) and a reject form side by side: an optional reason input (`.input`,
   `maxlength="500"`) with a visible `small` `--muted` label and an example as placeholder, both from `text.py` and a secondary reject button.
 - The first click arms a confirmation and stays armed; the second posts. An interrupted verdict

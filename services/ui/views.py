@@ -50,7 +50,9 @@ _NAV = (
 )
 
 SAMPLE_ASSET = "demo-panel"
-SAMPLE_GROUPS = (("hotspot", "sample-b"), ("delamination", "sample-c"), ("crack", "sample"))
+SAMPLE_GROUPS = (
+    ("hotspot", "sample-b"), ("corrosion", "sample-d"), ("delamination", "sample-c"), ("crack", "sample"),
+)
 BASE_GROUP = "crack"
 SAMPLE_ROLES = ("baseline", "blurred", "defect", "foreign")
 SAMPLES = tuple(f"{prefix}-{role}" for _, prefix in SAMPLE_GROUPS for role in SAMPLE_ROLES)
@@ -68,9 +70,8 @@ def sample_group(asset_id: str) -> tuple[str, str] | None:
     return next((g for g in SAMPLE_GROUPS if match and g[1] == prefix), None)
 
 
-def _sample_key(field: str, number: int, group: str) -> str:
-    key = f"sample_{number}_{field}"
-    return f"{key}_{group}" if number == 3 and group != BASE_GROUP else key
+def _for_group(t: dict, key: str, group: str) -> str:
+    return t.get(f"{key}_{group}", t[key])
 
 
 def when(value, lang: str = DEFAULT_LANG) -> str:
@@ -163,8 +164,8 @@ def _group_samples(t: dict, group: str, prefix: str, suffix: str, ready: bool) -
             "thumb": _static_url(".png", f"{prefix}-{role}-thumb"),
             "name": f"{prefix}-{role}.png",
             "asset_id": sample_asset(prefix, suffix),
-            "label": t[_sample_key("label", index + 1, group)],
-            "note": t[_sample_key("note", index + 1, group)] if ready or not index
+            "label": _for_group(t, f"sample_{index + 1}_label", group),
+            "note": _for_group(t, f"sample_{index + 1}_note", group) if ready or not index
             else t["sample_needs_reference"],
             "locked": not ready and index > 0,
         }
@@ -837,10 +838,7 @@ def _sample_step(stem: str, t: dict) -> dict | None:
         return None
     prefix, role = stem.rsplit("-", 1)
     group = next(g for g, p in SAMPLE_GROUPS if p == prefix)
-    label = NEXT_LABEL[role]
-    if role == "defect" and group != BASE_GROUP:
-        label = f"{label}_{group}"
-    return {"url": f"/app?sample={stem}", "label": t[label]}
+    return {"url": f"/app?sample={stem}", "label": _for_group(t, NEXT_LABEL[role], group)}
 
 
 def _next_sample(summary: dict, t: dict) -> dict | None:

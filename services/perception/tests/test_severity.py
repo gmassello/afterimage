@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from services.perception.diffing import crop_region
@@ -8,7 +9,14 @@ from services.perception.panels import (
     with_hotspot,
     with_soiling,
 )
-from services.perception.severity import CRACK, DELAMINATION, HOTSPOT, SOILING, classify_severity
+from services.perception.severity import (
+    CORROSION,
+    CRACK,
+    DELAMINATION,
+    HOTSPOT,
+    SOILING,
+    classify_severity,
+)
 
 CASES = [
     (with_crack, (2, 4), CRACK),
@@ -40,3 +48,15 @@ def test_unchanged_crop_scores_zero(panel):
     crop = crop_region(panel, cell_bbox(2, 4))
 
     assert classify_severity(crop, crop, area_ratio=0.0).score == 0.0
+
+
+def test_rust_on_grey_steel_is_named_corrosion_even_when_it_darkens():
+    rng = np.random.default_rng(3)
+    steel = np.clip(rng.normal(150, 12, (120, 120, 3)), 0, 255).astype(np.uint8)
+    rusty = steel.copy()
+    rusty[30:90, 30:90] = np.clip(rng.normal((30, 70, 150), 10, (60, 60, 3)), 0, 255).astype(np.uint8)
+
+    result = classify_severity(rusty, steel, area_ratio=0.01)
+
+    assert result.label == CORROSION
+    assert result.features["brightness_delta"] < 0

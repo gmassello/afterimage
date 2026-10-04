@@ -324,8 +324,11 @@ def test_the_second_opinion_sends_an_overstated_message_back_and_never_blocks(
 SAMPLE_DIR = Path(__file__).parents[2] / "ui" / "static"
 
 
+DEMO_LABEL = {"sample": "crack", "sample-b": "hotspot", "sample-c": "delamination", "sample-d": "corrosion"}
+
+
 @localstack
-@pytest.mark.parametrize("group", ["sample", "sample-b", "sample-c"])
+@pytest.mark.parametrize("group", sorted(DEMO_LABEL))
 def test_every_demo_group_reaches_its_four_answers(group, tmp_path):
     if not weights.neural_weights_available():
         pytest.skip("requires ALIKED weights, the detector the deployment uses")
@@ -344,3 +347,6 @@ def test_every_demo_group_reaches_its_four_answers(group, tmp_path):
         llm = PolicyFollowingLLM(capture_key, baseline_key, alignment.NEURAL)
         result = run_loop(asset, capture_key, llm, tmp_path / role)
         assert result.branch == branch, (role, result.decisions)
+        if role == "defect":
+            severity = [e for e in trace.read_events(result.run_dir) if e.get("tool") == "classify_severity"]
+            assert severity[-1]["metrics"]["label"] == DEMO_LABEL[group]

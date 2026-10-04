@@ -27,6 +27,10 @@ defect — `docs/EVALUATION.md` states what that does and does not let us claim.
 | `array_hannover_roof.jpg` | [Photovoltaik Dachanlage Hannover - Schwarze Heide - 1 MW.jpg](https://commons.wikimedia.org/wiki/File:Photovoltaik_Dachanlage_Hannover_-_Schwarze_Heide_-_1_MW.jpg) | AleSpa | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) |
 | `array_bifacial_roof.jpg` | [Vertical bifacial solar panels on a green roof.jpg](https://commons.wikimedia.org/wiki/File:Vertical_bifacial_solar_panels_on_a_green_roof.jpg) | Trygvetv | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
 | `array_arapaho.jpg` | [Solar panels at Arapaho National Wildlife Refuge (6009458404).jpg](https://commons.wikimedia.org/wiki/File:Solar_panels_at_Arapaho_National_Wildlife_Refuge_(6009458404).jpg) | USFWS Mountain Prairie | Public domain |
+| `steel_fire_tank.jpg` | [External Hot-Dipped Galvanised Steel Fire Tank.webp](https://commons.wikimedia.org/wiki/File:External_Hot-Dipped_Galvanised_Steel_Fire_Tank.webp), converted to JPEG | Wateraus1 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) |
+
+`steel_fire_tank.jpg` is used only by the corrosion demo set (`video/make_demo_images.py`); no
+evaluation scenario reads it.
 
 Share-alike licences (CC BY-SA) apply to the photographs themselves. They are redistributed here
 unmodified, with attribution; the derived scenarios the harness generates at run time are not

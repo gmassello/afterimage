@@ -76,7 +76,7 @@ Both live in [`services/perception/alignment.py`](services/perception/alignment.
 
 The loop is the product, not the development process: an unusable capture is sent back, an unrecognised asset is refused rather than guessed, and a severe finding waits for a human before anything is written.
 
-The public landing explains the problem, the decision loop, measured evidence, stack and limits before asking anyone to operate the system. The `/app` workspace includes three sets of four sample captures — a hot spot, delamination and a crack, each on its own panel and chosen by swiping — written to demo assets of the visitor's own, so anyone can drive the whole loop without a photo of their own; `/activity` makes the latest runs searchable by identity and outcome. Three switches sit beside each other in the header: language (English or Spanish), register (plain or technical) and theme. The plain register explains the number a decision turned on; it never replaces it, and metric names, identifiers and the message the agent itself wrote stay as the trace recorded them.
+The public landing explains the problem, the decision loop, measured evidence, stack and limits before asking anyone to operate the system. The `/app` workspace includes four sets of four sample captures — a hot spot, rust on a steel tank, delamination and a crack, each on its own asset and chosen by swiping — written to demo assets of the visitor's own, so anyone can drive the whole loop without a photo of their own; `/activity` makes the latest runs searchable by identity and outcome. Three switches sit beside each other in the header: language (English or Spanish), register (plain or technical) and theme. The plain register explains the number a decision turned on; it never replaces it, and metric names, identifiers and the message the agent itself wrote stay as the trace recorded them.
 
 A failed run remains immutable and can be retried from recent activity, and a run interrupted before it finished is closed as failed after fifteen minutes of silence so it can be retried too. The retry creates a new run over the same capture, repeated requests return that same replacement, and a write-once marker preserves the relationship. Browser failures render as normal themed pages; API clients receive stable `{detail, code, retryable}` JSON.
 
@@ -218,7 +218,7 @@ GOOGLE_API_KEY=... make deploy   # ECR + docker buildx arm64 + CloudFormation, i
 | Endpoint | What it serves |
 |---|---|
 | `/` | Public landing: product, workflow, measured evidence, stack and limits |
-| `/app` | Asset list, capture upload (the asset id is optional: leave it empty and the agent recognises the asset) and three sets of four sample captures that need no file of your own |
+| `/app` | Asset list, capture upload (the asset id is optional: leave it empty and the agent recognises the asset) and four sets of four sample captures that need no file of your own |
 | `/activity` | Search and status filtering over the latest runs, showing 4 |
 | `/assets/{id}` | Inspection timeline and current baseline |
 | `/queue` | Human approval queue, with the compared pair; a rejection can carry a written reason |

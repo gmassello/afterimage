@@ -9,6 +9,7 @@ CRACK = "crack"
 HOTSPOT = "hotspot"
 SOILING = "soiling"
 DELAMINATION = "delamination"
+CORROSION = "corrosion"
 UNKNOWN = "unknown"
 
 # Thresholds measured on the synthetic fixtures (see tests/test_severity.py):
@@ -16,10 +17,16 @@ UNKNOWN = "unknown"
 #   hotspot      brightness +29.6  saturation -19.0   (bright, washed out towards white)
 #   delamination brightness +54.1  saturation +46.4   (bright, shifted to another colour)
 #   soiling      brightness +18.4  saturation -12.8   spread over most of the frame
+#   corrosion    change hue 10 (rust orange-brown) on a greyer, less saturated surface;
+#                the synthetic delamination sits at change hue 24 and the demo one at 20
 BRIGHTNESS_DELTA_HOTSPOT = 12.0
 BRIGHTNESS_DELTA_CRACK = -12.0
 SATURATION_DELTA_DELAMINATION = 20.0
 AREA_RATIO_SOILING = 0.25
+RUST_HUE = 10.0
+RUST_HUE_TOLERANCE = 6.0
+SATURATION_DELTA_CORROSION = 15.0
+CHANGED_PIXEL_DELTA = 25
 FULL_SCALE_DELTA = 64.0
 
 
@@ -37,6 +44,19 @@ def _mean_hsv(image: np.ndarray) -> tuple[float, float]:
     return float(hsv[:, :, 0].mean()), float(hsv[:, :, 1].mean())
 
 
+def _change_hue(crop: np.ndarray, delta: np.ndarray) -> float:
+    if crop.ndim == 2:
+        return -1.0
+    hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+    changed = delta >= CHANGED_PIXEL_DELTA
+    weights = hsv[:, :, 1][changed].astype(np.float64)
+    if not weights.sum():
+        return -1.0
+    angles = hsv[:, :, 0][changed].astype(np.float64) * np.pi / 90
+    mean = np.arctan2((weights * np.sin(angles)).sum(), (weights * np.cos(angles)).sum())
+    return float(np.degrees(mean) / 2 % 180)
+
+
 def _features(crop: np.ndarray, baseline_crop: np.ndarray, area_ratio: float) -> dict[str, float]:
     crop_gray, baseline_gray = gray(crop), gray(baseline_crop)
     delta = cv2.absdiff(crop_gray, baseline_gray)
@@ -47,6 +67,7 @@ def _features(crop: np.ndarray, baseline_crop: np.ndarray, area_ratio: float) ->
         "brightness_delta": float(crop_gray.mean()) - float(baseline_gray.mean()),
         "saturation_delta": crop_saturation - baseline_saturation,
         "hue_shift": abs(crop_hue - baseline_hue),
+        "change_hue": _change_hue(crop, delta),
         "spatial_uniformity": mean_delta / (float(delta.max()) or 1.0),
         "mean_delta": mean_delta,
         "area_ratio": area_ratio,
@@ -56,6 +77,9 @@ def _features(crop: np.ndarray, baseline_crop: np.ndarray, area_ratio: float) ->
 def _label(features: dict[str, float]) -> str:
     # ponytail: threshold heuristic over OpenCV features. Upgrade to a small trained
     # classifier if the week 7 evaluation shows these do not separate the defect classes.
+    rust = abs((features["change_hue"] - RUST_HUE + 90) % 180 - 90) <= RUST_HUE_TOLERANCE
+    if features["change_hue"] >= 0 and rust and features["saturation_delta"] > SATURATION_DELTA_CORROSION:
+        return CORROSION
     if features["brightness_delta"] < BRIGHTNESS_DELTA_CRACK:
         return CRACK
     if features["saturation_delta"] > SATURATION_DELTA_DELAMINATION:

@@ -25,9 +25,9 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
 | Template | Visible behavior |
 |---|---|
 | `landing.html` | Public product explanation, workflow, evaluation evidence, stack, limits, and entry points. Both primary buttons open `/app?sample=sample-baseline`, so the tour starts one click from **inspect**. The illustration names stages with the trace's `step_<tool>` copy and results with `outcome_<branch>`; metric labels have plain and technical wordings over the same numbers. |
-| `index.html` | Inspection workspace, three sets of four sample captures in a horizontal carousel, and asset gallery. The asset ID is optional; its placeholder says an empty field asks the agent to recognise the asset. |
+| `index.html` | Inspection workspace and asset gallery. The sample photos come first — four sets of four in a horizontal carousel with their own **inspect this photo** button — and the upload form for an own photo sits below them. The asset ID is optional and is called "panel name" in the plain register; a visible help line, linked with `aria-describedby`, says that the same name compares against the panel's previous photo and an empty one asks the agent to recognise it. |
 | `activity.html` | Recent-run search and status filter, capped at 4 rows. |
-| `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action. The title is the localised `outcome_<status>` or `outcome_<branch>` copy, with the model's message beneath it, and the status pill uses `status_*`. The pending verdict and the next-sample link sit inside the hero's text column, under the pills, so a phone reaches them before the deciding-number panel; in the plain register neither carries the model's message; like the queue, an interrupted verdict offers only its claimed action. The `classify_severity` card shows the annotated evidence image (`evidence_key`) as a figure linking to the full-size PNG. The deciding number is the decision whose branch the run ended on (`baseline_exists` for a `first_baseline`), falling back to the last one, and skips `policy.AUDIT_METRICS`, so a re-observation or Jev check never replaces the verdict it follows. |
+| `trace.html` | Live run state, enforced path, tool details, deciding value, image region, and next action. The title is the localised `outcome_<status>` or `outcome_<branch>` copy, with the model's message beneath it, and the status pill uses `status_*`. The pending verdict carries two enlarged crops of the same region, before and now (macro `zoom`; `zoomRegions()` in `app.js` scales each image so the region ×2.5 fills a square), with a link to the full comparison (`#compare`); without a region it falls back to the whole capture with its box (macro `marked`). The pending verdict and the next-sample link sit inside the hero's text column, under the pills, so a phone reaches them before the deciding-number panel; in the plain register neither carries the model's message; like the queue, an interrupted verdict offers only its claimed action. The `classify_severity` card shows the annotated evidence image (`evidence_key`) as a figure linking to the full-size PNG. The deciding number is the decision whose branch the run ended on (`baseline_exists` for a `first_baseline`), falling back to the last one, and skips `policy.AUDIT_METRICS`, so a re-observation or Jev check never replaces the verdict it follows. |
 | `queue.html` | Pending comparisons with approve and reject actions; the reject form carries an optional `reason` field (500 characters). An interrupted verdict shows only the claimed action and a note to repeat it. |
 | `asset.html` | Longitudinal timeline, severity trend, current baseline, and superseded baselines. |
 | `error.html` | Consistent browser error with a stable code, explanation, and recovery action when available. |
@@ -44,14 +44,19 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
 - Sample buttons fetch bundled captures and place them into the same upload path as a local file.
   `/app?sample=<stem>` preselects one of them on load; any other value is ignored.
   The chosen card gets `aria-pressed=true` and an accent border, a server-rendered `role=status`
-  line says which sample loaded, and the form scrolls back into view.
-- The samples come in three sets of four, in this order — hot spot (`sample-b-*`), delamination
+  line says which sample loaded, and the **inspect this photo** button under the carousel is
+  enabled and scrolled into view. That button submits the upload form through `form='inspect-form'`,
+  so both paths post the same form. Choosing or dropping an own file clears a demo asset id,
+  unpresses the samples and disables that button again.
+- The samples come in four sets of four, in this order — hot spot (`sample-b-*`), corrosion on a
+  galvanized steel tank (`sample-d-*`, showing the agent is not tied to solar panels), delamination
   (`sample-c-*`) and crack (`sample-*`, the set the landing illustrates and opens) — each a `<section class='group'>` in a horizontal scroll-snap track.
   Swipe, trackpad, the ‹ › buttons or the arrow keys on the focused track move one set; the
   buttons carry `aria-disabled` at either end and a `role=status` line names the visible set.
   `?sample=` of another set scrolls there before selecting it.
-- Each set writes to its own demo asset: `demo-panel-<suffix>`, `demo-panel-b-<suffix>` and
-  `demo-panel-c-<suffix>`, all from the same `demo` cookie. Picking a sample of another set swaps a
+- Each set writes to its own demo asset: `demo-panel-<suffix>`, `demo-panel-b-<suffix>`,
+  `demo-panel-c-<suffix>` and `demo-panel-d-<suffix>`, all from the same `demo` cookie. A set's own copy
+  key (`sample_4_label_corrosion`, `next_sample_corrosion`) wins over the generic one when it exists. Picking a sample of another set swaps a
   demo asset id already in the field, never one the visitor typed.
 - Until a set's demo asset has a baseline, its samples 2–4 carry `aria-disabled=true` and the
   `sample_needs_reference` note; a click on one only writes `js_sample_locked` to the status line.
