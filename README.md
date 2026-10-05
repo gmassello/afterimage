@@ -34,8 +34,8 @@ Developer documentation: [functional guide](docs/FUNCTIONAL.md) ·
 </p>
 
 <p align="center">
-  <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/"><img src="docs/img/demo.gif" alt="A capture is uploaded, the trace opens and fills in as the agent works, the queue shows the changed region against the baseline, a human approves, and the asset history gains the new reference" width="880"></a><br>
-  <sub>Upload a capture → the loop decides → the trace shows the value behind every decision → a human approves what the policy would not write alone</sub><br>
+  <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/"><img src="docs/img/demo.gif" alt="The hot-spot sample set walked through the app: the first photo becomes the reference, the overheating cell scores 0.5945 against 0.4 and waits for a person, the asset history shows the old baseline superseded, a shaken photo is sent back at blur_variance 4.1446, and a different panel is refused at inlier_ratio 0.068" width="880"></a><br>
+  <sub>Pick a sample set → the loop decides → the trace shows the value behind every decision → a human approves what the policy would not write alone</sub><br>
   <sub><a href="https://youtu.be/_fJo29SdoaU">Watch the 3-minute walkthrough</a> · <a href="https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/">try the live endpoint</a></sub>
 </p>
 
@@ -152,7 +152,7 @@ Perception runs in an arm64 OpenCV 5 container on Lambda (Graviton): capture qua
 
 | Trace viewer | Asset history |
 |---|---|
-| <img src="docs/img/trace.png" alt="Per-run trace: the five pipeline stages as a rail, each with the branch it took, the stage the run never reached and why, and the number that decided the verdict" width="420"> | <img src="docs/img/history.png" alt="Asset history: the severity of every inspection plotted against the approval threshold, then each one scored against the threshold that was in force, with the sentence that decided it, and the current baseline" width="420"> |
+| <img src="docs/img/trace.png" alt="Per-run trace of a human-gated finding: score 0.5945 against the 0.4 threshold, and the approval card asking whether this is real damage, with the changed region zoomed before and now" width="420"> | <img src="docs/img/history.png" alt="Asset history: every inspection scored against the threshold that was in force, the current baseline, and the baseline it superseded" width="420"> |
 | One span per tool call, with the value that triggered the branch. | Every inspection of an asset, and which capture is the baseline. |
 
 ## Honest limits

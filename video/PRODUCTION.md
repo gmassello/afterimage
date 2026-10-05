@@ -435,9 +435,14 @@ in the README's two-column table.
 **When the front end changes, this file and `docs/img/` change with it.** Retaking the two PNGs
 and forgetting the GIF is the exact mistake this section documents.
 
-The front-end pass of 17 Sep 2026 retook `trace.png` and `history.png` and **did not** retake
-`demo.gif`: the GIF still shows the old trace, with the single `working…` box instead of the
-five-stage rail, the hidden bounding box and the two static figures instead of the wipe comparator.
-It has to be re-recorded from the deployed build before the submission, and the shot list above
-gains two beats that did not exist when it was written: the rail lighting stage by stage while the
-agent works, and the slider dragged across the changed region.
+The 4 October retake replaced the upload arc above with the sample tour and is scripted, so the
+three images can no longer drift apart:
+
+    make dev                             # in another terminal
+    bash video/readme_captures.sh        # writes docs/img/demo.gif, trace.png and history.png
+
+It drives a fresh `demo-panel-b-*` asset through the hot-spot set over the local API and captures
+seven stills with headless Chrome: the landing, `/app`, the first baseline, the approval card at
+`score 0.5945`, the history with the old baseline superseded, the recapture at `blur_variance
+4.1446` and the refusal at `inlier_ratio 0.068`. 160 colours, about 525 KB. Each capture gets its
+own `--user-data-dir`: a headless Chrome that reuses the previous one's profile hangs on the lock.
