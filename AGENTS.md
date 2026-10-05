@@ -26,7 +26,7 @@ Specialized references:
 - [Responsible use](docs/RESPONSIBLE_USE.md) — intended use, claims, human gate, and boundaries.
 - [AI disclosure](docs/AI_DISCLOSURE.md) — model responsibilities in the product and its development.
 
-Historical and delivery records include `docs/PROPOSAL.md`, `docs/BUILD_LOG.md`, `docs/DELIVERY.md` (the submission checklist), `docs/submission.md` (the entry text to paste), and the video-production documents. They preserve decisions and evidence from a point in time and are not sources of current architecture.
+Historical and delivery records include `docs/PROPOSAL.md`, `docs/BUILD_LOG.md`, `docs/DELIVERY.md` (the submission checklist), `docs/STATUS.md` (the verified state of every delivery surface), `docs/submission.md` (the entry text to paste), and the video-production documents. They preserve decisions and evidence from a point in time and are not sources of current architecture.
 
 ## Hard Rules
 

@@ -170,7 +170,7 @@ Units: all.
 | Product | the four answers are reachable by a first-time visitor | F6 walked on the public URL; `screenshot` of each terminal trace |
 | Product | full suite and evaluation green on `main` | `make test`; CI `ci` and `eval` jobs at HEAD |
 | System | the deployed image is `main` and its calibration is aligned | `gh run list --commit $(git rev-parse HEAD)` shows `Deploy` success; `make smoke` |
-| System | every submission requirement in `docs/HACKATHON.md` has its artefact | `hackathon-close` audit, recorded in `PENDIENTE.md` |
+| System | every submission requirement in `docs/HACKATHON.md` has its artefact | `hackathon-close` audit, recorded in `docs/STATUS.md` |
 | System | the video is at most five minutes and reachable without login | video duration on the public page; `hackathon-close` |
 
 ## Out of scope
