@@ -14,8 +14,8 @@ Estado del codigo en una linea: 380 tests verdes (cobertura 92.62%, `make test` 
 
 | Superficie | Donde | Estado | Verificado |
 |---|---|---|---|
-| Repo y CI | `gmassello/afterimage` @ `c7f0536` | arbol limpio, sincronizado con `origin`; `ci` y Pages verdes en `c7f0536`; `ci` corre en push a `main` y en PRs | 2026-10-05 `git status`, `gh run list --commit` |
-| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `24b329a` (deploy run 37247899968; lo posterior es solo docs): `/`, `/app`, `/activity`, `/queue` y `/health` en 200, los 55 assets de `/` y `/app` en 200, calibracion `aligned` 0.9975; field manual en Pages con el contenido del commit | 2026-10-05 curl sin sesion |
+| Repo y CI | `gmassello/afterimage` @ `e6654d4` | arbol limpio, sincronizado con `origin`; `ci` y Pages verdes en `e6654d4`; `ci` corre en push a `main` y en PRs | 2026-10-05 `git status`, `gh run list --commit` |
+| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `f6176fe` (deploy run 37247899968; lo posterior es solo docs): `/`, `/app`, `/activity`, `/queue` y `/health` en 200, los 55 assets de `/` y `/app` en 200, calibracion `aligned` 0.9975; field manual en Pages con el contenido del commit | 2026-10-05 curl sin sesion |
 | Submission | https://devpost.com/software/afterimage-ibp376 | ok — 1294 palabras, la tagline de `docs/submission.md`, 6 capturas, 14 tags, video `_fJo29SdoaU` (embed y historial de envios), inscripta en la competencia; Testing instructions del envio con el recorrido de ejemplos | 2026-10-05 curl sin sesion + `parse_ficha` |
 | Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no accesible — Devpost no publica la galeria mientras el concurso esta abierto | 2026-10-05 `gallery.py opencv26` |
 | PR upstream | no aplica | — | — |
