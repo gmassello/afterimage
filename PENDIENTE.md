@@ -14,8 +14,8 @@ Estado del codigo en una linea: 380 tests verdes (cobertura 92.62%, `make test` 
 
 | Superficie | Donde | Estado | Verificado |
 |---|---|---|---|
-| Repo y CI | `gmassello/afterimage` @ `bc9418b` | pusheado; CI verde | 2026-10-04 `gh run list --commit` |
-| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `bc9418b` (deploy manual, run 37232578711): cinco juegos con su rubro en el título, el tercero una fisura en un muro de hormigón | 2026-10-04 `/app` muestra "Hormigón: una grieta en el muro" y sirve `sample-e-defect-thumb.1621b31d.png` `200 image/png` |
+| Repo y CI | `gmassello/afterimage` @ `24b329a` | pusheado | 2026-10-04 `git push` |
+| Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `24b329a` (deploy manual, run 37247899968): la ayuda de `/app` nombra el orden 1, 3, 2, 4; `/health` calibracion `aligned` 0.9975 | 2026-10-04 curl de `/app` y `/health` |
 | Submission | https://devpost.com/software/afterimage-ibp376 | actualizada el 4 Oct con el texto de `docs/submission.md` y el video nuevo; la galeria sigue con capturas del 6 Sep | 2026-10-04 lectura de la pagina publica |
 | Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no verificada | — |
 | PR upstream | no aplica | — | — |
