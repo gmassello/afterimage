@@ -641,7 +641,7 @@
   </section>
 
   <section>
-    <div class="sec-head"><span class="marker">04</span><h2>The five instruments</h2></div>
+    <div class="sec-head"><span class="marker">04</span><h2>The six instruments</h2></div>
     <div class="col">
       <p>
         Each tool answers one question an inspector would ask, in the order they would ask it.
@@ -651,6 +651,18 @@
     <ol class="tools">
       <li>
         <span class="n">01</span>
+        <div>
+          <h3>Which panel is this?</h3>
+          <span class="fn">identify_asset()</span>
+        </div>
+        <p>
+          Only asked when the operator leaves the panel name empty. Every distinctive point in the new
+          photo votes for the stored panel whose points it resembles most. A clear majority names the
+          panel; a split or thin vote ends as unidentified, so the agent asks instead of guessing.
+        </p>
+      </li>
+      <li>
+        <span class="n">02</span>
         <div>
           <h3>Is this photo usable?</h3>
           <span class="fn">assess_quality()</span>
@@ -663,7 +675,7 @@
         </p>
       </li>
       <li>
-        <span class="n">02</span>
+        <span class="n">03</span>
         <div>
           <h3>Is this the same panel, and how does it fit?</h3>
           <span class="fn">align_to_baseline()</span>
@@ -676,7 +688,7 @@
         </p>
       </li>
       <li>
-        <span class="n">03</span>
+        <span class="n">04</span>
         <div>
           <h3>What changed?</h3>
           <span class="fn">diff_against_memory()</span>
@@ -688,7 +700,7 @@
         </p>
       </li>
       <li>
-        <span class="n">04</span>
+        <span class="n">05</span>
         <div>
           <h3>I want to see that closer.</h3>
           <span class="fn">crop_and_rescan()</span>
@@ -700,7 +712,7 @@
         </p>
       </li>
       <li>
-        <span class="n">05</span>
+        <span class="n">06</span>
         <div>
           <h3>How bad is it, and what kind?</h3>
           <span class="fn">classify_severity()</span>
@@ -918,7 +930,7 @@
     <div class="sec-head"><span class="marker">09</span><h2>Who decides what</h2></div>
     <div class="col">
       <p>
-        The loop is now running. A language model drives the five instruments over MCP — it chooses
+        The loop is now running. A language model drives the six instruments over MCP — it chooses
         the words for the operator and passes the arguments along. What it does <strong>not</strong>
         do is decide. After every tool result, plain code compares the numbers against the policy's
         thresholds, writes the verdict into the run's decision log, and hands the model the verdict
@@ -1061,7 +1073,7 @@ flowchart TB
             LWA["Lambda Web Adapter<br/>arm64 Graviton, 2048 MB, 900 s"]
             API["FastAPI, serves the whole site"]
             LOOP["Agent loop<br/>policy evaluated in code"]
-            MCPS["MCP server, five perception tools"]
+            MCPS["MCP server, six perception tools"]
             CV["OpenCV 5.0.0 headless<br/>ALIKED and LightGlue ONNX"]
             LWA --&gt; API --&gt; LOOP --&gt; MCPS --&gt; CV
         end

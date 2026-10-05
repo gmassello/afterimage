@@ -82,8 +82,8 @@ _EN = {
     "landing_secondary_cta": "See how it works",
     "landing_demo_kicker": "HOW THE LOOP BRANCHES",
     "landing_demo_title": "Four captures, four different answers.",
-    "landing_demo_hint": "An illustration of the path each capture takes. Try them in order in "
-                         "the app: the first photo sets the reference.",
+    "landing_demo_hint": "An illustration of the path each capture takes. Try them in the app: "
+                         "the first photo sets the reference, and each result links the next.",
     "landing_demo_result": "result",
     "landing_demo_scenario": "demo capture",
     "landing_demo_previous": "Previous",
@@ -151,8 +151,8 @@ _EN = {
 
     "samples_title_tech": "no photo at hand?",
     "samples_title_plain": "try it with sample photos",
-    "samples_hint_tech": "Sets of 4 captures, one branch each. Go 1 → 4.",
-    "samples_hint_plain": "1. Pick a problem with the ‹ › arrows. 2. Tap the photos in order, 1 to 4. 3. Press “inspect this photo” each time.",
+    "samples_hint_tech": "Sets of 4 captures, one branch each. Start at 1; each result links the next (1 → 3 → 2 → 4).",
+    "samples_hint_plain": "1. Pick a problem with the ‹ › arrows. 2. Start with photo 1, then follow the link each result shows: 1, 3, 2, 4. 3. Press “inspect this photo” each time.",
     "samples_group_tech": "Set {n} of {total} · {domain}: {name}",
     "samples_group_plain": "Problem {n} of {total} · {domain}: {name}",
     "samples_domain_solar": "Solar panels",
@@ -503,8 +503,8 @@ _ES = {
     "landing_secondary_cta": "Ver cómo funciona",
     "landing_demo_kicker": "CÓMO SE RAMIFICA EL CICLO",
     "landing_demo_title": "Cuatro capturas, cuatro respuestas distintas.",
-    "landing_demo_hint": "Una ilustración del recorrido de cada captura. Probalas en orden en la "
-                         "aplicación: la primera foto fija la referencia.",
+    "landing_demo_hint": "Una ilustración del recorrido de cada captura. Probalas en la aplicación: "
+                         "la primera foto fija la referencia, y cada resultado enlaza la siguiente.",
     "landing_demo_result": "resultado",
     "landing_demo_scenario": "captura de demo",
     "landing_demo_previous": "Anterior",
@@ -572,8 +572,8 @@ _ES = {
 
     "samples_title_tech": "¿no tenés una foto a mano?",
     "samples_title_plain": "probá con fotos de ejemplo",
-    "samples_hint_tech": "Juegos de 4 capturas, una rama cada una. Andá de la 1 a la 4.",
-    "samples_hint_plain": "1. Elegí un problema con las flechas ‹ ›. 2. Tocá las fotos en orden, de la 1 a la 4. 3. Apretá «inspeccionar esta foto» cada vez.",
+    "samples_hint_tech": "Juegos de 4 capturas, una rama cada una. Empezá por la 1; cada resultado enlaza la siguiente (1 → 3 → 2 → 4).",
+    "samples_hint_plain": "1. Elegí un problema con las flechas ‹ ›. 2. Empezá por la foto 1 y seguí el enlace que muestra cada resultado: 1, 3, 2, 4. 3. Apretá «inspeccionar esta foto» cada vez.",
     "samples_group_tech": "Juego {n} de {total} · {domain}: {name}",
     "samples_group_plain": "Problema {n} de {total} · {domain}: {name}",
     "samples_domain_solar": "Paneles solares",
