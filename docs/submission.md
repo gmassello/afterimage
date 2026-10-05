@@ -72,7 +72,7 @@ The published failures are the roadmap: a coverage gate that cannot take one glo
 Known limitations: the published effectiveness applies to the committed dataset only and is not field accuracy; the evaluation measures solar panels only, and the metal and concrete sets are demonstrations with a synthetic defect on one photograph each; the trace's hash chain detects ordinary editing but is not a signed audit log; the public deployment has no login and is a bounded demonstration.
 
 ## Built With (-)
-opencv, amazon-web-services, aws-lambda, amazon-dynamodb, amazon-s3, aws-cloudformation, arm64, onnx, mcp, gemini, python, fastapi, docker, github-actions
+opencv, amazon-web-services, aws-lambda, amazon-dynamodb, s3, aws-cloudformation, arm64, onnx, mcp, gemini, python, fastapi, docker, github-actions
 
 ## Try it out (-)
 - https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/
