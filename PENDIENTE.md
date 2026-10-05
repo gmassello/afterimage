@@ -16,7 +16,7 @@ Estado del codigo en una linea: 380 tests verdes (cobertura 92.62%, `make test` 
 |---|---|---|---|
 | Repo y CI | `gmassello/afterimage` @ `24b329a` | pusheado | 2026-10-04 `git push` |
 | Sitio | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | ok — sirve `24b329a` (deploy manual, run 37247899968): la ayuda de `/app` nombra el orden 1, 3, 2, 4; `/health` calibracion `aligned` 0.9975 | 2026-10-04 curl de `/app` y `/health` |
-| Submission | https://devpost.com/software/afterimage-ibp376 | actualizada el 4 Oct con el texto de `docs/submission.md` y el video nuevo; la galeria sigue con capturas del 6 Sep | 2026-10-04 lectura de la pagina publica |
+| Submission | https://devpost.com/software/afterimage-ibp376 | actualizada el 4 Oct: texto de `docs/submission.md`, galeria y thumbnail nuevos, video `_fJo29SdoaU` en el proyecto y en el envio, Testing instructions con el recorrido de ejemplos y 29 escenarios | 2026-10-04 lectura de la pagina publica |
 | Tarjeta en la galeria | https://opencv26.devpost.com/project-gallery | no verificada | — |
 | PR upstream | no aplica | — | — |
 | Segundo checkout | no aplica | — | — |
