@@ -48,6 +48,18 @@ section.
 class and required decision path). **Most of the suite runs on photographs**: 18 of 29.
 
 Branch accuracy **0.8621**, macro F1 **0.8624**. Defect accuracy **0.8571**, macro F1 **0.8542**.
+
+### Real photographs, reported apart
+
+On the 18 real photographs alone, **14 of 18 passed** and branch accuracy is **0.8333**. With 29
+scenarios a point estimate says little about how far it would move on a different set of the same
+kind, so `make eval` also publishes 95% Wilson intervals: passed **[0.6545, 0.924]** and branch
+accuracy **[0.6944, 0.945]** over the whole suite, and passed **[0.5478, 0.91]** over the real
+photographs. The real subset is not a clean holdout. The thresholds were calibrated on the
+synthetic fixtures, but the photographs were in the suite while the policy was being built, so
+read the real figure as a check that the thresholds survive photographic texture, not as an
+unseen-data estimate. The interval is wide because the suite is small, which is the honest reading
+of 29 scenarios.
 Macro F1 averages the classes present in the ground truth: the defect `MISSED` row (support 0, one
 false positive) is listed below but sits outside that average.
 

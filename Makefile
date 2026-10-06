@@ -1,6 +1,6 @@
 COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo docker compose || echo docker-compose)
 
-.PHONY: dev build test lint typecheck verify-runtime eval deploy weights demo smoke smoke-jev
+.PHONY: dev build test lint typecheck verify-runtime eval deploy weights demo smoke smoke-jev latency
 
 weights:
 	AFTERIMAGE_WEIGHTS_DIR=models python3 services/perception/weights.py
@@ -37,3 +37,6 @@ smoke-jev:
 
 deploy:
 	./deploy.sh
+
+latency:
+	infra/latency.sh "$(SINCE)"

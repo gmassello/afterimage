@@ -443,7 +443,9 @@ These come from the function's own `REPORT` lines. The log group dates from the 
 redeploy, so the window is a fortnight rather than the full 30 days of retention: **2–16 September
 2026, 4,906 invocations**, 211 of which paid an init and 21 of which ran longer than 10 s and are
 the real inspections. Four Logs Insights queries over `/aws/lambda/afterimage-api` reproduce every
-figure above — cold, warm, inspection, and the totals:
+figure above — cold, warm, inspection, and the totals. `make latency SINCE=<ISO date>` runs all four
+over the window from that date and prints the per-inspection cost; the `Latency` workflow runs the
+same `infra/latency.sh` through OIDC:
 
 ```text
 filter @type="REPORT" and ispresent(@initDuration)
@@ -527,6 +529,7 @@ network and no tokens.
 | Defect classification accuracy | **0.8571** · macro F1 **0.8542** |
 | Mean IoU of the located region | **0.7875**, 12 of 14 at IoU ≥ 0.5 |
 | `human_approval` precision | **1.0** over 14 scenarios — a human was never called for nothing |
+| Real photographs passed | **14 of 18**, 95% Wilson interval [0.5478, 0.91] |
 
 `eval/tests/test_published_numbers.py` parses this page and `docs/EVALUATION.md` and fails the suite
 if either disagrees with `eval/results/latest/results.json`. A number here cannot go stale silently.

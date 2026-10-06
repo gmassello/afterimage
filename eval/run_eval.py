@@ -129,6 +129,18 @@ def _defect_scored(record: dict) -> bool:
     return record["severity_ran"] or record["expected_defect"] != NO_DEFECT
 
 
+def _subset(records: list[dict]) -> dict:
+    passed = sum(1 for r in records if r["passed"])
+    return {
+        "scenarios": len(records),
+        "passed": passed,
+        "branch_accuracy": metrics_module.accuracy(
+            (r["expected_branch"], r["branch"] or "failed") for r in records
+        ),
+        "passed_interval": metrics_module.wilson(passed, len(records)),
+    }
+
+
 def summarise(records: list[dict]) -> dict:
     branch_pairs = [(r["expected_branch"], r["branch"] or "failed") for r in records]
     defect_pairs = [
@@ -153,6 +165,16 @@ def summarise(records: list[dict]) -> dict:
             "accuracy": metrics_module.accuracy(defect_pairs),
             "macro": metrics_module.macro(defect_report),
             "per_class": defect_report,
+        },
+        "interval": {
+            "passed": metrics_module.wilson(sum(1 for r in records if r["passed"]), len(records)),
+            "branch_accuracy": metrics_module.wilson(
+                sum(1 for expected, got in branch_pairs if expected == got), len(branch_pairs)
+            ),
+        },
+        "by_source": {
+            source: _subset([r for r in records if r["source"] == source])
+            for source in ("real", "synthetic")
         },
         "localisation": {
             "measured": len(ious),
@@ -181,6 +203,12 @@ def render_summary(records: list[dict], summary: dict) -> str:
         "",
         f"Branch accuracy **{summary['branch']['accuracy']}**, macro F1 {summary['branch']['macro']['f1']}. "
         f"Defect accuracy **{summary['defect']['accuracy']}**, macro F1 {summary['defect']['macro']['f1']}.",
+        "",
+        f"95% Wilson interval: passed {summary['interval']['passed']}, branch accuracy "
+        f"{summary['interval']['branch_accuracy']}. Real photographs alone: "
+        f"{summary['by_source']['real']['passed']} of {summary['by_source']['real']['scenarios']} passed, "
+        f"branch accuracy {summary['by_source']['real']['branch_accuracy']}, passed interval "
+        f"{summary['by_source']['real']['passed_interval']}.",
         "",
     ]
     lines += _table(summary["branch"]["per_class"], "Agent branch")

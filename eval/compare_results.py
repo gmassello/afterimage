@@ -19,6 +19,7 @@ def figures(summary: dict) -> dict:
         "localisation.mean_iou": summary["localisation"]["mean_iou"],
         "localisation.measured": summary["localisation"]["measured"],
         "localisation.at_least_half": summary["localisation"]["at_least_half"],
+        "by_source.real.branch_accuracy": summary["by_source"]["real"]["branch_accuracy"],
     }
 
 
@@ -28,6 +29,11 @@ def differences(published: dict, measured: dict) -> list[str]:
         for name in EXACT
         if published[name] != measured[name]
     ]
+    if published["by_source"]["real"]["passed"] != measured["by_source"]["real"]["passed"]:
+        drift.append(
+            f"by_source.real.passed: published {published['by_source']['real']['passed']}, "
+            f"measured {measured['by_source']['real']['passed']}"
+        )
     for key in ("branch", "defect"):
         published_support = {label: row["support"] for label, row in published[key]["per_class"].items()}
         measured_support = {label: row["support"] for label, row in measured[key]["per_class"].items()}

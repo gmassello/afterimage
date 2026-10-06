@@ -30,7 +30,7 @@ Developer documentation: [functional guide](docs/FUNCTIONAL.md) ·
 [backend](docs/BACKEND.md) · [frontend](docs/FRONTEND.md)
 
 <p align="center">
-  <sub>Response time is the median of seven warm requests to the Function URL, measured with <code>curl -o /dev/null -w '%{http_code} %{time_total}'</code> on 15 September 2026 (range 0.57–0.67 s). It is a warm figure: an EventBridge rule replays a synthetic <code>/health</code> every five minutes. Cold, the function itself takes <b>2.34 s</b> to start — the median of 211 cold starts in the fortnight of logs the group holds — on top of that same network time. An inspection takes <b>20.4 s</b> and bills <b>$0.0005</b> at list price. <a href="docs/TECHNICAL_REPORT.md#7-deployment-and-responsible-operation">Where each figure comes from</a>.</sub>
+  <sub>Response time is the median of seven warm requests to the Function URL, measured with <code>curl -o /dev/null -w '%{http_code} %{time_total}'</code> on 15 September 2026 (range 0.57–0.67 s). It is a warm figure: an EventBridge rule replays a synthetic <code>/health</code> every five minutes. Cold, the function itself takes <b>2.34 s</b> to start — the median of 211 cold starts in the fortnight of logs the group holds — on top of that same network time. An inspection takes <b>20.4 s</b> and bills <b>$0.0005</b> at list price. <code>make latency SINCE=&lt;ISO date&gt;</code> reads every figure back from the function logs. <a href="docs/TECHNICAL_REPORT.md#7-deployment-and-responsible-operation">Where each figure comes from</a>.</sub>
 </p>
 
 <p align="center">
@@ -50,7 +50,7 @@ Developer documentation: [functional guide](docs/FUNCTIONAL.md) ·
 
 ---
 
-Built for the [OpenCV AI Competition 2026](https://opencv26.devpost.com/) — Agentic Vision path ([the submission](https://devpost.com/software/afterimage-ibp376)). Every branch below is decided in code by `services/agent/policy.py` and recorded with the numeric value that triggered it, so any run can be replayed from its trace.
+Built for the [OpenCV AI Competition 2026](https://opencv26.devpost.com/) — Agentic Vision path ([the submission](https://devpost.com/software/afterimage-ibp376)). Every branch below is decided in code by `services/agent/policy.py` and recorded with the numeric value that triggered it, so any run can be replayed from its trace. One inspection runs on an `arm64` Lambda in about 20 s and costs **$0.0005** at list price ([how it is measured](docs/TECHNICAL_REPORT.md#7-deployment-and-responsible-operation)).
 
 **Two of the APIs this project runs on do not exist in OpenCV 4** — it cannot be ported back to 4.x by changing an import.
 
@@ -93,6 +93,7 @@ A failed run remains immutable and can be retried from recent activity, and a ru
 | Defect macro F1 | 0.8542 | precision 0.75 or better on every defect class |
 | Mean IoU | 0.7875 | 14 localised regions, 12 at IoU ≥ 0.5 |
 | Scenarios passed | 24 / 29 | 14 real-photograph and 10 synthetic scenarios |
+| Real photographs passed | 14 / 18 | 95% Wilson interval [0.5478, 0.91]; the whole suite [0.6545, 0.924] |
 
 ### Where it fails
 

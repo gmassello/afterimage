@@ -58,6 +58,7 @@ The supported workflow uses Docker Compose and `make`:
 - `make smoke` builds and runs the Lambda image and requires `/health` calibration `aligned` and the landing `<title>afterimage`.
 - `make smoke-jev` measures the optional Jev checks at `jev_floor` on labelled sentences; needs `AI_GATEWAY_API_KEY`.
 - `make deploy` deploys through ECR, buildx for `arm64`, and CloudFormation; it requires `GOOGLE_API_KEY`.
+- `make latency SINCE=<ISO date>` runs `infra/latency.sh`: the four Logs Insights queries behind the published latency and the per-inspection cost; needs AWS credentials for the afterimage account (the `Latency` workflow has them through OIDC).
 
 Run everything in the `arm64` container. There is no local `cv2`, so plain host-side `pytest` does not work. Neural-path tests and the `dev`, `test`, `demo`, `eval`, and `deploy` workflows require the downloaded weights. To run one test:
 

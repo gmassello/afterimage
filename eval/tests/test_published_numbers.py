@@ -58,6 +58,23 @@ def test_headline_figures_match_the_artefact(published, measured):
     )
 
 
+def test_the_real_subset_and_its_intervals_match_the_artefact(published, measured):
+    real = measured["by_source"]["real"]
+    interval = measured["interval"]
+    assert _claim(published, r"\*\*(\d+) of \d+ passed\*\* and branch accuracy") == str(real["passed"])
+    assert _claim(published, r"passed\*\* and branch accuracy is \*\*([\d.]+)\*\*") == str(real["branch_accuracy"])
+    assert _claim(published, r"passed \*\*(\[[\d., ]+\])\*\* and branch") == str(interval["passed"])
+    assert _claim(published, r"branch\naccuracy \*\*(\[[\d., ]+\])\*\*") == str(interval["branch_accuracy"])
+    assert _claim(published, r"passed \*\*(\[[\d., ]+\])\*\* over the real") == str(real["passed_interval"])
+    readme = README.read_text()
+    assert _claim(readme, r"\| Real photographs passed \| (\d+ / \d+) \|") == f"{real['passed']} / {real['scenarios']}"
+    assert _claim(readme, r"Wilson interval (\[[\d., ]+\]); the whole") == str(real["passed_interval"])
+    assert _claim(readme, r"the whole suite (\[[\d., ]+\])") == str(interval["passed"])
+    report = REPORT.read_text()
+    assert _claim(report, r"\| Real photographs passed \| \*\*(\d+) of") == str(real["passed"])
+    assert _claim(report, r"\*\*\d+ of \d+\*\*, 95% Wilson interval (\[[\d., ]+\])") == str(real["passed_interval"])
+
+
 def test_the_page_counts_the_scenarios_it_leaves_out_of_the_defect_table(published, measured):
     scored = sum(row["support"] for row in measured["defect"]["per_class"].values())
     assert _claim(published, r"The (\w+) scenarios left out of this table") == SPELLED[

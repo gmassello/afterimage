@@ -1,3 +1,6 @@
+import math
+
+
 def labels(pairs) -> list[str]:
     return sorted({label for pair in pairs for label in pair})
 
@@ -59,3 +62,16 @@ def iou(first, second) -> float:
     overlap_height = max(0, min(ay + ah, by + bh) - max(ay, by))
     intersection = overlap_width * overlap_height
     return _ratio(intersection, aw * ah + bw * bh - intersection)
+
+
+def wilson(successes: int, total: int, z: float = 1.96) -> list[float]:
+    if not total:
+        return [0.0, 0.0]
+    share = successes / total
+    centre = share + z * z / (2 * total)
+    spread = z * math.sqrt(share * (1 - share) / total + z * z / (4 * total * total))
+    denominator = 1 + z * z / total
+    return [
+        round(max(0.0, (centre - spread) / denominator), 4),
+        round(min(1.0, (centre + spread) / denominator), 4),
+    ]

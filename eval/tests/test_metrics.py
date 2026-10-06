@@ -52,3 +52,10 @@ def test_macro_skips_a_class_that_was_only_ever_predicted():
     report = metrics.per_class([("a", "a"), ("a", "b")])
     assert report["b"]["support"] == 0
     assert metrics.macro(report) == {"precision": 1.0, "recall": 0.5, "f1": 0.6667}
+
+
+def test_wilson_matches_the_textbook_interval_and_stays_inside_zero_and_one():
+    assert metrics.wilson(24, 29) == [0.6545, 0.924]
+    assert metrics.wilson(0, 10) == [0.0, 0.2775]
+    assert metrics.wilson(10, 10) == [0.7225, 1.0]
+    assert metrics.wilson(0, 0) == [0.0, 0.0]

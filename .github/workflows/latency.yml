@@ -21,14 +21,9 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Inspection latency
+      - uses: actions/checkout@v4
+
+      - name: Latency and cost
         env:
           SINCE: ${{ inputs.since }}
-        run: |
-          ID=$(aws logs start-query --log-group-name /aws/lambda/afterimage-api \
-            --start-time "$(date -d "$SINCE" +%s)" --end-time "$(date +%s)" \
-            --query-string 'filter @type="REPORT" and @duration > 10000
-              | stats count(), pct(@duration,50), min(@duration), max(@duration), pct(@billedDuration,50), max(@maxMemoryUsed)/1048576' \
-            --query queryId --output text)
-          until [ "$(aws logs get-query-results --query-id "$ID" --query status --output text)" = Complete ]; do sleep 2; done
-          aws logs get-query-results --query-id "$ID" --query results --output json
+        run: infra/latency.sh "$SINCE"

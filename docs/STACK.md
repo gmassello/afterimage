@@ -86,3 +86,4 @@ Every field in `services/agent/policy.py:Policy` can also be overridden with
 | `make smoke` | Builds and runs the Lambda image; requires `/health` calibration `aligned` and the landing title. |
 | `make smoke-jev` | Measures Jev's recall and precision at `jev_floor` on labelled sentences; needs `AI_GATEWAY_API_KEY`. |
 | `make deploy` | Builds and deploys the AWS stack. |
+| `make latency SINCE=<ISO date>` | Reads cold, warm and inspection latency, totals and the per-inspection cost back from the function logs. |

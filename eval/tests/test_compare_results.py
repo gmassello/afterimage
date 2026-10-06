@@ -17,6 +17,7 @@ SUMMARY = {
         "per_class": {"hotspot": {"support": 3}, "NONE": {"support": 12}},
     },
     "localisation": {"mean_iou": 0.7875, "measured": 14, "at_least_half": 12},
+    "by_source": {"real": {"passed": 15, "branch_accuracy": 0.8333}},
 }
 
 
@@ -72,3 +73,12 @@ def test_a_changed_class_support_is_rejected_even_inside_the_tolerance(tmp_path)
     with pytest.raises(SystemExit) as changed:
         compare_results.main([published, str(_results(tmp_path / "regrouped", regrouped))])
     assert "defect.per_class support" in str(changed.value)
+
+
+def test_a_real_photograph_that_stops_passing_is_rejected(tmp_path):
+    published = str(_results(tmp_path / "published", SUMMARY))
+    worse = _variant()
+    worse["by_source"]["real"]["passed"] = 14
+    with pytest.raises(SystemExit) as changed:
+        compare_results.main([published, str(_results(tmp_path / "worse", worse))])
+    assert "by_source.real.passed" in str(changed.value)

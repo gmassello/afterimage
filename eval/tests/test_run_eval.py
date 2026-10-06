@@ -112,3 +112,16 @@ def test_the_ablation_flags_reach_every_scenario(tmp_path, monkeypatch):
     run_eval.main()
 
     assert seen == [{"detector": run_eval.alignment.CLASSIC, "memory": False}]
+
+
+def test_the_summary_splits_real_from_synthetic_and_the_parts_add_up():
+    records = [
+        dict(fake_run_scenario(SCENARIOS[1], None), source=source, passed=passed)
+        for source, passed in (("real", True), ("real", False), ("synthetic", True))
+    ]
+    summary = run_eval.summarise(records)
+    parts = summary["by_source"]
+    assert parts["real"]["scenarios"] + parts["synthetic"]["scenarios"] == summary["scenarios"]
+    assert parts["real"]["passed"] + parts["synthetic"]["passed"] == summary["passed"]
+    assert parts["real"]["passed_interval"] == run_eval.metrics_module.wilson(1, 2)
+    assert summary["interval"]["passed"] == run_eval.metrics_module.wilson(2, 3)

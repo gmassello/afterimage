@@ -123,18 +123,48 @@
         }
       }
     },
+    "interval": {
+      "passed": [
+        0.076,
+        0.3455
+      ],
+      "branch_accuracy": [
+        0.076,
+        0.3455
+      ]
+    },
+    "by_source": {
+      "real": {
+        "scenarios": 18,
+        "passed": 2,
+        "branch_accuracy": 0.1111,
+        "passed_interval": [
+          0.031,
+          0.328
+        ]
+      },
+      "synthetic": {
+        "scenarios": 11,
+        "passed": 3,
+        "branch_accuracy": 0.2727,
+        "passed_interval": [
+          0.0975,
+          0.5657
+        ]
+      }
+    },
     "localisation": {
       "measured": 0,
       "mean_iou": null,
       "at_least_half": 0
     },
-    "generated_at": "2026-09-27T01:26:47+00:00"
+    "generated_at": "2026-10-06T21:41:12+00:00"
   },
   "scenarios": [
     {
       "id": "first-baseline-synthetic",
       "source": "synthetic",
-      "run_id": "645323f0b7e3",
+      "run_id": "40be73716472",
       "status": "completed",
       "expected_branch": "first_baseline",
       "branch": "first_baseline",
@@ -179,7 +209,7 @@
     {
       "id": "recapture-blur-synthetic",
       "source": "synthetic",
-      "run_id": "2e92882752da",
+      "run_id": "16059eb2ed7b",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
@@ -224,7 +254,7 @@
     {
       "id": "recapture-overexposed-synthetic",
       "source": "synthetic",
-      "run_id": "8f6a4df5bf37",
+      "run_id": "6c69b2781de8",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
@@ -269,7 +299,7 @@
     {
       "id": "recapture-partial-frame-synthetic",
       "source": "synthetic",
-      "run_id": "10e4111fd32d",
+      "run_id": "44fb9e86cc08",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "first_baseline",
@@ -314,7 +344,7 @@
     {
       "id": "unrecognized-asset-synthetic",
       "source": "synthetic",
-      "run_id": "37c217af23d5",
+      "run_id": "e08263bf98ae",
       "status": "completed",
       "expected_branch": "unrecognized_asset",
       "branch": "first_baseline",
@@ -359,7 +389,7 @@
     {
       "id": "no-change-synthetic",
       "source": "synthetic",
-      "run_id": "f50063cebc03",
+      "run_id": "6e096ae3cd9c",
       "status": "completed",
       "expected_branch": "no_change",
       "branch": "first_baseline",
@@ -404,7 +434,7 @@
     {
       "id": "crack-synthetic",
       "source": "synthetic",
-      "run_id": "95eb12a16bd6",
+      "run_id": "2e4d4a2dbede",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -454,7 +484,7 @@
     {
       "id": "hotspot-synthetic",
       "source": "synthetic",
-      "run_id": "ae0556f5887c",
+      "run_id": "677bf2aa31c1",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -504,7 +534,7 @@
     {
       "id": "delamination-synthetic",
       "source": "synthetic",
-      "run_id": "915673cc9e16",
+      "run_id": "d346e0b18a74",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -554,7 +584,7 @@
     {
       "id": "soiling-synthetic",
       "source": "synthetic",
-      "run_id": "c82a9d9fa087",
+      "run_id": "897e906f4578",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -599,7 +629,7 @@
     {
       "id": "faint-spot-synthetic",
       "source": "synthetic",
-      "run_id": "cea8b31c52ed",
+      "run_id": "07fdc6f88f57",
       "status": "completed",
       "expected_branch": "auto_write",
       "branch": "first_baseline",
@@ -651,7 +681,7 @@
     {
       "id": "crack-real-closeup",
       "source": "real",
-      "run_id": "bf3b573b73f2",
+      "run_id": "3e29e1705008",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -701,7 +731,7 @@
     {
       "id": "crack-real-israel-center",
       "source": "real",
-      "run_id": "b8e9dcf00c9b",
+      "run_id": "093b71ce5acd",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -751,7 +781,7 @@
     {
       "id": "hotspot-real-plain",
       "source": "real",
-      "run_id": "2fd8399ba2a2",
+      "run_id": "b081e4436fe2",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "recapture",
@@ -801,7 +831,7 @@
     {
       "id": "hotspot-real-cleaning",
       "source": "real",
-      "run_id": "ed4c3da8feb7",
+      "run_id": "f55031447b90",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -851,7 +881,7 @@
     {
       "id": "delamination-real-jetion",
       "source": "real",
-      "run_id": "d48a3473133c",
+      "run_id": "1abb873565e1",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -901,7 +931,7 @@
     {
       "id": "delamination-real-packed",
       "source": "real",
-      "run_id": "a1c24e974e4a",
+      "run_id": "2d023b3ef844",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -951,7 +981,7 @@
     {
       "id": "faint-spot-real-et-solar",
       "source": "real",
-      "run_id": "84ab0b9084f4",
+      "run_id": "58e0513ee1c3",
       "status": "completed",
       "expected_branch": "auto_write",
       "branch": "first_baseline",
@@ -1003,7 +1033,7 @@
     {
       "id": "no-change-real-et-solar",
       "source": "real",
-      "run_id": "1e1d6ee8a26b",
+      "run_id": "cbb4c9327a10",
       "status": "completed",
       "expected_branch": "no_change",
       "branch": "first_baseline",
@@ -1048,7 +1078,7 @@
     {
       "id": "no-change-real-warehouse",
       "source": "real",
-      "run_id": "b6676b50e82d",
+      "run_id": "2b227177d3f0",
       "status": "completed",
       "expected_branch": "no_change",
       "branch": "first_baseline",
@@ -1093,7 +1123,7 @@
     {
       "id": "recapture-blur-real-rooftop",
       "source": "real",
-      "run_id": "a399fa9365cb",
+      "run_id": "40a5123fdbe5",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
@@ -1138,7 +1168,7 @@
     {
       "id": "recapture-overexposed-real-ground",
       "source": "real",
-      "run_id": "001146d2f42b",
+      "run_id": "7ea8bad062ad",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "recapture",
@@ -1183,7 +1213,7 @@
     {
       "id": "unrecognized-asset-real-marine",
       "source": "real",
-      "run_id": "14acde265109",
+      "run_id": "7dfae3532859",
       "status": "completed",
       "expected_branch": "unrecognized_asset",
       "branch": "first_baseline",
@@ -1228,7 +1258,7 @@
     {
       "id": "soiling-real-forest",
       "source": "real",
-      "run_id": "8304ed20a09b",
+      "run_id": "6c8773f8d02e",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -1273,7 +1303,7 @@
     {
       "id": "recapture-partial-frame-real-arapaho",
       "source": "real",
-      "run_id": "367628999f6d",
+      "run_id": "85fe6f9868a9",
       "status": "completed",
       "expected_branch": "recapture",
       "branch": "first_baseline",
@@ -1318,7 +1348,7 @@
     {
       "id": "crack-real-tororo",
       "source": "real",
-      "run_id": "96c49dcd9186",
+      "run_id": "15a1ee17a60b",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -1368,7 +1398,7 @@
     {
       "id": "hotspot-real-ogiinuur",
       "source": "real",
-      "run_id": "e2ffdced24bd",
+      "run_id": "076ba1d1944c",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -1418,7 +1448,7 @@
     {
       "id": "delamination-real-bifacial",
       "source": "real",
-      "run_id": "89d82245ce3f",
+      "run_id": "699910f21da3",
       "status": "completed",
       "expected_branch": "human_approval",
       "branch": "first_baseline",
@@ -1468,7 +1498,7 @@
     {
       "id": "faint-spot-real-hannover-roof",
       "source": "real",
-      "run_id": "9ef5960d759a",
+      "run_id": "217ecee238f7",
       "status": "completed",
       "expected_branch": "auto_write",
       "branch": "first_baseline",
