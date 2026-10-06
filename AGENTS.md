@@ -93,7 +93,7 @@ Tests use `pytest`; files and test functions follow `test_*.py`. Add focused reg
 
 ## Required Gates
 
-- `eval/tests/test_published_numbers.py` validates figures in `README.md`, `docs/EVALUATION.md`, `docs/TECHNICAL_REPORT.md`, and `video/script.tsv` against `eval/results/latest/results.json`. The `eval` job in CI scores the dataset again and `eval/compare_results.py` fails when the committed artefact no longer matches a fresh run. After changing a threshold or perception metric, rerun `make eval` and update every published number.
+- `eval/tests/test_published_numbers.py` validates figures in `README.md`, `docs/EVALUATION.md`, `docs/TECHNICAL_REPORT.md`, and `video/script.tsv` against `eval/results/latest/results.json`. The `eval` job in CI scores the dataset again and `eval/compare_results.py` fails when the committed artefact no longer matches a fresh run. After changing a threshold or perception metric, rerun `make eval` and update every published number. The same job rescores the ablation with ORB and compares it with `eval/results/orb-only`, so a perception change also needs `make eval ARGS="--detector classic --out eval/results/orb-only"` and the ORB column of the ablation tables in `README.md` and `docs/EVALUATION.md` updated in the same commit.
 - `services/perception/tests/test_import_safety.py` imports every non-test module under `services/` with a bare environment. No module may require configuration, weights, or AWS at import time; use cached client factories.
 - `docs/` and `README.md` are part of the deliverable. Changes to the loop, a threshold, or an endpoint usually require updates to `docs/TECHNICAL_REPORT.md` and the README flowchart.
 
