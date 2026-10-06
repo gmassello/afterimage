@@ -96,8 +96,9 @@ For an asset without a baseline, the loop runs quality assessment and either req
 or creates the first baseline. For an existing asset, the enforced order is quality, initial
 alignment, diff, optional crop-and-rescan, and severity. Alignment starts with ALIKED and LightGlue
 when weights are available and may retry with ORB; without weights it starts with ORB and does not
-perform that retry. The driver can choose arguments and phrasing, but `NEXT_TOOL`, policy validation,
-and the final submit contract prevent it from skipping stages or changing the branch.
+perform that retry. The driver chooses phrasing only: the loop fills every tool's arguments from the last
+verdict and records any the driver passed as `llm_args`, while `NEXT_TOOL`, policy validation, and the
+final submit contract prevent it from skipping stages or changing the branch.
 
 Three checks follow a verdict without changing it. With `AI_GATEWAY_API_KEY` set, Jev is asked
 whether the submit message overstates the verdict (`phrasing` stage; a rejection sends the submit
@@ -163,12 +164,18 @@ requests and the long inspection request. There is no external queue or independ
 - ALIKED and LightGlue are the primary alignment path, with ORB as a detector-specific fallback.
 - Severe findings cannot update asset memory before a human decision.
 - Baseline promotion is timestamp-aware, so an older capture cannot replace a newer reference.
-- Run claiming is explicit but not atomic across competing workers.
+- Run claiming is a write-once `claim.json` (S3 `If-None-Match` or a local hard link), so two
+  executions of one run cannot both start.
 - A failed-run retry creates a new `unstarted` run with the original asset and capture. It never
   appends to or executes the failed run, and repeated requests return the recorded replacement.
 - HTTP failures have stable machine-readable codes. Content negotiation renders the same failure as
   HTML for browsers or `{detail, code, retryable}` JSON for API clients.
 - Inspection and `META` summary updates are not a DynamoDB transaction.
+- Baseline promotion is not conditional: two concurrent promotions of one asset can leave two
+  baselines marked current in the timeline, while `current_baseline()` still picks the newest.
+- Retention counts from promotion, so a baseline still in use expires after 180 days.
+- A run that already finished is never reopened as failed; a failure between storing the
+  inspection and promoting its baseline still is, and its retry stores the capture again.
 - In-process image and asset caches are not bounded.
 - Two concurrent event appends on one run keep the last writer only.
 - Activity filters reach the 200 most recent runs, not the whole archive.

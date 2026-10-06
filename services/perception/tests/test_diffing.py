@@ -1,7 +1,8 @@
+import numpy as np
 import pytest
 
 from services.perception.alignment import CLASSIC, align_to_baseline
-from services.perception.diffing import crop_and_rescan, diff_against_memory
+from services.perception.diffing import crop_and_rescan, diff_against_memory, fill_uncovered
 from services.perception.panels import (
     cell_bbox,
     centre,
@@ -72,3 +73,19 @@ def test_the_uncovered_border_of_a_warp_is_not_a_change(panel):
 
     assert unmasked.changed_ratio > masked.changed_ratio
     assert not masked.regions
+
+
+def test_rescan_ignores_pixels_the_warp_never_covered(panel):
+    damaged = with_faint_spot(panel, *CRACK_CELL)
+    region = diff_against_memory(damaged, panel).regions[0]
+    x = region.bbox[0]
+    uncovered = damaged.copy()
+    uncovered[:, :x] = 0
+    valid_mask = np.full(panel.shape[:2], 255, dtype=np.uint8)
+    valid_mask[:, :x] = 0
+
+    unmasked = crop_and_rescan(uncovered, panel, region.bbox)
+    masked = crop_and_rescan(fill_uncovered(uncovered, panel, valid_mask), panel, region.bbox)
+
+    assert len(unmasked.regions) > len(masked.regions)
+    assert len(masked.regions) == len(crop_and_rescan(damaged, panel, region.bbox).regions)

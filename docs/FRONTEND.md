@@ -107,6 +107,10 @@ The resolution order is:
 - Language: valid query parameter, then cookie, then `Accept-Language`, then English.
 - Register: valid query parameter, then cookie, then plain.
 
+The header toggles keep the page's other query parameters (filters, preselection, tour step).
+`app.js` rewrites their links over the current URL, or over the page's `data-get-path` when the
+server rendered it in answer to a POST, so switching language there never requests a POST-only path.
+
 The API stores valid preferences in independent one-year cookies. Poll requests omit query strings,
 so cookies carry the selected preferences across live updates.
 

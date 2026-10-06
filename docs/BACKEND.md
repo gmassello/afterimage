@@ -63,12 +63,14 @@ metadata; raw IP addresses are not written to the trace.
 ## Agent loop
 
 `services/agent/loop.py` creates 12-character hexadecimal run IDs, appends `run_started`, resumes an
-opened run, and prevents ordinary duplicate execution through a claim derived from events. The claim
-is not a distributed atomic lock.
+opened run, and prevents duplicate execution by writing `claim.json` write-once before the first
+tool runs; a second execute finds it and returns 409.
 
 Retry is separate from execution. `POST /runs/{run_id}/retry` accepts only a run whose final
 `run_finished.status` is `failed`. It conditionally writes `retry.json` on that original run, then
-opens a new `unstarted` run with the same `asset_id` and `capture_key` plus `retry_of`. A repeated or
+opens a new `unstarted` run with the same `asset_id` and `capture_key` plus `retry_of`; when it
+executes, the loop copies the capture into the retry's own `assets/{asset_id}/{run_id}/` folder so
+its derived images never overwrite the original run's evidence. A repeated or
 concurrent request reads the marker and returns the same replacement. The JSON response is:
 
 ```json

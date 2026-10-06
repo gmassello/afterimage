@@ -660,3 +660,43 @@ def test_a_verdict_whose_claim_is_still_in_flight_is_a_conflict(client, tmp_path
     refused = client.post(f"/queue/{run_id}/approve")
     assert refused.status_code == 409
     assert refused.json()["code"] == "approval_already_resolved"
+
+
+def test_a_page_rendered_by_a_post_points_its_toggles_at_a_get_page(client):
+    browser = client.post(
+        "/inspections",
+        data={"asset_id": unique("api-get-path")},
+        files={"image": ("phone.heic", b"not an image", "image/heic")},
+        headers={"accept": "text/html"},
+    )
+    assert "data-get-path='/app'" in browser.text
+    assert "data-get-path" not in client.get("/activity?q=x", headers={"accept": "text/html"}).text
+
+
+def test_the_approver_fingerprint_ignores_a_forged_first_forwarded_address():
+    from starlette.requests import Request
+
+    from services.api.app import _actor
+
+    def fingerprint(forwarded):
+        return _actor(Request({
+            "type": "http",
+            "headers": [(b"x-forwarded-for", forwarded), (b"user-agent", b"ua")],
+            "client": ("127.0.0.1", 1),
+        }))
+
+    assert fingerprint(b"6.6.6.6, 1.2.3.4") == fingerprint(b"1.2.3.4")
+    assert fingerprint(b"1.2.3.4, 6.6.6.6") != fingerprint(b"1.2.3.4")
+
+
+@localstack
+def test_an_uploaded_capture_is_stored_under_its_run_id(client):
+    asset_id = unique("api-run-folder")
+    response = client.post(
+        "/inspections",
+        data={"asset_id": asset_id},
+        files={"image": ("panel.png", png_bytes(PANEL), "image/png")},
+    )
+    run_id = response.headers["location"].rsplit("/", 1)[-1]
+    started = runs.read(runs.runs_dir() / run_id, runs.EVENTS)[0]
+    assert started["capture_key"] == f"assets/{asset_id}/{run_id}/capture.png"

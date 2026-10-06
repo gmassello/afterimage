@@ -24,9 +24,9 @@ SYSTEM = (
     "Inspect the capture by calling the perception tools in order: assess_quality, "
     "align_to_baseline, diff_against_memory, crop_and_rescan only when mandated, "
     "classify_severity. Every tool result carries a 'policy' verdict computed in code "
-    "from calibrated thresholds; you MUST follow its 'branch' - your judgment covers "
-    "phrasing the operator-facing message and passing the right arguments, never "
-    "overriding a verdict. When the verdict is terminal, call submit with that exact "
+    "from calibrated thresholds; you MUST follow its 'branch'. The loop fills every tool's "
+    "arguments from that verdict, so any you pass are recorded and ignored. Your judgment "
+    "covers phrasing the operator-facing message, never overriding a verdict. When the verdict is terminal, call submit with that exact "
     "branch and one concrete sentence for the operator (e.g. recapture guidance built "
     "from the failing metric). Never fabricate metrics; only tool results count."
 )
@@ -99,8 +99,14 @@ class AlreadyStarted(Exception):
     pass
 
 
-def start(asset_id: str, capture_key: str, runs_dir: str | Path = "runs") -> dict:
-    run_id = uuid.uuid4().hex[:12]
+def new_run_id() -> str:
+    return uuid.uuid4().hex[:12]
+
+
+def start(
+    asset_id: str, capture_key: str, runs_dir: str | Path = "runs", run_id: str | None = None
+) -> dict:
+    run_id = run_id or new_run_id()
     return trace.emit(
         Path(runs_dir) / run_id,
         "run_started",
@@ -115,9 +121,13 @@ async def resume(run_id: str, runs_dir: str | Path = "runs", **kwargs) -> RunRes
     started = trace.started_event(events)
     if started is None:
         raise FileNotFoundError(run_id)
-    # ponytail: non-atomic claim, so two racing clients could both pass it; enough for a
-    # single-operator demo endpoint, swap for a conditional DynamoDB write if that changes
     if trace.run_state(events) != trace.UNSTARTED:
+        raise AlreadyStarted(run_id)
+    try:
+        claimed, _ = runs.write_once(Path(runs_dir) / run_id, runs.CLAIM, {"ts": trace.now()})
+    except runs.ClaimInFlight:
+        claimed = False
+    if not claimed:
         raise AlreadyStarted(run_id)
     try:
         return await run(
@@ -130,6 +140,8 @@ async def resume(run_id: str, runs_dir: str | Path = "runs", **kwargs) -> RunRes
 
 
 def close_as_failed(run_dir: Path, message: str | BaseException) -> None:
+    if trace.run_state(trace.read_events(run_dir)) == trace.DONE:
+        return
     if isinstance(message, BaseException):
         message = f"{type(message).__name__}: {message}"
     trace.emit(run_dir, "run_finished", status=trace.FAILED, branch=None, message=message)
@@ -193,6 +205,9 @@ async def run(
             # ponytail: the trace does not say whether this capture moved the baseline pointer (an
             # older concurrent run files a historical one); the asset timeline does. Record it here
             # if auto_write ever needs to be audited without the timeline.
+            # ponytail: a failure between put_inspection and promote_baseline still closes the run as
+            # failed, and its retry writes the same capture again under a new run_id; an idempotent
+            # commit keyed on the capture is the upgrade if that ever matters
             hitl.commit(asset_id, run_id, captured_at, stage_metrics, image_keys, verdict)
         elif branch == policy_module.NO_CHANGE:
             store.put_inspection(
@@ -270,6 +285,13 @@ async def run(
             image_keys["capture"] = capture_key
             state.update(asset_id=asset_id, capture_key=capture_key)
 
+        if started.get("retry_of") and asset_id:
+            capture_key = images.put_image(
+                asset_id, run_id, "capture", images.get_image(capture_key)
+            )
+            image_keys["capture"] = capture_key
+            state.update(capture_key=capture_key)
+
         baseline = store.current_baseline(asset_id)
         if baseline is not None and not images.exists(baseline["image_key"]):
             return finish("failed", None, f"the baseline image is gone: {baseline['image_key']}")
@@ -304,15 +326,37 @@ async def run(
         ]
         tools.append(SUBMIT_TOOL)
 
+        def pinned(tool: str, verdict: dict) -> dict:
+            if tool == "align_to_baseline":
+                chosen = (
+                    alignment.CLASSIC if verdict["branch"] == policy_module.RETRY_CLASSIC
+                    else detector
+                )
+                return {"image_key": capture_key, "baseline_key": baseline_key, "detector": chosen}
+            if tool not in ("diff_against_memory", "crop_and_rescan", "classify_severity"):
+                return {}
+            args = {
+                "aligned_key": image_keys.get("aligned"),
+                "baseline_key": baseline_key,
+                "valid_mask_key": image_keys.get("valid_mask"),
+            }
+            if tool == "crop_and_rescan":
+                args["bbox"] = verdict["extra"]["bbox"]
+            if tool == "classify_severity":
+                args["bbox"] = verdict["extra"]["bbox"]
+                args["area_ratio"] = verdict["extra"]["area_ratio"]
+            return args
+
         expected_tool = "assess_quality"
+        expected_args: dict = {"image_key": capture_key}
         expected_branch: str | None = None
         tool_errors = 0
         history: list[dict] = [{
             "role": "user",
             "text": (
                 f"Inspect asset {asset_id}. Capture: {capture_key}. Baseline: {baseline_key}. "
-                f"Start with assess_quality, and use detector {detector!r} when aligning "
-                f"(on a retry_classic verdict, align again with detector {alignment.CLASSIC!r})."
+                "Start with assess_quality. The loop fills each tool's arguments from the "
+                "last policy verdict."
             ),
         }]
 
@@ -349,7 +393,9 @@ async def run(
                             {"error": WRONG_TOOL.format(expected=expected_tool)},
                         ))
                         continue
-                    metrics, span = await call(tool_call.name, tool_call.args)
+                    metrics, span = await call(tool_call.name, expected_args)
+                    if span is not None and dict(tool_call.args) != expected_args:
+                        span["llm_args"] = dict(tool_call.args)
                     if "error" in metrics:
                         tool_errors += 1
                         if tool_errors > 1:
@@ -363,6 +409,7 @@ async def run(
                         image_keys["aligned"] = metrics["aligned_key"]
                         image_keys["valid_mask"] = metrics["valid_mask_key"]
                     expected_tool = NEXT_TOOL.get(verdict["branch"], SUBMIT)
+                    expected_args = pinned(expected_tool, verdict)
                     expected_branch = verdict["branch"] if expected_tool == SUBMIT else None
                     responses.append((tool_call.name, {"metrics": metrics, "policy": verdict}))
             history.append({"role": "tool", "responses": responses})

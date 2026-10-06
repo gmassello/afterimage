@@ -67,6 +67,7 @@ class PolicyFollowingLLM:
                 "aligned_key": self.aligned_key,
                 "baseline_key": self.baseline_key,
                 "bbox": verdict["extra"]["bbox"],
+                "valid_mask_key": self.valid_mask_key,
             })
         elif branch == policy.CHANGE_CONFIRMED:
             call = ToolCall("classify_severity", {
@@ -74,6 +75,7 @@ class PolicyFollowingLLM:
                 "baseline_key": self.baseline_key,
                 "bbox": verdict["extra"]["bbox"],
                 "area_ratio": verdict["extra"]["area_ratio"],
+                "valid_mask_key": self.valid_mask_key,
             })
         else:
             call = ToolCall("submit", {"branch": branch, "message": f"inspection ended: {branch}"})

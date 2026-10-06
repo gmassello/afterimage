@@ -15,8 +15,8 @@ it substitutes is the language model, replaced by the scripted driver in
 
 That substitution costs nothing in validity and buys reproducibility. Branch verdicts are computed
 in code by `policy.evaluate()`, never by the model, and the loop rejects a submit that names the
-wrong branch (`loop.WRONG_BRANCH`, in `services/agent/loop.py`). The model supplies tool arguments and the final
-submit; it cannot move a threshold. So these numbers measure perception and policy — which is what
+wrong branch (`loop.WRONG_BRANCH`, in `services/agent/loop.py`). The loop fills every tool argument from the last
+verdict and the model supplies the final submit; it cannot move a threshold. So these numbers measure perception and policy — which is what
 "task effectiveness" means here — and they are identical on every run, with no network and no tokens.
 
 What the harness does **not** measure: detection of naturally occurring defects. Every lesion is
@@ -48,6 +48,8 @@ section.
 class and required decision path). **Most of the suite runs on photographs**: 18 of 29.
 
 Branch accuracy **0.8621**, macro F1 **0.8624**. Defect accuracy **0.8571**, macro F1 **0.8542**.
+Macro F1 averages the classes present in the ground truth: the defect `MISSED` row (support 0, one
+false positive) is listed below but sits outside that average.
 
 ### Agent branch
 

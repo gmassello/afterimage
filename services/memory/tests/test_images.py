@@ -1,4 +1,5 @@
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pytest
@@ -36,3 +37,14 @@ def test_an_array_round_trips_through_the_bucket():
 
     assert loaded.dtype == np.float32
     assert np.array_equal(loaded, stored)
+
+
+def test_the_cache_survives_concurrent_readers_and_evictions(monkeypatch):
+    monkeypatch.setattr(images, "get_png", lambda key: key.encode())
+    monkeypatch.setattr(images, "decode", lambda data: np.zeros((1, 1), dtype=np.uint8))
+    keys = [f"k{n}" for n in range(images.CACHE_MAX_IMAGES * 4)]
+
+    with ThreadPoolExecutor(max_workers=16) as pool:
+        list(pool.map(images.get_image, keys * 50))
+
+    assert len(images._cache) <= images.CACHE_MAX_IMAGES

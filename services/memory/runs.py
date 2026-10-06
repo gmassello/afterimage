@@ -15,6 +15,7 @@ EVENTS = "events.json"
 STATE = "state.json"
 RETRY = "retry.json"
 VERDICT = "verdict.json"
+CLAIM = "claim.json"
 
 STALE_AFTER_SECONDS = 900
 CLAIM_READ_ATTEMPTS = 3
@@ -99,11 +100,6 @@ def append(run_dir: Path, name: str, item) -> None:
     items = read(run_dir, name) or []
     items.append(item)
     write(run_dir, name, items)
-
-
-def last(run_dir: Path, name: str) -> Any:
-    items = read(run_dir, name) or []
-    return items[-1] if items else None
 
 
 def delete(run_dir: Path, name: str) -> None:

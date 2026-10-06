@@ -126,13 +126,13 @@ def test_reobservation_compares_what_memory_holds_with_what_was_written(
     monkeypatch, promoted, current, stored, branch, observed
 ):
     key = "assets/panel-gate/abcdef123456/capture.png"
-    monkeypatch.setattr(hitl.store, "history", lambda asset_id: [
-        {"sk": "BASELINE#2026-09-12", "inspection_id": "abcdef123456", "image_key": key},
-    ])
+    monkeypatch.setattr(hitl.store, "baseline_at", lambda asset_id, captured_at: {
+        "sk": f"BASELINE#{captured_at}", "inspection_id": "abcdef123456", "image_key": key,
+    })
     monkeypatch.setattr(hitl.store, "current_baseline", lambda asset_id: {"inspection_id": current})
     monkeypatch.setattr(hitl.images, "exists", lambda image_key: stored)
 
-    verdict = hitl.reobserve("panel-gate", "abcdef123456", promoted)
+    verdict = hitl.reobserve("panel-gate", "abcdef123456", "2026-09-12", promoted)
 
     assert verdict["branch"] == branch
     assert verdict["extra"]["observed"] == observed
@@ -142,7 +142,7 @@ def test_an_approval_records_the_reobservation_after_the_human_decision(tmp_path
     run_dir = tmp_path / "abcdef123456"
     _pending(run_dir)
     monkeypatch.setattr(hitl, "commit", lambda *args: True)
-    monkeypatch.setattr(hitl, "reobserve", lambda asset_id, inspection_id, promoted: {
+    monkeypatch.setattr(hitl, "reobserve", lambda asset_id, inspection_id, captured_at, promoted: {
         "input_metric": "baseline_consistent", "value": 1.0, "threshold": 1.0,
         "branch": "baseline_verified",
     })

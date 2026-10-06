@@ -152,6 +152,13 @@ def promote_baseline(
         "image_key": image_key,
         "quality_score": quality_score,
     }
+    # ponytail: the ttl and the bucket lifecycle count from promotion, so a baseline still in use
+    # expires after RETENTION_DAYS and the next capture starts a new memory; tag-filtered lifecycle
+    # plus a ttl refresh on each inspection is the upgrade if assets outlive that
+    # ponytail: read, put and supersede are not conditional, so two concurrent promotions of one
+    # asset can both leave the older baseline unmarked and the timeline shows two current ones;
+    # current_baseline() still picks the newest by sk. A ConditionExpression on superseded_by is
+    # the upgrade if that matters
     latest = _table().query(
         KeyConditionExpression=Key("pk").eq(asset_key(asset_id)) & Key("sk").begins_with(BASELINE),
         ScanIndexForward=False,
@@ -171,6 +178,11 @@ def promote_baseline(
             ExpressionAttributeValues={":inspection": inspection_id},
         )
     return promoted
+
+
+def baseline_at(asset_id: str, captured_at: str) -> dict | None:
+    item = _table().get_item(Key={"pk": asset_key(asset_id), "sk": f"{BASELINE}{captured_at}"})
+    return _plain(item["Item"]) if "Item" in item else None
 
 
 def current_baseline(asset_id: str) -> dict | None:

@@ -351,3 +351,73 @@ def test_every_demo_group_reaches_its_four_answers(group, tmp_path):
         if role == "defect":
             severity = [e for e in trace.read_events(result.run_dir) if e.get("tool") == "classify_severity"]
             assert severity[-1]["metrics"]["label"] == DEMO_LABEL[group]
+
+
+def test_a_failure_after_the_run_finished_does_not_reopen_it_as_failed(tmp_path):
+    run_dir = tmp_path / "finished"
+    trace.emit(run_dir, "run_started", run_id="finished", asset_id="a", capture_key="k")
+    trace.emit(run_dir, "run_finished", status="completed", branch="auto_write", message=None)
+
+    loop.close_as_failed(run_dir, OSError("state.json could not be written"))
+
+    finished = [event for event in trace.read_events(run_dir) if event["type"] == "run_finished"]
+    assert [event["status"] for event in finished] == ["completed"]
+
+
+class ArgumentOverridingLLM(PolicyFollowingLLM):
+    def generate(self, system, history, tools):
+        turn = super().generate(system, history, tools)
+        call = turn.calls[0]
+        if call.name == "align_to_baseline":
+            call = ToolCall(call.name, {**call.args, "detector": alignment.CLASSIC})
+        elif call.name in ("crop_and_rescan", "classify_severity"):
+            call = ToolCall(call.name, {**call.args, "bbox": [0, 0, *PANEL.shape[1::-1]],
+                                        "valid_mask_key": None})
+        return Turn(calls=(call,))
+
+
+@localstack
+def test_the_loop_pins_tool_arguments_and_records_the_ones_the_model_chose(tmp_path):
+    asset = unique("loop-pinned")
+    baseline_key = seed_asset(asset, PANEL)
+    capture_key = upload_capture(asset, with_crack(PANEL, 2, 4))
+    llm = ArgumentOverridingLLM(capture_key, baseline_key, detector())
+    result = run_loop(asset, capture_key, llm, tmp_path)
+
+    assert result.branch == "human_approval"
+    spans = {e["tool"]: e for e in trace.read_events(result.run_dir) if e["type"] == "tool_call"}
+    assert spans["align_to_baseline"]["args"]["detector"] == detector()
+    confirmed = next(d for d in result.decisions if d["branch"] == "change_confirmed")
+    severity = spans["classify_severity"]
+    assert severity["args"]["bbox"] == confirmed["extra"]["bbox"]
+    assert severity["args"]["valid_mask_key"]
+    assert severity["llm_args"]["bbox"] == [0, 0, *PANEL.shape[1::-1]]
+
+
+def test_a_run_already_claimed_is_not_executed_again(tmp_path):
+    started = loop.start("asset", "assets/asset/insp1/capture.png", tmp_path)
+    run_dir = tmp_path / started["run_id"]
+    loop.runs.write_once(run_dir, loop.runs.CLAIM, {"ts": trace.now()})
+
+    with pytest.raises(loop.AlreadyStarted):
+        asyncio.run(loop.resume(started["run_id"], runs_dir=tmp_path))
+    assert loop.trace.run_state(trace.read_events(run_dir)) == trace.UNSTARTED
+
+
+@localstack
+def test_a_retry_inspects_a_copy_of_the_capture_in_its_own_folder(tmp_path):
+    asset = unique("loop-retry-copy")
+    baseline_key = seed_asset(asset, PANEL)
+    capture_key = upload_capture(asset, with_crack(PANEL, 2, 4))
+    started = trace.emit(
+        tmp_path / "retry0000001", "run_started", run_id="retry0000001", asset_id=asset,
+        capture_key=capture_key, retry_of="original0001",
+    )
+    llm = PolicyFollowingLLM(capture_key, baseline_key, detector())
+    result = run_loop(asset, capture_key, llm, tmp_path, started=started)
+
+    spans = [e for e in trace.read_events(result.run_dir) if e["type"] == "tool_call"]
+    written = [value for span in spans for key, value in span["metrics"].items()
+               if key.endswith("_key") and value]
+    assert written
+    assert all(images.ids_from_key(key)[1] == "retry0000001" for key in written)

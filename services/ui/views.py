@@ -271,9 +271,10 @@ def activity_page(items: list[dict], q: str = "", status: str = "",
 
 
 def error_page(status_code: int, code: str, detail: str, lang: str = DEFAULT_LANG,
-               register: str = DEFAULT_REGISTER) -> str:
+               register: str = DEFAULT_REGISTER, get_path: str = "") -> str:
     return _render(
         "error.html", strings(lang, register)["error_title"], "error", lang, register,
+        get_path=get_path,
         status_code=status_code,
         error_code=code,
         detail=detail,
@@ -412,11 +413,12 @@ def _asset_card(asset: dict) -> dict:
 def index_page(assets: list[dict], error: str = "", asset_id: str = "",
                lang: str = DEFAULT_LANG, register: str = DEFAULT_REGISTER,
                sample_suffix: str = "", preselect: str = "",
-               sample_ready: bool | tuple[bool, ...] = True) -> str:
+               sample_ready: bool | tuple[bool, ...] = True, get_path: str = "") -> str:
     t = strings(lang, register)
     return _render(
         "index.html", t["nav_assets"], "assets", lang, register,
         narrow=True,
+        get_path=get_path,
         assets=[_asset_card(asset) for asset in assets],
         asset_branches=sorted({str(asset.get("last_branch")) for asset in assets
                                if asset.get("last_branch")}),

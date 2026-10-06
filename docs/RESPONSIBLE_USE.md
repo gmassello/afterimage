@@ -47,8 +47,8 @@ Two honest qualifications:
 
 ## Bounded by construction, not by trust
 
-Branch verdicts are computed in code. The language model chooses tool arguments and phrasing; it
-cannot move a threshold, and the loop refuses a submission whose branch differs from the last policy
+Branch verdicts are computed in code. The language model chooses the phrasing; the loop fills every tool
+argument from the last verdict, so it cannot move a threshold or a bounding box, and the loop refuses a submission whose branch differs from the last policy
 verdict (`services/agent/loop.py`). So the system's decisions do not depend on the model provider,
 its version, or prompt phrasing — and the evaluation, which substitutes a scripted driver for the
 model, measures the same decisions the public endpoint makes. See

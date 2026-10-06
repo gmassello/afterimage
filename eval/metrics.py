@@ -35,6 +35,9 @@ def per_class(pairs) -> dict[str, dict[str, float]]:
 
 
 def macro(report: dict[str, dict[str, float]]) -> dict[str, float]:
+    # ponytail: averages only classes present in the ground truth, so a predicted label with no
+    # support (MISSED today) lowers precision rows but never the macro; average every row with
+    # predictions if a spurious label ever needs to count against the published figure
     rows = [row for row in report.values() if row["support"]]
     if not rows:
         return {"precision": 0.0, "recall": 0.0, "f1": 0.0}

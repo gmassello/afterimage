@@ -132,12 +132,20 @@ def diff_against_memory(aligned_key: str, baseline_key: str, valid_mask_key: str
     return _diff_payload(result)
 
 
+def _covered(aligned: np.ndarray, baseline: np.ndarray, valid_mask_key: str | None) -> np.ndarray:
+    valid_mask = quality.gray(images.get_image(valid_mask_key)) if valid_mask_key else None
+    return diffing.fill_uncovered(aligned, baseline, valid_mask)
+
+
 @server.tool()
-def crop_and_rescan(aligned_key: str, baseline_key: str, bbox: list[float]) -> dict:
+def crop_and_rescan(
+    aligned_key: str, baseline_key: str, bbox: list[float], valid_mask_key: str | None = None
+) -> dict:
     policy = Policy.from_env()
+    baseline = images.get_image(baseline_key)
     result = diffing.crop_and_rescan(
-        images.get_image(aligned_key),
-        images.get_image(baseline_key),
+        _covered(images.get_image(aligned_key), baseline, valid_mask_key),
+        baseline,
         _bbox(bbox),
         delta_threshold=policy.diff_delta_threshold,
         min_region_area_ratio=policy.diff_min_region_area_ratio,
@@ -146,11 +154,18 @@ def crop_and_rescan(aligned_key: str, baseline_key: str, bbox: list[float]) -> d
 
 
 @server.tool()
-def classify_severity(aligned_key: str, baseline_key: str, bbox: list[float], area_ratio: float) -> dict:
+def classify_severity(
+    aligned_key: str,
+    baseline_key: str,
+    bbox: list[float],
+    area_ratio: float,
+    valid_mask_key: str | None = None,
+) -> dict:
     box = _bbox(bbox)
     full = images.get_image(aligned_key)
-    aligned = diffing.crop_region(full, box)
-    baseline = diffing.crop_region(images.get_image(baseline_key), box)
+    full_baseline = images.get_image(baseline_key)
+    aligned = diffing.crop_region(_covered(full, full_baseline, valid_mask_key), box)
+    baseline = diffing.crop_region(full_baseline, box)
     if aligned.size == 0 or baseline.size == 0:
         raise ValueError(f"bbox is outside image bounds: {bbox!r}")
     result = severity.classify_severity(

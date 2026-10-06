@@ -41,7 +41,7 @@ agent's own cost per inspection.
 - R4. When a detected change is weak, the agent looks closer at the changed region before deciding, and only a confirmed change reaches severity. [criterion: Orchestration and appropriate autonomy]
 - R5. A severe finding waits for a person; approving it updates memory, rejecting it leaves memory unchanged and keeps the stated reason. [criterion: Failure handling, observability, security, and human control]
 - R6. Every branch the agent takes shows the metric, the measured value, and the threshold that chose it, and the whole run can be replayed from its trace. [criterion: Failure handling, observability, security, and human control]
-- R7. The language model can phrase results and pick arguments but cannot override the branch that the measured evidence mandates. [criterion: Orchestration and appropriate autonomy]
+- R7. The language model can phrase results but cannot pick tool arguments or override the branch that the measured evidence mandates. [criterion: Orchestration and appropriate autonomy]
 - R8. When no asset ID is given, the agent identifies which stored asset the photo shows, or says it cannot, without guessing. [criterion: Orchestration and appropriate autonomy]
 - R9. The asset keeps a chronological history in which superseded references remain visible. [criterion: Real-world impact]
 - R10. A failed run can be retried without changing or hiding the original record. [criterion: Failure handling, observability, security, and human control]
@@ -100,8 +100,8 @@ agent's own cost per inspection.
 
 ## Key decisions
 
-- Branches are decided by one policy module from measured values; the model only phrases and picks
-  arguments — chosen over letting the model decide, because every decision must be reconstructible
+- Branches are decided by one policy module from measured values; the model only phrases, and the loop
+  fills the arguments — chosen over letting the model decide, because every decision must be reconstructible
   and the Agentic Vision rule requires visual evidence to change what happens next. settled: user-directed
 - Longitudinal memory per asset is the product's core — chosen over single-image defect
   classification, because no previous winner had it and it is what the Innovation criterion rewards. settled: user-directed

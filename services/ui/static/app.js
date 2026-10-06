@@ -290,6 +290,13 @@ addEventListener('input', (e) => {
 }, true);
 
 const page = document.querySelector('.page');
+
+document.querySelectorAll('nav.langs a, nav.regs a').forEach((link) => {
+  const [name, value] = link.getAttribute('href').slice(1).split('=');
+  const target = new URL(page.dataset.getPath || location.href, location.origin);
+  target.searchParams.set(name, value);
+  link.href = target.pathname + target.search;
+});
 const says = document.querySelector('.runstate .says');
 const clock = document.querySelector('.runstate .clock');
 const opened = Date.now();
@@ -311,7 +318,7 @@ if (page.dataset.runState === 'unstarted' && page.dataset.executeUrl) {
     say(T.runStartFailed);
   };
   fetch(page.dataset.executeUrl, { method: 'POST' })
-    .then((res) => { if (!res.ok && res.status !== 409) failed(); })
+    .then((res) => { if (!res.ok && res.status !== 409 && res.status < 500) failed(); })
     .catch(failed);
 }
 

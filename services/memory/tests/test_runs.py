@@ -36,7 +36,6 @@ def test_append_reads_the_stored_file_on_every_call(tmp_path):
     runs.write(run_dir, runs.EVENTS, [{"n": 1}, {"n": 2}])
     runs.append(run_dir, runs.EVENTS, {"n": 3})
     assert runs.read(run_dir, runs.EVENTS) == [{"n": 1}, {"n": 2}, {"n": 3}]
-    assert runs.last(run_dir, runs.EVENTS) == {"n": 3}
 
 
 def test_the_queue_comes_back_oldest_first(tmp_path):

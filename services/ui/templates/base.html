@@ -30,7 +30,8 @@ document.documentElement.classList.add('js');
 <a class='skip-link' href='#main-content'>{{ t.skip_to_content }}</a>
 <div class='page'
   {%- if run_state %} data-run-state='{{ run_state }}'{% endif %}
-  {%- if execute_url %} data-execute-url='{{ execute_url }}'{% endif %}>
+  {%- if execute_url %} data-execute-url='{{ execute_url }}'{% endif %}
+  {%- if get_path %} data-get-path='{{ get_path }}'{% endif %}>
 <div class='{{ "wrap narrow" if narrow else "wrap" }}'>
 {% include 'partials/header.html' %}
 {% if says %}<p class='runstate'><span class='says' role='status' aria-live='polite'>{{ says }}</span>{% if run_state %}<span class='clock' aria-hidden='true'></span>{% endif %}</p>{% endif %}

@@ -1,5 +1,6 @@
 import io
 import os
+import threading
 from collections import OrderedDict
 from functools import lru_cache
 
@@ -15,13 +16,15 @@ MAX_IMAGE_PIXELS = 16_000_000
 # CACHE_MAX_IMAGES arrays and evicts the oldest; size it by bytes if captures grow past a few MP
 CACHE_MAX_IMAGES = 32
 _cache: OrderedDict[str, np.ndarray] = OrderedDict()
+_cache_lock = threading.Lock()
 
 
 def _remember(key: str, image: np.ndarray) -> np.ndarray:
-    _cache[key] = image
-    _cache.move_to_end(key)
-    while len(_cache) > CACHE_MAX_IMAGES:
-        _cache.popitem(last=False)
+    with _cache_lock:
+        _cache[key] = image
+        _cache.move_to_end(key)
+        while len(_cache) > CACHE_MAX_IMAGES:
+            _cache.popitem(last=False)
     return image
 
 
@@ -144,9 +147,10 @@ def exists(key: str) -> bool:
 
 
 def get_image(key: str) -> np.ndarray:
-    if key in _cache:
-        _cache.move_to_end(key)
-        return _cache[key]
+    with _cache_lock:
+        if key in _cache:
+            _cache.move_to_end(key)
+            return _cache[key]
     return _remember(key, decode(get_png(key)))
 
 

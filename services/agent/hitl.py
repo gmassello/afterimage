@@ -36,14 +36,10 @@ def commit(
     )
 
 
-def reobserve(asset_id: str, inspection_id: str, promoted: bool) -> dict:
-    stored = next(
-        (
-            item for item in store.history(asset_id)
-            if item["sk"].startswith(store.BASELINE) and item.get("inspection_id") == inspection_id
-        ),
-        None,
-    )
+def reobserve(asset_id: str, inspection_id: str, captured_at: str, promoted: bool) -> dict:
+    stored = store.baseline_at(asset_id, captured_at)
+    if stored is not None and stored.get("inspection_id") != inspection_id:
+        stored = None
     current = store.current_baseline(asset_id)
     if stored is None or not images.exists(stored["image_key"]):
         observed = MISSING
@@ -121,7 +117,9 @@ def resolve(
             payload.get("verdict"),
         )
         extra["baseline"] = PROMOTED if promoted else HISTORICAL
-        observation = reobserve(payload["asset_id"], payload["run_id"], promoted)
+        observation = reobserve(
+            payload["asset_id"], payload["run_id"], payload["captured_at"], promoted
+        )
     record = policy.decision(
         policy.HUMAN_GATE_METRIC,
         1.0 if approved else 0.0,

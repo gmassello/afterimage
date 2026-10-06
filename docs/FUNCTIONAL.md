@@ -90,8 +90,9 @@ plain language are the defaults.
 
 ## Trust and limits
 
-- The language model may choose tool arguments and wording, but it cannot set thresholds, change
-  the enforced tool order, or submit a branch that disagrees with policy.
+- The language model chooses the wording only. The loop fills every tool argument from the last
+  verdict, and the model cannot set thresholds, change the enforced tool order, or submit a branch
+  that disagrees with policy.
 - Retrying is recovery, not history rewriting: only a terminal failed run is eligible, and the
   original trace remains available while a write-once marker identifies its one replacement run.
 - A trace provides causal evidence for the run and a hash chain that detects ordinary editing,

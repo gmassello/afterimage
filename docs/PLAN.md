@@ -14,8 +14,8 @@ must; nothing remaining blocks the demo.
 
 ## Key technical decisions
 
-- Branches are decided only in the policy module from measured values; the model picks arguments and
-  phrasing, and a submit that disagrees with the last verdict is rejected. settled: inherited from BRIEF
+- Branches are decided only in the policy module from measured values; the model phrases and the loop
+  fills the arguments, and a submit that disagrees with the last verdict is rejected. settled: inherited from BRIEF
 - The trace is an append-only event file with a hash chain, not an OpenTelemetry pipeline. settled: inherited from BRIEF
 - Alignment uses OpenCV 5 `Features` with ALIKED and LightGlue ONNX, falling back to ORB only when the
   weights are missing. settled: plan-time

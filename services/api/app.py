@@ -4,6 +4,7 @@ import uuid
 from functools import lru_cache
 from hashlib import sha256
 from time import monotonic
+from urllib.parse import urlsplit
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -53,6 +54,15 @@ class ApiError(HTTPException):
         self.code = code
 
 
+def _get_path(request: Request) -> str:
+    if request.method == "GET":
+        return ""
+    referer = urlsplit(request.headers.get("referer", ""))
+    if referer.netloc == request.url.netloc and referer.path.startswith("/"):
+        return referer.path + (f"?{referer.query}" if referer.query else "")
+    return "/app"
+
+
 @app.exception_handler(StarletteHTTPException)
 async def http_error(request: Request, rejected: StarletteHTTPException):
     code = getattr(rejected, "code", f"http_{rejected.status_code}")
@@ -65,6 +75,7 @@ async def http_error(request: Request, rejected: StarletteHTTPException):
                 str(rejected.detail),
                 lang=language(request),
                 register=register(request),
+                get_path=_get_path(request),
             ),
             status_code=rejected.status_code,
         )
@@ -87,6 +98,7 @@ async def internal_error(request: Request, error: Exception):
                 detail,
                 lang=language(request),
                 register=register(request),
+                get_path=_get_path(request),
             ),
             status_code=500,
         )
@@ -227,6 +239,7 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
                 register=reading,
                 sample_suffix=suffix,
                 sample_ready=ready,
+                get_path="/app",
             ),
             status_code=rejected.status_code,
         )
@@ -234,10 +247,9 @@ async def create_inspection(request: Request, asset_id: str = Form(""),
         raise ApiError(503, strings(lang, reading)["err_calibration"], "calibration_failed")
     if asset_id:
         store.put_asset(asset_id)
-    capture_key = images.put_image(
-        asset_id or loop.UNASSIGNED, uuid.uuid4().hex[:12], "capture", capture
-    )
-    started = loop.start(asset_id, capture_key, runs_dir=runs.runs_dir())
+    run_id = loop.new_run_id()
+    capture_key = images.put_image(asset_id or loop.UNASSIGNED, run_id, "capture", capture)
+    started = loop.start(asset_id, capture_key, runs_dir=runs.runs_dir(), run_id=run_id)
     return RedirectResponse(f"/traces/{started['run_id']}", status_code=303)
 
 
@@ -344,7 +356,7 @@ def queue(lang: str = Depends(language), reading: str = Depends(register)):
 def _actor(request: Request) -> str:
     # The trace is public, so the approver is recorded as a fingerprint rather than an address:
     # enough to tell two actors apart and to correlate approvals, not enough to identify anyone.
-    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[-1].strip()
     client = forwarded or (request.client.host if request.client else "unknown")
     fingerprint = f"{client}\n{request.headers.get('user-agent', '')}".encode()
     return sha256(fingerprint).hexdigest()[:12]

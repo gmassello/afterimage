@@ -366,8 +366,8 @@ def test_a_flat_history_at_zero_still_draws_a_sparkline():
     assert line["mark"] == "24.00"
 
 
-def test_a_rejected_start_stops_the_clock_instead_of_spinning():
-    assert "if (!res.ok && res.status !== 409) failed();" in JS
+def test_a_rejected_start_stops_the_clock_but_a_failed_run_keeps_polling():
+    assert "if (!res.ok && res.status !== 409 && res.status < 500) failed();" in JS
     assert "say(T.runStartFailed);" in JS
     assert "stopPolling();" in JS
 

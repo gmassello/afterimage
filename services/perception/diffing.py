@@ -83,6 +83,14 @@ def _regions(
     )
 
 
+def fill_uncovered(
+    aligned: np.ndarray, baseline: np.ndarray, valid_mask: np.ndarray | None
+) -> np.ndarray:
+    if valid_mask is None:
+        return aligned
+    return np.where(valid_mask[..., None] > 0, aligned, baseline)
+
+
 def crop_origin(bbox: tuple[int, int, int, int], margin: float) -> tuple[int, int]:
     x, y, width, height = bbox
     return max(x - int(width * margin), 0), max(y - int(height * margin), 0)
