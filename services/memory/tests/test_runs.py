@@ -200,6 +200,14 @@ def test_an_interrupted_run_is_retryable_while_it_still_reads_as_running(tmp_pat
     assert items["bbbbbbbbbbbb"]["retryable"] is False
 
 
+def test_a_run_that_died_before_its_first_event_is_retryable_once_stale(tmp_path):
+    runs.write(tmp_path / "aaaaaaaaaaaa", runs.EVENTS, _interrupted(30)[:1])
+    runs.write(tmp_path / "bbbbbbbbbbbb", runs.EVENTS, _interrupted(1)[:1])
+    items = {item["run_id"]: item for item in runs.recent(tmp_path)}
+    assert items["aaaaaaaaaaaa"]["status"] == "unstarted"
+    assert items["aaaaaaaaaaaa"]["retryable"] is True
+    assert items["bbbbbbbbbbbb"]["retryable"] is False
+
 def _conflicting_s3(monkeypatch, reads):
     from services.memory import images
 

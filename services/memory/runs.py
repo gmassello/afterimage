@@ -168,7 +168,7 @@ def _summary(root: str | Path, run_id: str) -> dict | None:
         "status": status,
         "branch": state.get("branch") or (finished or {}).get("branch"),
         "message": state.get("message") or (finished or {}).get("message") or "",
-        "retryable": status == "failed" or (status == "running" and stale(events)),
+        "retryable": status == "failed" or (status in ("running", "unstarted") and stale(events)),
     }
 
 

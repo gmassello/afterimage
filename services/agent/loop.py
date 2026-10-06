@@ -123,6 +123,8 @@ async def resume(run_id: str, runs_dir: str | Path = "runs", **kwargs) -> RunRes
         raise FileNotFoundError(run_id)
     if trace.run_state(events) != trace.UNSTARTED:
         raise AlreadyStarted(run_id)
+    # ponytail: the claim never expires; a run that dies before its first event is recovered
+    # through retry once stale, a lease with an expiry is the upgrade
     try:
         claimed, _ = runs.write_once(Path(runs_dir) / run_id, runs.CLAIM, {"ts": trace.now()})
     except runs.ClaimInFlight:

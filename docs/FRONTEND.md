@@ -77,7 +77,8 @@ remain small and autoescaped, and shared markup lives in `templates/partials/com
   confirmation before submission.
 - After the upload redirect, the trace page starts the run with a separate POST request. Without
   JavaScript the same request is a `<noscript>` form the operator submits.
-- A terminal failed activity row offers retry. The browser follows the redirect to the replacement
+- A terminal failed activity row offers retry, and so does a running or unstarted row silent for
+  15 minutes, which the retry first closes as failed. The browser follows the redirect to the replacement
   trace; repeated submissions resolve to that same replacement run.
 - Active traces poll every 1.5 seconds; the approval queue polls every 5 seconds.
 - Polling pauses while the user is interacting with focusable or expanded content and preserves
