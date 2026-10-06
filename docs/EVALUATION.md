@@ -237,8 +237,8 @@ table against all three artefacts.
 | Figure | Full agent | ORB only | No memory |
 |---|---:|---:|---:|
 | `passed` | 24 / 29 | 22 / 29 | 5 / 29 |
-| `branch macro F1` | 0.8624 | 0.8068 | 0.1346 |
-| `defect macro F1` | 0.8542 | 0.7907 | 0.0 |
+| `branch macro F1` | 0.8624 | 0.7837 | 0.1346 |
+| `defect macro F1` | 0.8542 | 0.8185 | 0.0 |
 | `defects found` | 12 / 14 | 11 / 14 | 0 / 14 |
 | `median inlier_ratio` | 0.9987 | 0.8610 | — |
 | `mean IoU` | 0.7875 | 0.7167 | — |
@@ -249,7 +249,8 @@ table against all three artefacts.
   answer never needed a baseline: the recapture cases and the first-baseline case itself.
 - **ORB only** loses two real photographs. On `faint-spot-real-et-solar` the worse alignment leaves
   residue that hides the faint spot, and the run ends in `no_change`; on
-  `delamination-real-bifacial` the region is located elsewhere (IoU 0.0) and classified as a crack.
+  `delamination-real-bifacial` the region is located elsewhere (IoU 0.0), its score falls to 0.2255
+  against the 0.4 threshold, and the run writes it as `auto_write` instead of asking a person.
   `faint-spot-real-hannover-roof` still passes, but its IoU falls from 0.7216 to 0.2923.
 - The synthetic panels pass under ORB because the classic threshold is 0.30: the rotated and scaled
   grid aligns at a median 0.3929, against 0.9975 with the learned features. The margin over the

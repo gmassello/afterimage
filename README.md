@@ -113,13 +113,13 @@ The same 29 scenarios, scored three ways: the full agent; with ALIKED + LightGlu
 | Figure | Full agent | ORB only | No memory |
 |---|---:|---:|---:|
 | `passed` | 24 / 29 | 22 / 29 | 5 / 29 |
-| `branch macro F1` | 0.8624 | 0.8068 | 0.1346 |
-| `defect macro F1` | 0.8542 | 0.7907 | 0.0 |
+| `branch macro F1` | 0.8624 | 0.7837 | 0.1346 |
+| `defect macro F1` | 0.8542 | 0.8185 | 0.0 |
 | `defects found` | 12 / 14 | 11 / 14 | 0 / 14 |
 | `median inlier_ratio` | 0.9987 | 0.8610 | — |
 | `mean IoU` | 0.7875 | 0.7167 | — |
 
-Without memory the agent has nothing to compare against, so every capture that passes the quality gate becomes a first baseline and no defect is ever found — that column is the floor by construction, not a tuned result. The learned features are worth two real photographs: with ORB, a faint spot on a real module is lost to a worse alignment and a delamination is located in the wrong place. On the rotated and scaled synthetic panels ORB still clears its own lower threshold, but its median `inlier_ratio` there is 0.3929 against 0.9975.
+Without memory the agent has nothing to compare against, so every capture that passes the quality gate becomes a first baseline and no defect is ever found — that column is the floor by construction, not a tuned result. The learned features are worth two real photographs: with ORB, a faint spot on a real module is lost to a worse alignment and a delamination is located in the wrong place, scores under the 0.4 severity threshold and is written without a person. On the rotated and scaled synthetic panels ORB still clears its own lower threshold, but its median `inlier_ratio` there is 0.3929 against 0.9975.
 
 ## How the loop works
 
