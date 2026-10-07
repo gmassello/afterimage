@@ -11,6 +11,7 @@ SITE = Path("docs/index.html")
 RESULTS = Path("eval/results/latest/results.json")
 SCRIPT = Path("video/script.tsv")
 LANDING_VIEW = Path("services/ui/views.py")
+ENTRY = Path("docs/submission.md")
 
 DELIVERABLES = (PAGE, REPORT, README, SITE)
 SPELLED = (
@@ -73,6 +74,9 @@ def test_the_real_subset_and_its_intervals_match_the_artefact(published, measure
     report = REPORT.read_text()
     assert _claim(report, r"\| Real photographs passed \| \*\*(\d+) of") == str(real["passed"])
     assert _claim(report, r"\*\*\d+ of \d+\*\*, 95% Wilson interval (\[[\d., ]+\])") == str(real["passed_interval"])
+    entry = ENTRY.read_text()
+    assert _claim(entry, r"\| Real photographs passed \| (\d+ / \d+) \(") == f"{real['passed']} / {real['scenarios']}"
+    assert _claim(entry, r"\(95% Wilson interval (\[[\d., ]+\])\) \|") == str(real["passed_interval"])
 
 
 def test_the_page_counts_the_scenarios_it_leaves_out_of_the_defect_table(published, measured):

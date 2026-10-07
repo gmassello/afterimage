@@ -42,8 +42,9 @@ external figure for the cost of a manual inspection, only the measured $0.0005 p
 
 Risks, not tasks, each with its fallback.
 
-- **The endpoint stays up through judging (27 Oct → 9 Nov)** — fallback: a live screen-share,
-  which the rules accept.
+- **The endpoint stays up through judging (27 Oct → 9 Nov)** — the `Uptime` workflow probes
+  `/health` calibration and the landing title every six hours and a failed run is the alarm;
+  fallback: a live screen-share, which the rules accept.
 - **The video stays public** — fallback: upload the same render to a second host and list both.
 - **Edits after 26 Oct 23:45 PDT do not reach the judges** — the entry is already submitted.
 - **Zoom check-in 7–14 Oct, only with a compute grant** — no fallback; confirm whether it applies.

@@ -1,0 +1,32 @@
+name: Uptime
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  URL: https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws
+
+jobs:
+  endpoint:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    steps:
+      - name: Calibration and landing
+        run: |
+          for i in $(seq 1 10); do
+            health=$(curl -sf --max-time 30 "$URL/health" || true)
+            landing=$(curl -sf --max-time 30 "$URL/" || true)
+            if echo "$health" | jq -e '.ok and .calibration.branch == "aligned"' >/dev/null 2>&1 \
+              && echo "$landing" | grep -q '<title>afterimage'; then
+              echo "$health"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "health: $health" >&2
+          exit 1

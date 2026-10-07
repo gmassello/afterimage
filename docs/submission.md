@@ -41,7 +41,7 @@ Memory is a single DynamoDB table that returns an asset's whole history in one q
 Delivery is CloudFormation from GitHub Actions over OIDC with a permissions boundary, exact pins, an image retention policy, and a calibration check that takes the service out of rotation if the alignment stack stops answering as expected. A failed run can be retried into a new run without touching the original record. An inspection takes 20.4 s and bills $0.0005 at list price. <!-- src: README.md footer; docs/TECHNICAL_REPORT.md §7, Lambda REPORT lines and the Price List API -->
 
 ## Challenges we ran into (-)
-OpenCV 5 broke compatibility with everything the models know: `Features2D` is now `Features`, the C API is gone, ML and G-API moved to contrib. Every API had to be verified against the 5.x docs rather than recalled. The OpenCV 5 DNN engine has no GPU support, so the system was designed for CPU on Graviton from the first commit instead of being ported later.
+OpenCV 5 broke compatibility with everything the models know: `Features2D` is now `Features`, the C API is gone, ML and G-API moved to contrib. Every API had to be verified against the 5.x docs rather than recalled. Two of them carry the alignment and do not exist in OpenCV 4 — `cv2.ALIKED` and `cv2.LightGlueMatcher` — so the project cannot be ported back to 4.x by changing an import. The OpenCV 5 DNN engine has no GPU support, so the system was designed for CPU on Graviton from the first commit instead of being ported later.
 
 The harder problem was honesty. It is easy to build a demo where the agent looks decisive. It is much harder to make every decision reconstructible — which is why the causal link is a field in the trace, not something a judge has to infer by reading several events in order:
 
@@ -56,8 +56,9 @@ The harder problem was honesty. It is easy to build a demo where the agent looks
 | Defect macro F1 | 0.8542 (precision 0.75 or better on every evaluated defect class) |
 | Mean IoU | 0.7875 |
 | Scenarios passed | 24 / 29 |
+| Real photographs passed | 14 / 18 (95% Wilson interval [0.5478, 0.91]) |
 
-<!-- src: make eval → eval/results/latest/results.json summary.branch, summary.defect, summary.iou; anchored by eval/tests/test_published_numbers.py -->
+<!-- src: make eval → eval/results/latest/results.json summary.branch, summary.defect, summary.iou, summary.by_source.real; anchored by eval/tests/test_published_numbers.py -->
 
 The five failures are published, each traced to a root cause rather than explained away. The test suite fails if any headline figure drifts from the evaluation artefact, so the README cannot quietly disagree with the numbers.
 

@@ -47,6 +47,8 @@ table uses on-demand billing. These values must be verified in
 - `.github/workflows/ci.yml` runs on native `ubuntu-24.04-arm` and executes the runtime, lint, type,
   coverage, and test gates plus `./smoke.sh`; its eval job compares a fresh run with
   `eval/results/latest/` and a classic-detector run with `eval/results/orb-only/`.
+- `.github/workflows/uptime.yml` probes the public `/health` calibration and the landing title
+  every six hours through judging; a failed run is the alarm.
 - `.github/workflows/deploy.yml` is manual, authenticates to AWS through GitHub OIDC, and delegates
   deployment to `deploy.sh`.
 - `deploy.sh` downloads weights, maintains the ECR retention policy, builds for `linux/arm64`,
