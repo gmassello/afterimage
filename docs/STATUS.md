@@ -4,8 +4,8 @@ Submissions close **2026-10-26 23:45 -07:00** (2026-10-27 03:45 -03:00). Judging
 00:00 -07:00 → 2026-11-09 23:45 -08:00; winners are announced 2026-11-10 09:00 -08:00. Event:
 <https://opencv26.devpost.com/> · Entry: <https://devpost.com/software/afterimage-ibp376>.
 
-The product is complete (U1–U20 of [PLAN.md](PLAN.md) done): 380 tests green at 92.62% coverage
-(`make test`, 2026-10-05), the video re-recorded and the entry refreshed on 4 October.
+The product is complete (U1–U20 of [PLAN.md](PLAN.md) done): 394 tests green at 92.70% coverage
+(`make test`, 2026-10-07), the video re-recorded on 4 October and the entry refreshed on 7 October.
 
 ## Surfaces
 
@@ -13,13 +13,13 @@ Each one checked from outside, without a session.
 
 | Surface | Where | State | Checked |
 |---|---|---|---|
-| Repo and CI | `gmassello/afterimage`, `main` | clean and in sync with `origin`; `ci` and Pages green; `ci` runs on pushes to `main` and on pull requests | 2026-10-05 |
-| Site | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | serves `f6176fe` (deploy run 37247899968; later commits are docs only); `/`, `/app`, `/activity`, `/queue`, `/health` and the 55 assets of `/` and `/app` answer 200; calibration `aligned` at 0.9975 | 2026-10-05 |
-| Field manual | https://gmassello.github.io/afterimage/ | serves the content of `main` | 2026-10-05 |
-| Devpost entry | https://devpost.com/software/afterimage-ibp376 | `SUBMITTED`; text of [submission.md](submission.md), six current captures, 14 tags, video `_fJo29SdoaU` on the project and on the submission, testing instructions walking the sample sets | 2026-10-05 |
-| Gallery card | https://opencv26.devpost.com/project-gallery | not accessible: Devpost does not publish the gallery while the contest is open | 2026-10-05 |
-| Video | https://youtu.be/_fJo29SdoaU (3:06.6, public) | same ID in README, entry, deck and field manual; rendered after `results.json`; every four-decimal figure in its captions is in `results.json` or on screen in the take | 2026-10-05 |
-| Deck | [deck.pdf](deck.pdf) (not required by the event) | the published PDF matches the repository copy and links the current video | 2026-10-05 |
+| Repo and CI | `gmassello/afterimage`, `main` | clean and in sync with `origin`; `ci`, Pages and `Uptime` green on `3ee5f08`; `ci` runs on pushes to `main` and on pull requests | 2026-10-07 |
+| Site | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | serves `f6176fe` (deploy run 37247899968, recorded as `24b329a` before the history rewrite); **`2389eb6` and `009e55c` change `services/` and are not deployed**; `/`, `/app`, `/activity`, `/queue`, `/health` and the 44 assets of `/` and `/app` answer 200; calibration `aligned` at 0.9975 | 2026-10-07 |
+| Field manual | https://gmassello.github.io/afterimage/ | serves the content of `main` | 2026-10-07 |
+| Devpost entry | https://devpost.com/software/afterimage-ibp376 | `SUBMITTED`; every paragraph and table row of [submission.md](submission.md) on the public page, including the real-photograph interval, six current captures, 14 tags, video `_fJo29SdoaU` on the project and on the submission, testing instructions walking the sample sets | 2026-10-07 |
+| Gallery card | https://opencv26.devpost.com/project-gallery | not accessible: Devpost does not publish the gallery while the contest is open | 2026-10-07 |
+| Video | https://youtu.be/_fJo29SdoaU (3:06.6, public) | same ID in README, entry, deck and field manual; rendered before the last `results.json` change, which only added the real-photograph subset; every four-decimal figure in its captions is in `results.json` or on screen in the take | 2026-10-07 |
+| Deck | [deck.pdf](deck.pdf) (not required by the event) | the published PDF matches the repository copy and links the current video | 2026-10-07 |
 
 ## Known limits
 
