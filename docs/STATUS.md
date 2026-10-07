@@ -14,7 +14,7 @@ Each one checked from outside, without a session.
 | Surface | Where | State | Checked |
 |---|---|---|---|
 | Repo and CI | `gmassello/afterimage`, `main` | clean and in sync with `origin`; `ci`, Pages and `Uptime` green on `3ee5f08`; `ci` runs on pushes to `main` and on pull requests | 2026-10-07 |
-| Site | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | serves `f6176fe` (deploy run 37247899968, recorded as `24b329a` before the history rewrite); **`2389eb6` and `009e55c` change `services/` and are not deployed**; `/`, `/app`, `/activity`, `/queue`, `/health` and the 44 assets of `/` and `/app` answer 200; calibration `aligned` at 0.9975 | 2026-10-07 |
+| Site | https://jgmzrkpa344jwixw7nbulgh2ju0mojcb.lambda-url.us-east-1.on.aws/ | serves `3ee5f08` (deploy run 37695394916; later commits are docs only), with `app.da91a6c2.js` replacing the 4 October bundle; `/`, `/app`, `/activity`, `/queue`, `/health` and the 44 assets of `/` and `/app` answer 200; calibration `aligned` at 0.9975 | 2026-10-07 |
 | Field manual | https://gmassello.github.io/afterimage/ | serves the content of `main` | 2026-10-07 |
 | Devpost entry | https://devpost.com/software/afterimage-ibp376 | `SUBMITTED`; every paragraph and table row of [submission.md](submission.md) on the public page, including the real-photograph interval, six current captures, 14 tags, video `_fJo29SdoaU` on the project and on the submission, testing instructions walking the sample sets | 2026-10-07 |
 | Gallery card | https://opencv26.devpost.com/project-gallery | not accessible: Devpost does not publish the gallery while the contest is open | 2026-10-07 |
